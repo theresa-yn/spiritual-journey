@@ -1,6 +1,6 @@
-// sw.js - Service Worker for Soul Reflections App
 const CACHE_NAME = "soul-reflections-cache-v1";
 const OFFLINE_URL = "offline.html";
+
 // Files to cache
 const FILES_TO_CACHE = [
   "/",
@@ -8,9 +8,11 @@ const FILES_TO_CACHE = [
   "/offline.html",
   "/manifest.json",
   "/sw.js",
-  "/icon-192.png",
-  "/icon-512.png"
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ];
+
 // Install: cache files
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -21,6 +23,7 @@ self.addEventListener("install", (event) => {
   );
   self.skipWaiting();
 });
+
 // Activate: cleanup old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -37,9 +40,14 @@ self.addEventListener("activate", (event) => {
   );
   self.clients.claim();
 });
+
 // Fetch: serve from cache, then fallback to network, then offline page
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
+  const url = new URL(event.request.url);
+  if (url.hostname.includes("firebase") || url.pathname.includes("/api/")) {
+    // Always fetch from network for auth/database
+    event.respondWith(fetch(event.request));
+  } else if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() =>
         caches.open(CACHE_NAME).then((cache) => cache.match(OFFLINE_URL))
