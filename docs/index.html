@@ -216,6 +216,7 @@
     <button id="account-button" class="button hidden">Account</button>
     <button id="auth-button" class="button hidden">Sign Out</button>
   </div>
+  <div id="debug" style="position:fixed;left:0;right:0;bottom:0;background:#fee;color:#900;font:12px monospace;padding:4px;display:none;z-index:2000"></div>
   <!-- Main Screen -->
   <div id="main-screen" class="content hidden">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
@@ -308,7 +309,27 @@
     // Initialize Supabase client
     const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(supabaseUrl, supabaseKey)
+      : null;
+    const AUTH_UNAVAILABLE = 'Authentication is unavailable. Check network and Supabase CDN.';
+
+    // Global error surfacing so buttons "not working" shows a reason
+    (function attachGlobalErrorHandlers(){
+      try {
+        const debug = document.getElementById('debug');
+        if (!debug) return;
+        function show(msg){
+          debug.style.display = 'block';
+          debug.textContent = String(msg || 'Unknown error');
+        }
+        window.addEventListener('error', (e) => show(e && e.message));
+        window.addEventListener('unhandledrejection', (e) => {
+          const reason = (e && e.reason) ? (e.reason.message || e.reason) : 'Unhandled promise rejection';
+          show(reason);
+        });
+      } catch(_) {}
+    })();
 
     let recognition;
     let reflections = [];
@@ -520,7 +541,7 @@
       document.getElementById('account-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('account-message').textContent = '';
-      document.getElementById('account-email').value = user?.email || '';
+      document.getElementById('account-email').value = (user && user.email) ? user.email : '';
     }
 
     async function showHistory() {
@@ -681,6 +702,7 @@
         return;
       }
 
+      if (!supabase) { authMessage.textContent = AUTH_UNAVAILABLE; return; }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -709,6 +731,7 @@
         return;
       }
 
+      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -732,6 +755,7 @@
     }
 
     async function handleSignOut() {
+      if (!supabase) { alert(AUTH_UNAVAILABLE); return; }
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
@@ -755,6 +779,7 @@
         loginMessage.textContent = 'Enter your email to reset password.';
         return;
       }
+      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin
       });
@@ -772,6 +797,7 @@
         accountMessage.textContent = 'Email cannot be empty.';
         return;
       }
+      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
       const { data, error } = await supabase.auth.updateUser({ email });
       if (error) {
         accountMessage.textContent = error.message;
@@ -794,6 +820,7 @@
         accountMessage.textContent = 'Passwords do not match.';
         return;
       }
+      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
         accountMessage.textContent = error.message;
@@ -805,6 +832,7 @@
     }
 
     async function handleOAuth(provider) {
+      if (!supabase) { const m = AUTH_UNAVAILABLE; const authMessage = document.getElementById('auth-message'); const loginMessage = document.getElementById('login-message'); if (authMessage) authMessage.textContent = m; if (loginMessage) loginMessage.textContent = m; return; }
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: window.location.origin }
@@ -819,6 +847,16 @@
 
     // Initialize auth state
     async function initAuth() {
+      try {
+        if (!window.supabase) {
+          const d = document.getElementById('debug');
+          if (d) { d.style.display = 'block'; d.textContent = 'Supabase CDN not loaded.'; }
+        } else if (!supabase) {
+          const d = document.getElementById('debug');
+          if (d) { d.style.display = 'block'; d.textContent = 'Supabase client not initialized.'; }
+        }
+      } catch (e) {}
+      if (!supabase) { console.error(AUTH_UNAVAILABLE); showRegisterScreen(); return; }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         user = session.user;
@@ -846,7 +884,7 @@
           loadReflections();
           goBack();
         } else if (event === 'PASSWORD_RECOVERY') {
-          user = session?.user || null;
+          user = (session && session.user) ? session.user : null;
           showAccountScreen();
           document.getElementById('account-message').textContent = 'Enter a new password to complete reset.';
         } else if (event === 'SIGNED_OUT') {
