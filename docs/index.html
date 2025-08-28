@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#7c3aed">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Soul Reflections</title>
@@ -106,7 +106,7 @@
       transform: translateY(-2px);
     }
     .hidden { display: none; }
-    input[type="text"], input[type="password"], textarea {
+    input[type="text"], textarea {
       width: 85%;
       padding: 10px;
       font-size: 1rem;
@@ -173,32 +173,14 @@
       margin: 12px 0;
     }
   </style>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <!-- Login Screen -->
-  <div id="login-screen" class="content">
-    <h2>Welcome to Soul Reflections</h2>
-    <p>Sign in or create an account to save your reflections</p>
-    <input type="text" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <div class="button-group">
-      <button class="button" onclick="signUp()">Sign Up</button>
-      <button class="button" onclick="signIn()">Sign In</button>
-      <button class="button" onclick="useOffline()">Use Offline</button>
-    </div>
-    <p id="login-error" style="color: red; display: none;"></p>
-  </div>
+  <div class="header">
+    <span id="current-time"></span>
+  </div>  
 
   <!-- Main Screen -->
-  <div id="main-screen" class="content hidden">
-    <div class="header">
-      <span id="current-time"></span>
-      <button class="button" onclick="signOut()">Sign Out</button>
-    </div>
+  <div id="main-screen" class="content">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <h2>My Spiritual Journey...</h2>
@@ -239,35 +221,6 @@
   <div class="floating-plus" onclick="showEntryScreen()">+</div>
 
   <script>
-    // Firebase Modular SDK Imports
-    const { initializeApp } = firebase.app;
-    const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = firebase.auth;
-    const { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc } = firebase.firestore;
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAj8BYzjanTu-UHo5o9kR1LVTLOYqUBaFY",
-      authDomain: "spiritual-journey-ec673.firebaseapp.com",
-      projectId: "spiritual-journey-ec673",
-      storageBucket: "spiritual-journey-ec673.firebasestorage.app",
-      messagingSenderId: "613506401674",
-      appId: "1:613506401674:web:5fb06dbb4f4e0e00093473"
-    };
-
-    // Initialize Firebase
-    let auth, db;
-    let isOffline = false;
-    try {
-      const app = initializeApp(firebaseConfig);
-      console.log('Firebase initialized successfully');
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch (e) {
-      console.error('Firebase initialization failed:', e);
-      alert('Failed to connect to Firebase. Using offline mode (local storage).');
-      isOffline = true;
-    }
-
     let recognition;
     let reflections = [];
     let currentImage = "";
@@ -329,177 +282,18 @@
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
 
-    // Authentication Functions
-    function signUp() {
-      if (isOffline) {
-        alert('Offline mode: Sign-up not available. Using local storage.');
-        return;
-      }
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      if (!email || !password) {
-        document.getElementById('login-error').textContent = 'Please enter both email and password.';
-        document.getElementById('login-error').style.display = 'block';
-        return;
-      }
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          console.log('Sign-up successful for:', email);
-          document.getElementById('login-error').style.display = 'none';
-        })
-        .catch(error => {
-          console.error('Sign-up error:', error);
-          document.getElementById('login-error').textContent = error.message;
-          document.getElementById('login-error').style.display = 'block';
-        });
-    }
-
-    function signIn() {
-      if (isOffline) {
-        alert('Offline mode: Sign-in not available. Using local storage.');
-        return;
-      }
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      if (!email || !password) {
-        document.getElementById('login-error').textContent = 'Please enter both email and password.';
-        document.getElementById('login-error').style.display = 'block';
-        return;
-      }
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          console.log('Sign-in successful for:', email);
-          document.getElementById('login-error').style.display = 'none';
-        })
-        .catch(error => {
-          console.error('Sign-in error:', error);
-          document.getElementById('login-error').textContent = error.message;
-          document.getElementById('login-error').style.display = 'block';
-        });
-    }
-
-    function signOut() {
-      if (isOffline) {
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-screen').classList.add('hidden');
-        reflections = [];
-        document.getElementById('history-list').innerHTML = '';
-        return;
-      }
-      signOut(auth).then(() => {
-        console.log('Sign-out successful');
-        reflections = [];
-        document.getElementById('history-list').innerHTML = '';
-      }).catch(error => {
-        console.error('Sign-out error:', error);
-        alert('Error signing out. Please try again.');
-      });
-    }
-
-    function useOffline() {
-      isOffline = true;
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('main-screen').classList.remove('hidden');
-      loadReflections(null);
-    }
-
-    // Firebase Auth State Listener
-    if (!isOffline) {
-      onAuthStateChanged(auth, user => {
-        console.log('Auth state changed:', user ? `User ${user.uid} logged in` : 'No user logged in');
-        if (user) {
-          document.getElementById('login-screen').classList.add('hidden');
-          document.getElementById('main-screen').classList.remove('hidden');
-          loadReflections(user.uid);
-        } else {
-          document.getElementById('login-screen').classList.remove('hidden');
-          document.getElementById('main-screen').classList.add('hidden');
-          document.getElementById('entry-screen').classList.add('hidden');
-          document.getElementById('history-screen').classList.add('hidden');
-        }
-      });
-    }
-
-    async function loadReflections(uid) {
-      try {
-        reflections = [];
-        if (isOffline) {
-          const saved = localStorage.getItem('reflections');
-          if (saved) {
-            reflections = JSON.parse(saved);
-            console.log('Loaded offline reflections:', reflections);
-          }
-        } else {
-          const snapshot = await getDocs(collection(db, 'reflections', uid, 'userReflections'));
-          snapshot.forEach(doc => {
-            reflections.push({ id: doc.id, ...doc.data() });
-          });
-          console.log('Loaded Firebase reflections:', reflections);
-        }
-        showHistory();
-      } catch (e) {
-        console.error('Failed to load reflections:', e);
-        alert('Error loading reflections. Please check your connection or try again.');
+    function loadReflections() {
+      const saved = localStorage.getItem('reflections');
+      if (saved) {
+        reflections = JSON.parse(saved);
       }
     }
 
-    async function saveReflection() {
-      const title = document.getElementById('title').value.trim();
-      const reflection = document.getElementById('reflection').value.trim();
-      const date = document.getElementById('current-date').textContent;
-
-      try {
-        if (isOffline) {
-          if (editingIndex !== null) {
-            reflections[editingIndex] = { title, reflection, date, image: currentImage };
-          } else {
-            reflections.push({ title, reflection, date, image: currentImage });
-          }
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-          console.log('Saved offline reflection:', reflections[reflections.length - 1]);
-        } else {
-          const user = auth.currentUser;
-          if (!user) {
-            alert('You must be signed in to save reflections.');
-            goBack();
-            return;
-          }
-          if (editingIndex !== null) {
-            const docRef = doc(db, 'reflections', user.uid, 'userReflections', reflections[editingIndex].id);
-            await updateDoc(docRef, {
-              title,
-              reflection,
-              date,
-              image: currentImage
-            });
-            reflections[editingIndex] = { id: reflections[editingIndex].id, title, reflection, date, image: currentImage };
-            console.log('Updated Firebase reflection:', reflections[editingIndex]);
-          } else {
-            const docRef = await addDoc(collection(db, 'reflections', user.uid, 'userReflections'), {
-              title,
-              reflection,
-              date,
-              image: currentImage
-            });
-            reflections.push({ id: docRef.id, title, reflection, date, image: currentImage });
-            console.log('Saved new Firebase reflection:', { id: docRef.id, title, reflection, date, image: currentImage });
-          }
-        }
-        currentImage = "";
-        editingIndex = null;
-        goBack();
-        alert("Reflection saved!");
-      } catch (e) {
-        console.error('Failed to save reflection:', e);
-        alert('Error saving reflection. Please check your connection or try again.');
-      }
+    function saveReflections() {
+      localStorage.setItem('reflections', JSON.stringify(reflections));
     }
 
     function showEntryScreen(index = null) {
-      if (!isOffline && !auth.currentUser) {
-        alert('Please sign in to create or edit reflections.');
-        return;
-      }
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
@@ -535,10 +329,6 @@
     }
 
     function showHistory() {
-      if (!isOffline && !auth.currentUser) {
-        alert('Please sign in to view reflections.');
-        return;
-      }
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
@@ -571,28 +361,11 @@
       alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
-    async function deleteReflection(index) {
-      if (!isOffline && !auth.currentUser) {
-        alert('Please sign in to delete reflections.');
-        return;
-      }
+    function deleteReflection(index) {
       if (confirm('Are you sure you want to delete this reflection?')) {
-        try {
-          if (isOffline) {
-            reflections.splice(index, 1);
-            localStorage.setItem('reflections', JSON.stringify(reflections));
-            console.log('Deleted offline reflection at index:', index);
-          } else {
-            const docRef = doc(db, 'reflections', auth.currentUser.uid, 'userReflections', reflections[index].id);
-            await deleteDoc(docRef);
-            reflections.splice(index, 1);
-            console.log('Deleted Firebase reflection at index:', index);
-          }
-          showHistory();
-        } catch (e) {
-          console.error('Failed to delete reflection:', e);
-          alert('Error deleting reflection. Please check your connection or try again.');
-        }
+        reflections.splice(index, 1);
+        saveReflections();
+        showHistory();
       }
     }
 
@@ -622,8 +395,7 @@
         document.getElementById('stop-voice').disabled = true;
       };
 
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+      recognition.onerror = () => {
         document.getElementById('start-voice').disabled = false;
         document.getElementById('stop-voice').disabled = true;
       };
@@ -664,6 +436,23 @@
       return !!(title && reflection);
     }
 
+    function saveReflection() {
+      const title = document.getElementById('title').value.trim();
+      const reflection = document.getElementById('reflection').value.trim();
+      const date = document.getElementById('current-date').textContent;
+
+      if (editingIndex !== null) {
+        reflections[editingIndex] = { title, reflection, date, image: currentImage };
+      } else {
+        reflections.push({ title, reflection, date, image: currentImage });
+      }
+      saveReflections();
+      currentImage = "";
+      editingIndex = null;
+      goBack();
+      alert("Reflection saved!");
+    }
+
     function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
@@ -685,17 +474,21 @@
     document.getElementById('save').addEventListener('click', saveReflection);
     document.getElementById('image-input').addEventListener('change', previewImage);
 
+    // Load reflections on page load
+    loadReflections();
     setInterval(updateDateTime, 1000);
     updateDateTime();
-  </script>
+</script> 
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('Service Worker registered', reg))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
-  </script>
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.log('Service Worker registration failed', err));
+  });
+}
+
+  </script> 
 </body>
 </html>
+
