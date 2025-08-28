@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -187,6 +188,7 @@
     <div class="button-group">
       <button class="button" onclick="signUp()">Sign Up</button>
       <button class="button" onclick="signIn()">Sign In</button>
+      <button class="button" onclick="useOffline()">Use Offline</button>
     </div>
     <p id="login-error" style="color: red; display: none;"></p>
   </div>
@@ -237,6 +239,11 @@
   <div class="floating-plus" onclick="showEntryScreen()">+</div>
 
   <script>
+    // Firebase Modular SDK Imports
+    const { initializeApp } = firebase.app;
+    const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = firebase.auth;
+    const { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc } = firebase.firestore;
+
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAj8BYzjanTu-UHo5o9kR1LVTLOYqUBaFY",
@@ -248,15 +255,18 @@
     };
 
     // Initialize Firebase
+    let auth, db;
+    let isOffline = false;
     try {
-      firebase.initializeApp(firebaseConfig);
+      const app = initializeApp(firebaseConfig);
       console.log('Firebase initialized successfully');
+      auth = getAuth(app);
+      db = getFirestore(app);
     } catch (e) {
       console.error('Firebase initialization failed:', e);
-      alert('Failed to initialize Firebase. Please check your configuration or try again later.');
+      alert('Failed to connect to Firebase. Using offline mode (local storage).');
+      isOffline = true;
     }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
 
     let recognition;
     let reflections = [];
@@ -321,6 +331,10 @@
 
     // Authentication Functions
     function signUp() {
+      if (isOffline) {
+        alert('Offline mode: Sign-up not available. Using local storage.');
+        return;
+      }
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
       if (!email || !password) {
@@ -328,7 +342,7 @@
         document.getElementById('login-error').style.display = 'block';
         return;
       }
-      auth.createUserWithEmailAndPassword(email, password)
+      createUserWithEmailAndPassword(auth, email, password)
         .then(() => {
           console.log('Sign-up successful for:', email);
           document.getElementById('login-error').style.display = 'none';
@@ -341,6 +355,10 @@
     }
 
     function signIn() {
+      if (isOffline) {
+        alert('Offline mode: Sign-in not available. Using local storage.');
+        return;
+      }
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
       if (!email || !password) {
@@ -348,7 +366,7 @@
         document.getElementById('login-error').style.display = 'block';
         return;
       }
-      auth.signInWithEmailAndPassword(email, password)
+      signInWithEmailAndPassword(auth, email, password)
         .then(() => {
           console.log('Sign-in successful for:', email);
           document.getElementById('login-error').style.display = 'none';
@@ -361,7 +379,14 @@
     }
 
     function signOut() {
-      auth.signOut().then(() => {
+      if (isOffline) {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-screen').classList.add('hidden');
+        reflections = [];
+        document.getElementById('history-list').innerHTML = '';
+        return;
+      }
+      signOut(auth).then(() => {
         console.log('Sign-out successful');
         reflections = [];
         document.getElementById('history-list').innerHTML = '';
@@ -371,30 +396,47 @@
       });
     }
 
+    function useOffline() {
+      isOffline = true;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('main-screen').classList.remove('hidden');
+      loadReflections(null);
+    }
+
     // Firebase Auth State Listener
-    auth.onAuthStateChanged(user => {
-      console.log('Auth state changed:', user ? `User ${user.uid} logged in` : 'No user logged in');
-      if (user) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-screen').classList.remove('hidden');
-        loadReflections(user.uid);
-      } else {
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-screen').classList.add('hidden');
-        document.getElementById('entry-screen').classList.add('hidden');
-        document.getElementById('history-screen').classList.add('hidden');
-      }
-    });
+    if (!isOffline) {
+      onAuthStateChanged(auth, user => {
+        console.log('Auth state changed:', user ? `User ${user.uid} logged in` : 'No user logged in');
+        if (user) {
+          document.getElementById('login-screen').classList.add('hidden');
+          document.getElementById('main-screen').classList.remove('hidden');
+          loadReflections(user.uid);
+        } else {
+          document.getElementById('login-screen').classList.remove('hidden');
+          document.getElementById('main-screen').classList.add('hidden');
+          document.getElementById('entry-screen').classList.add('hidden');
+          document.getElementById('history-screen').classList.add('hidden');
+        }
+      });
+    }
 
     async function loadReflections(uid) {
       try {
         reflections = [];
-        const snapshot = await db.collection('reflections').doc(uid).collection('userReflections').get();
-        snapshot.forEach(doc => {
-          reflections.push({ id: doc.id, ...doc.data() });
-        });
-        console.log('Loaded reflections:', reflections);
-        showHistory(); // Refresh history if open
+        if (isOffline) {
+          const saved = localStorage.getItem('reflections');
+          if (saved) {
+            reflections = JSON.parse(saved);
+            console.log('Loaded offline reflections:', reflections);
+          }
+        } else {
+          const snapshot = await getDocs(collection(db, 'reflections', uid, 'userReflections'));
+          snapshot.forEach(doc => {
+            reflections.push({ id: doc.id, ...doc.data() });
+          });
+          console.log('Loaded Firebase reflections:', reflections);
+        }
+        showHistory();
       } catch (e) {
         console.error('Failed to load reflections:', e);
         alert('Error loading reflections. Please check your connection or try again.');
@@ -402,35 +444,46 @@
     }
 
     async function saveReflection() {
-      const user = auth.currentUser;
-      if (!user) {
-        alert('You must be signed in to save reflections.');
-        goBack();
-        return;
-      }
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
 
       try {
-        if (editingIndex !== null) {
-          await db.collection('reflections').doc(user.uid).collection('userReflections').doc(reflections[editingIndex].id).update({
-            title,
-            reflection,
-            date,
-            image: currentImage
-          });
-          reflections[editingIndex] = { id: reflections[editingIndex].id, title, reflection, date, image: currentImage };
-          console.log('Updated reflection:', reflections[editingIndex]);
+        if (isOffline) {
+          if (editingIndex !== null) {
+            reflections[editingIndex] = { title, reflection, date, image: currentImage };
+          } else {
+            reflections.push({ title, reflection, date, image: currentImage });
+          }
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          console.log('Saved offline reflection:', reflections[reflections.length - 1]);
         } else {
-          const docRef = await db.collection('reflections').doc(user.uid).collection('userReflections').add({
-            title,
-            reflection,
-            date,
-            image: currentImage
-          });
-          reflections.push({ id: docRef.id, title, reflection, date, image: currentImage });
-          console.log('Saved new reflection:', { id: docRef.id, title, reflection, date, image: currentImage });
+          const user = auth.currentUser;
+          if (!user) {
+            alert('You must be signed in to save reflections.');
+            goBack();
+            return;
+          }
+          if (editingIndex !== null) {
+            const docRef = doc(db, 'reflections', user.uid, 'userReflections', reflections[editingIndex].id);
+            await updateDoc(docRef, {
+              title,
+              reflection,
+              date,
+              image: currentImage
+            });
+            reflections[editingIndex] = { id: reflections[editingIndex].id, title, reflection, date, image: currentImage };
+            console.log('Updated Firebase reflection:', reflections[editingIndex]);
+          } else {
+            const docRef = await addDoc(collection(db, 'reflections', user.uid, 'userReflections'), {
+              title,
+              reflection,
+              date,
+              image: currentImage
+            });
+            reflections.push({ id: docRef.id, title, reflection, date, image: currentImage });
+            console.log('Saved new Firebase reflection:', { id: docRef.id, title, reflection, date, image: currentImage });
+          }
         }
         currentImage = "";
         editingIndex = null;
@@ -443,7 +496,7 @@
     }
 
     function showEntryScreen(index = null) {
-      if (!auth.currentUser) {
+      if (!isOffline && !auth.currentUser) {
         alert('Please sign in to create or edit reflections.');
         return;
       }
@@ -482,7 +535,7 @@
     }
 
     function showHistory() {
-      if (!auth.currentUser) {
+      if (!isOffline && !auth.currentUser) {
         alert('Please sign in to view reflections.');
         return;
       }
@@ -519,15 +572,22 @@
     }
 
     async function deleteReflection(index) {
-      if (!auth.currentUser) {
+      if (!isOffline && !auth.currentUser) {
         alert('Please sign in to delete reflections.');
         return;
       }
       if (confirm('Are you sure you want to delete this reflection?')) {
         try {
-          await db.collection('reflections').doc(auth.currentUser.uid).collection('userReflections').doc(reflections[index].id).delete();
-          reflections.splice(index, 1);
-          console.log('Deleted reflection at index:', index);
+          if (isOffline) {
+            reflections.splice(index, 1);
+            localStorage.setItem('reflections', JSON.stringify(reflections));
+            console.log('Deleted offline reflection at index:', index);
+          } else {
+            const docRef = doc(db, 'reflections', auth.currentUser.uid, 'userReflections', reflections[index].id);
+            await deleteDoc(docRef);
+            reflections.splice(index, 1);
+            console.log('Deleted Firebase reflection at index:', index);
+          }
           showHistory();
         } catch (e) {
           console.error('Failed to delete reflection:', e);
