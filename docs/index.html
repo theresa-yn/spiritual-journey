@@ -217,8 +217,8 @@
   <div id="main-screen" class="content">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>Your Garden...</h2>
-    <p>Tap the plus button to begin planning</p>
+    <h2>My Spiritual Journey...</h2>
+    <p>Tap to begin writing your experience</p>
   </div>
 
   <!-- Entry Screen -->
@@ -238,6 +238,12 @@
       <button class="button" id="save" disabled>Save Reflection</button>
       <button class="button" onclick="goBack()">Back</button>
     </div>
+    <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
+    <div id="options-menu" class="options-menu">
+      <button onclick="showEntryScreen()">Add New</button>
+      <button onclick="showHistory()">View Past</button>
+      <button onclick="deleteAllReflections()">Delete All</button>
+    </div>
   </div>
 
   <!-- History Screen -->
@@ -247,13 +253,6 @@
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
     </div>
-  </div>
-
-  <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
-  <div id="options-menu" class="options-menu">
-    <button onclick="showEntryScreen()">Add New</button>
-    <button onclick="showHistory()">View Past</button>
-    <button onclick="deleteAllReflections()">Delete All</button>
   </div>
 
   <script>
@@ -338,7 +337,6 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
@@ -366,7 +364,6 @@
       if (recognition) recognition.stop();
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
     }
@@ -375,7 +372,6 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
-      document.getElementById('options-menu').style.display = 'none';
 
       const list = document.getElementById('history-list');
       list.innerHTML = '';
@@ -419,7 +415,7 @@
         saveReflections();
         document.getElementById('options-menu').style.display = 'none';
         document.getElementById('history-screen').classList.add('hidden');
-        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('entry-screen').classList.remove('hidden');
       }
     }
 
