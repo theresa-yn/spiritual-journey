@@ -180,6 +180,32 @@
       .history-item { padding: 12px; }
       .floating-plus { width: 45px; height: 45px; font-size: 26px; }
     }
+    .options-menu {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 10px;
+      display: none;
+    }
+    .options-menu button {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+      background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+    }
+    .options-menu button:hover {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body>
@@ -191,11 +217,8 @@
   <div id="main-screen" class="content">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>Your Garden...</h2>
-    <p>Tap the plus button to begin planning</p>
-    <div class="button-group">
-      <button class="button" onclick="showHistory()">Past Reflections</button>
-    </div>
+    <h2>My Spiritual Journey...</h2>
+    <p>Tap the plus button to begin writing your experience</p>
   </div>
 
   <!-- Entry Screen -->
@@ -226,7 +249,12 @@
     </div>
   </div>
 
-  <div class="floating-plus" onclick="showEntryScreen()">+</div>
+  <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
+  <div id="options-menu" class="options-menu">
+    <button onclick="showEntryScreen()">Add New</button>
+    <button onclick="showHistory()">View Past</button>
+    <button onclick="deleteAllReflections()">Delete All</button>
+  </div>
 
   <script>
     let recognition;
@@ -254,7 +282,12 @@
       "Because you are alive, everything is possible. – Thich Nhat Hanh",
       "We are not at peace because we have not yet learned to be alone with ourselves. – Thomas Merton",
       "Silence is the language of God, all else is poor translation. – Thomas Merton",
-      "The things we fear most in prayer are the things that can save us. – Thomas Merton"
+      "The things we fear most in prayer are the things that can save us. – Thomas Merton",
+      "In the stillness of your soul, wisdom whispers its truths. – Unknown",
+      "Every step you take is a dance with the universe’s rhythm. – Unknown",
+      "The heart’s quiet moments hold the seeds of transformation. – Unknown",
+      "Embrace the shadows, for they guide you to your light. – Unknown",
+      "Your spirit blooms where gratitude takes root. – Unknown"
     ];
 
     const journalQuestions = [
@@ -305,6 +338,7 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
@@ -332,6 +366,7 @@
       if (recognition) recognition.stop();
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
     }
@@ -340,6 +375,7 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
+      document.getElementById('options-menu').style.display = 'none';
 
       const list = document.getElementById('history-list');
       list.innerHTML = '';
@@ -374,6 +410,16 @@
         reflections.splice(index, 1);
         saveReflections();
         showHistory();
+      }
+    }
+
+    function deleteAllReflections() {
+      if (confirm('Are you sure you want to delete all reflections?')) {
+        reflections = [];
+        saveReflections();
+        document.getElementById('options-menu').style.display = 'none';
+        document.getElementById('history-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
       }
     }
 
@@ -475,6 +521,11 @@
       }
     }
 
+    function toggleOptionsMenu() {
+      const menu = document.getElementById('options-menu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
     document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
     document.getElementById('stop-voice').addEventListener('click', stopVoiceRecognition);
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
@@ -498,4 +549,3 @@
   </script> 
 </body>
 </html>
-
