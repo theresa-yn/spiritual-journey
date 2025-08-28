@@ -282,6 +282,17 @@
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
 
+    function loadReflections() {
+      const saved = localStorage.getItem('reflections');
+      if (saved) {
+        reflections = JSON.parse(saved);
+      }
+    }
+
+    function saveReflections() {
+      localStorage.setItem('reflections', JSON.stringify(reflections));
+    }
+
     function showEntryScreen(index = null) {
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
@@ -353,6 +364,7 @@
     function deleteReflection(index) {
       if (confirm('Are you sure you want to delete this reflection?')) {
         reflections.splice(index, 1);
+        saveReflections();
         showHistory();
       }
     }
@@ -434,6 +446,7 @@
       } else {
         reflections.push({ title, reflection, date, image: currentImage });
       }
+      saveReflections();
       currentImage = "";
       editingIndex = null;
       goBack();
@@ -461,6 +474,8 @@
     document.getElementById('save').addEventListener('click', saveReflection);
     document.getElementById('image-input').addEventListener('change', previewImage);
 
+    // Load reflections on page load
+    loadReflections();
     setInterval(updateDateTime, 1000);
     updateDateTime();
 </script> 
