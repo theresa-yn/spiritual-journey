@@ -6,7 +6,7 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Soul Reflections</title>
+  <title>My Garden</title>
   <style>
     body {
       font-family: 'Georgia', serif;
@@ -217,8 +217,8 @@
   <div id="main-screen" class="content">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>My Spiritual Journey...</h2>
-    <p>Tap to begin writing your experience</p>
+    <h2>My Garden...</h2>
+    <p>Tap the plus button to begin planning</p>
   </div>
 
   <!-- Entry Screen -->
@@ -238,12 +238,6 @@
       <button class="button" id="save" disabled>Save Reflection</button>
       <button class="button" onclick="goBack()">Back</button>
     </div>
-    <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
-    <div id="options-menu" class="options-menu">
-      <button onclick="showEntryScreen()">Add New</button>
-      <button onclick="showHistory()">View Past</button>
-      <button onclick="deleteAllReflections()">Delete All</button>
-    </div>
   </div>
 
   <!-- History Screen -->
@@ -253,6 +247,12 @@
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
     </div>
+  </div>
+
+  <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
+  <div id="options-menu" class="options-menu">
+    <button onclick="showEntryScreen()">New Seed</button>
+    <button onclick="showHistory()">My Plants</button>
   </div>
 
   <script>
@@ -337,6 +337,7 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
@@ -364,6 +365,7 @@
       if (recognition) recognition.stop();
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
     }
@@ -372,6 +374,7 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
+      document.getElementById('options-menu').style.display = 'none';
 
       const list = document.getElementById('history-list');
       list.innerHTML = '';
@@ -406,16 +409,6 @@
         reflections.splice(index, 1);
         saveReflections();
         showHistory();
-      }
-    }
-
-    function deleteAllReflections() {
-      if (confirm('Are you sure you want to delete all reflections?')) {
-        reflections = [];
-        saveReflections();
-        document.getElementById('options-menu').style.display = 'none';
-        document.getElementById('history-screen').classList.add('hidden');
-        document.getElementById('entry-screen').classList.remove('hidden');
       }
     }
 
