@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,9 +10,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <title>Soul Reflections</title>
   <link rel="manifest" href="manifest.json">
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Georgia', serif;
@@ -308,25 +307,11 @@
     <button onclick="showHistory()">Past Reflections</button>
     <button id="account-menu-button" onclick="showAccountScreen()" style="display:none">Account</button>
   </div>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCIRzXxvPxavnHpWTtVetqlu6AvxvNglYg",
-      authDomain: "soulreflection-57055.firebaseapp.com",
-      projectId: "soulreflection-57055",
-      storageBucket: "soulreflection-57055.firebasestorage.app",
-      messagingSenderId: "204371249472",
-      appId: "1:204371249472:web:1a78d82f0a727b92c452a5",
-      measurementId: "G-XXQ0GJQN1D"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const AUTH_UNAVAILABLE = 'Authentication is unavailable. Check network and Firebase config.';
+  <script>
+    // Initialize Supabase
+    const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     let recognition;
     let reflections = [];
@@ -391,17 +376,20 @@
     }
 
     async function loadReflections() {
-      if (!user || !db) {
-        console.error('No user or Firestore client available');
+      if (!user) {
+        console.error('No user available');
         return;
       }
       try {
-        const q = query(
-          collection(db, 'users', user.uid, 'reflections'),
-          orderBy('created_at', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        reflections = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const { data, error } = await supabase
+          .from('reflections')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        reflections = data || [];
         localStorage.setItem('reflections', JSON.stringify(reflections));
         updateHistoryUI();
       } catch (error) {
@@ -411,7 +399,7 @@
     }
 
     async function saveJournal() {
-      if (!user || !db) {
+      if (!user) {
         alert('Please log in to save reflections.');
         return;
       }
@@ -423,7 +411,7 @@
         return;
       }
       const reflectionData = {
-        user_id: user.uid,
+        user_id: user.id,
         title,
         reflection: journalEntry,
         date,
@@ -433,15 +421,27 @@
 
       try {
         if (editingId) {
-          const reflectionRef = doc(db, 'users', user.uid, 'reflections', editingId);
-          await updateDoc(reflectionRef, reflectionData);
+          const { error } = await supabase
+            .from('reflections')
+            .update(reflectionData)
+            .eq('id', editingId)
+            .eq('user_id', user.id);
+          
+          if (error) throw error;
+          
           const index = reflections.findIndex(r => r.id === editingId);
           if (index !== -1) {
             reflections[index] = { ...reflectionData, id: editingId };
           }
         } else {
-          const docRef = await addDoc(collection(db, 'users', user.uid, 'reflections'), reflectionData);
-          reflections.unshift({ ...reflectionData, id: docRef.id });
+          const { data, error } = await supabase
+            .from('reflections')
+            .insert([reflectionData])
+            .select();
+          
+          if (error) throw error;
+          
+          reflections.unshift({ ...reflectionData, id: data[0].id });
         }
         localStorage.setItem('reflections', JSON.stringify(reflections));
         currentImage = "";
@@ -487,8 +487,12 @@
       }
 
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        authMessage.textContent = 'Account created! You can now log in.';
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password
+        });
+        if (error) throw error;
+        authMessage.textContent = 'Account created! Please check your email to verify.';
       } catch (error) {
         authMessage.textContent = error.message;
         console.error('Sign-up error:', error);
@@ -506,8 +510,13 @@
       }
 
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        user = userCredential.user;
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        
+        user = data.user;
         document.getElementById('auth-button').classList.remove('hidden');
         document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
         document.getElementById('account-button').classList.remove('hidden');
@@ -637,13 +646,20 @@
     }
 
     async function deleteReflection(id) {
-      if (!user || !db) {
+      if (!user) {
         alert('Please log in to delete reflections.');
         return;
       }
       if (confirm('Are you sure you want to delete this reflection?')) {
         try {
-          await deleteDoc(doc(db, 'users', user.uid, 'reflections', id));
+          const { error } = await supabase
+            .from('reflections')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+          
+          if (error) throw error;
+          
           reflections = reflections.filter(r => r.id !== id);
           localStorage.setItem('reflections', JSON.stringify(reflections));
           updateHistoryUI();
@@ -716,181 +732,27 @@
       return !!(title && journalEntry);
     }
 
-    function previewImage(event) {
+    async function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
+        if (!user) {
+          alert('Please log in to upload images.');
+          return;
+        }
+        try {
+          // Upload to Supabase Storage
+          const fileName = `${user.id}/${Date.now()}_${file.name}`;
+          const { data, error } = await supabase.storage
+            .from('reflection-images')
+            .upload(fileName, file);
+          
+          if (error) throw error;
+          
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('reflection-images')
+            .getPublicUrl(fileName);
+          
           const preview = document.getElementById('preview-image');
-          preview.src = e.target.result;
-          preview.style.display = 'block';
-          currentImage = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    function toggleOptionsMenu() {
-      const menu = document.getElementById('options-menu');
-      if (!menu) {
-        console.error('Options menu element not found');
-        return;
-      }
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
-
-    async function handleSignOut() {
-      try {
-        await signOut(auth);
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-        document.getElementById('auth-button').classList.add('hidden');
-        document.getElementById('account-button').classList.add('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'none';
-        showRegisterScreen();
-      } catch (error) {
-        console.error('Error signing out:', error);
-        alert('Failed to sign out: ' + error.message);
-      }
-    }
-
-    async function handleForgotPassword() {
-      const email = document.getElementById('signin-email').value.trim();
-      const loginMessage = document.getElementById('login-message');
-      if (!email) {
-        loginMessage.textContent = 'Enter your email to reset password.';
-        return;
-      }
-      try {
-        await sendPasswordResetEmail(auth, email);
-        loginMessage.textContent = 'Password reset email sent. Check your inbox.';
-      } catch (error) {
-        loginMessage.textContent = error.message;
-        console.error('Password reset error:', error);
-      }
-    }
-
-    async function handleUpdateEmail() {
-      const email = document.getElementById('account-email').value.trim();
-      const accountMessage = document.getElementById('account-message');
-      if (!email) {
-        accountMessage.textContent = 'Email cannot be empty.';
-        return;
-      }
-      try {
-        await updateEmail(user, email);
-        accountMessage.textContent = 'Email updated successfully.';
-      } catch (error) {
-        accountMessage.textContent = error.message;
-        console.error('Update email error:', error);
-      }
-    }
-
-    async function handleUpdatePassword() {
-      const newPassword = document.getElementById('new-password').value.trim();
-      const confirmPassword = document.getElementById('confirm-password').value.trim();
-      const accountMessage = document.getElementById('account-message');
-      if (!newPassword || !confirmPassword) {
-        accountMessage.textContent = 'Please enter and confirm your new password.';
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        accountMessage.textContent = 'Passwords do not match.';
-        return;
-      }
-      try {
-        await updatePassword(user, newPassword);
-        document.getElementById('new-password').value = '';
-        document.getElementById('confirm-password').value = '';
-        accountMessage.textContent = 'Password updated successfully.';
-      } catch (error) {
-        accountMessage.textContent = error.message;
-        console.error('Update password error:', error);
-      }
-    }
-
-    async function handleOAuth() {
-      const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        user = result.user;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-        document.getElementById('account-button').classList.remove('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-        await loadReflections();
-        updateHistoryUI();
-        goBack();
-      } catch (error) {
-        const authMessage = document.getElementById('auth-message');
-        const loginMessage = document.getElementById('login-message');
-        if (authMessage) authMessage.textContent = error.message;
-        if (loginMessage) loginMessage.textContent = error.message;
-        console.error('OAuth error:', error);
-      }
-    }
-
-    async function initAuth() {
-      try {
-        onAuthStateChanged(auth, async (currentUser) => {
-          if (currentUser) {
-            user = currentUser;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-            document.getElementById('account-button').classList.remove('hidden');
-            const accountMenuBtn = document.getElementById('account-menu-button');
-            if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-            await loadReflections();
-            document.getElementById('main-screen').classList.remove('hidden');
-            document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('signin-form').classList.add('hidden');
-          } else {
-            user = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            document.getElementById('auth-button').classList.add('hidden');
-            document.getElementById('account-button').classList.add('hidden');
-            const accountMenuBtn = document.getElementById('account-menu-button');
-            if (accountMenuBtn) accountMenuBtn.style.display = 'none';
-            showRegisterScreen();
-          }
-        });
-      } catch (error) {
-        console.error('Init auth error:', error);
-        showRegisterScreen();
-      }
-    }
-
-    // Event listeners
-    document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
-    document.getElementById('stop-voice').addEventListener('click', stopVoiceRecognition);
-    document.getElementById('title').addEventListener('input', checkSaveEnabled);
-    document.getElementById('journal-entry').addEventListener('input', checkSaveEnabled);
-    document.getElementById('image-input').addEventListener('change', previewImage);
-    document.getElementById('auth-button').addEventListener('click', handleSignOut);
-    document.getElementById('forgot-password-button').addEventListener('click', handleForgotPassword);
-    document.getElementById('account-button').addEventListener('click', showAccountScreen);
-    document.getElementById('update-email-button').addEventListener('click', handleUpdateEmail);
-    document.getElementById('update-password-button').addEventListener('click', handleUpdatePassword);
-    document.getElementById('login-google').addEventListener('click', handleOAuth);
-    document.getElementById('signup-google').addEventListener('click', handleOAuth);
-
-    // Load reflections and initialize auth on page load
-    initAuth();
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('Service Worker registered', reg))
-          .catch(err => console.log('Service Worker registration failed', err));
-      });
-    }
-  </script>
-</body>
-</html>
+          preview.src = urlData.publicUrl;
+          preview
