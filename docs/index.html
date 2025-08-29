@@ -755,4 +755,176 @@
           
           const preview = document.getElementById('preview-image');
           preview.src = urlData.publicUrl;
-          preview
+          preview.style.display = 'block';
+          currentImage = urlData.publicUrl;
+        } catch (error) {
+          console.error('Image upload error:', error);
+          alert('Failed to upload image: ' + error.message);
+        }
+      }
+    }
+
+    function toggleOptionsMenu() {
+      const menu = document.getElementById('options-menu');
+      if (!menu) {
+        console.error('Options menu element not found');
+        return;
+      }
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    async function handleSignOut() {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        user = null;
+        reflections = [];
+        localStorage.removeItem('reflections');
+        document.getElementById('auth-button').classList.add('hidden');
+        document.getElementById('account-button').classList.add('hidden');
+        const accountMenuBtn = document.getElementById('account-menu-button');
+        if (accountMenuBtn) accountMenuBtn.style.display = 'none';
+        showRegisterScreen();
+      } catch (error) {
+        console.error('Error signing out:', error);
+        alert('Failed to sign out: ' + error.message);
+      }
+    }
+
+    async function handleForgotPassword() {
+      const email = document.getElementById('signin-email').value.trim();
+      const loginMessage = document.getElementById('login-message');
+      if (!email) {
+        loginMessage.textContent = 'Enter your email to reset password.';
+        return;
+      }
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        loginMessage.textContent = 'Password reset email sent. Check your inbox.';
+      } catch (error) {
+        loginMessage.textContent = error.message;
+        console.error('Password reset error:', error);
+      }
+    }
+
+    async function handleUpdateEmail() {
+      const email = document.getElementById('account-email').value.trim();
+      const accountMessage = document.getElementById('account-message');
+      if (!email) {
+        accountMessage.textContent = 'Email cannot be empty.';
+        return;
+      }
+      try {
+        const { error } = await supabase.auth.updateUser({ email });
+        if (error) throw error;
+        accountMessage.textContent = 'Email updated successfully.';
+      } catch (error) {
+        accountMessage.textContent = error.message;
+        console.error('Update email error:', error);
+      }
+    }
+
+    async function handleUpdatePassword() {
+      const newPassword = document.getElementById('new-password').value.trim();
+      const confirmPassword = document.getElementById('confirm-password').value.trim();
+      const accountMessage = document.getElementById('account-message');
+      if (!newPassword || !confirmPassword) {
+        accountMessage.textContent = 'Please enter and confirm your new password.';
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        accountMessage.textContent = 'Passwords do not match.';
+        return;
+      }
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        accountMessage.textContent = 'Password updated successfully.';
+      } catch (error) {
+        accountMessage.textContent = error.message;
+        console.error('Update password error:', error);
+      }
+    }
+
+    async function handleOAuth() {
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google'
+        });
+        if (error) throw error;
+        // Note: User will be updated via auth state change listener
+      } catch (error) {
+        const authMessage = document.getElementById('auth-message');
+        const loginMessage = document.getElementById('login-message');
+        if (authMessage) authMessage.textContent = error.message;
+        if (loginMessage) loginMessage.textContent = error.message;
+        console.error('OAuth error:', error);
+      }
+    }
+
+    async function initAuth() {
+      try {
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            user = session.user;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+            document.getElementById('account-button').classList.remove('hidden');
+            const accountMenuBtn = document.getElementById('account-menu-button');
+            if (accountMenuBtn) accountMenuBtn.style.display = 'block';
+            loadReflections();
+            document.getElementById('main-screen').classList.remove('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('signin-form').classList.add('hidden');
+          } else {
+            user = null;
+            reflections = [];
+            localStorage.removeItem('reflections');
+            document.getElementById('auth-button').classList.add('hidden');
+            document.getElementById('account-button').classList.add('hidden');
+            const accountMenuBtn = document.getElementById('account-menu-button');
+            if (accountMenuBtn) accountMenuBtn.style.display = 'none';
+            showRegisterScreen();
+          }
+        });
+      } catch (error) {
+        console.error('Init auth error:', error);
+        showRegisterScreen();
+      }
+    }
+
+    // Event listeners
+    document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
+    document.getElementById('stop-voice').addEventListener('click', stopVoiceRecognition);
+    document.getElementById('title').addEventListener('input', checkSaveEnabled);
+    document.getElementById('journal-entry').addEventListener('input', checkSaveEnabled);
+    document.getElementById('image-input').addEventListener('change', previewImage);
+    document.getElementById('auth-button').addEventListener('click', handleSignOut);
+    document.getElementById('forgot-password-button').addEventListener('click', handleForgotPassword);
+    document.getElementById('account-button').addEventListener('click', showAccountScreen);
+    document.getElementById('update-email-button').addEventListener('click', handleUpdateEmail);
+    document.getElementById('update-password-button').addEventListener('click', handleUpdatePassword);
+    document.getElementById('login-google').addEventListener('click', handleOAuth);
+    document.getElementById('signup-google').addEventListener('click', handleOAuth);
+
+    // Load reflections and initialize auth on page load
+    initAuth();
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.log('Service Worker registration failed', err));
+      });
+    }
+  </script>
+</body>
+</html>
+```
