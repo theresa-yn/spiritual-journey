@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#7c3aed">
-  <title>Soul Reflections</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Garden</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
@@ -213,55 +213,48 @@
 <body>
   <div class="header">
     <span id="current-time"></span>
-    <button id="account-button" class="button hidden">Account</button>
     <button id="auth-button" class="button hidden">Sign Out</button>
-  </div>
-  <div id="debug" style="position:fixed;left:0;right:0;bottom:0;background:#fee;color:#900;font:12px monospace;padding:4px;display:none;z-index:2000"></div>
-  <!-- Sign-Up Form -->
-  <div id="signup-form" class="content">
-    <h2>Sign Up</h2>
-    <input type="email" id="signup-email" placeholder="Email">
-    <input type="password" id="signup-password" placeholder="Password">
-    <div class="button-group">
-      <button class="button" onclick="signUp()">Create Account</button>
-      <button class="button" onclick="showLoginScreen()">Log In</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-    <div class="button-group">
-      <button class="button" id="signup-google">Continue with Google</button>
-    </div>
-    <p id="auth-message" class="prompt"></p>
-  </div>
-  <!-- Sign-In Form -->
-  <div id="signin-form" class="content hidden">
-    <h2>Sign In</h2>
-    <input type="email" id="signin-email" placeholder="Email">
-    <input type="password" id="signin-password" placeholder="Password">
-    <div class="button-group">
-      <button class="button" onclick="signIn()">Log In</button>
-      <button class="button" onclick="showRegisterScreen()">Sign Up</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-    <div class="button-group">
-      <button class="button" id="forgot-password-button">Forgot Password?</button>
-      <button class="button" id="login-google">Continue with Google</button>
-    </div>
-    <p id="login-message" class="prompt"></p>
   </div>
   <!-- Main Screen -->
   <div id="main-screen" class="content hidden">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>Soul Reflections</h2>
-    <p>Tap the plus button to begin reflecting</p>
+    <h2>My Garden...</h2>
+    <p>Tap the plus button to begin planning</p>
   </div>
-  <!-- Journal Section -->
-  <div id="journal-section" class="content hidden">
+  <!-- Registration Screen -->
+  <div id="register-screen" class="content">
+    <h2>Create Your Account</h2>
+    <p>Sign up to save your reflections securely</p>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <div class="button-group">
+      <button class="button" id="signup-button">Sign Up</button>
+      <button class="button" onclick="showLoginScreen()">Log In</button>
+      <button class="button" onclick="goBack()">Back</button>
+    </div>
+    <p id="auth-message" class="prompt"></p>
+  </div>
+  <!-- Login Screen -->
+  <div id="login-screen" class="content hidden">
+    <h2>Log In</h2>
+    <p>Access your saved reflections</p>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="Password">
+    <div class="button-group">
+      <button class="button" id="login-button">Log In</button>
+      <button class="button" onclick="showRegisterScreen()">Sign Up</button>
+      <button class="button" onclick="goBack()">Back</button>
+    </div>
+    <p id="login-message" class="prompt"></p>
+  </div>
+  <!-- Entry Screen -->
+  <div id="entry-screen" class="content hidden">
     <h2 id="current-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
     <button class="button" onclick="newQuestion()">New Question</button>
     <input type="text" id="title" placeholder="Title">
-    <textarea id="journal-entry" placeholder="Speak or type your reflections..."></textarea>
+    <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
       <input type="file" accept="image/*" id="image-input" capture="environment">
       <img id="preview-image" class="preview" src="" alt="Preview">
@@ -269,7 +262,7 @@
     <div class="button-group">
       <button class="button" id="start-voice">Start Speaking</button>
       <button class="button" id="stop-voice" disabled>Stop Speaking</button>
-      <button class="button" id="save" onclick="saveJournal()" disabled>Save Reflection</button>
+      <button class="button" id="save" disabled>Save Reflection</button>
       <button class="button" onclick="goBack()">Back</button>
     </div>
   </div>
@@ -281,36 +274,16 @@
       <button class="button" onclick="goBack()">Back</button>
     </div>
   </div>
-  <!-- Account Screen -->
-  <div id="account-screen" class="content hidden">
-    <h2>Account</h2>
-    <p>Manage your email and password</p>
-    <input type="email" id="account-email" placeholder="Email">
-    <div class="button-group">
-      <button class="button" id="update-email-button">Update Email</button>
-    </div>
-    <input type="password" id="new-password" placeholder="New Password">
-    <input type="password" id="confirm-password" placeholder="Confirm New Password">
-    <div class="button-group">
-      <button class="button" id="update-password-button">Update Password</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-    <p id="account-message" class="prompt"></p>
-  </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
   <div id="options-menu" class="options-menu">
-    <button onclick="showEntryScreen()">New Reflection</button>
-    <button onclick="showHistory()">Past Reflections</button>
-    <button id="account-menu-button" onclick="showAccountScreen()" style="display:none">Account</button>
+    <button onclick="showEntryScreen()">New Seed</button>
+    <button onclick="showHistory()">My Plants</button>
   </div>
   <script>
     // Initialize Supabase client
     const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-    const supabase = (window.supabase && window.supabase.createClient)
-      ? window.supabase.createClient(supabaseUrl, supabaseKey)
-      : null;
-    const AUTH_UNAVAILABLE = 'Authentication is unavailable. Check network and Supabase CDN.';
+    const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
 
     let recognition;
     let reflections = [];
@@ -373,7 +346,7 @@
         year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
       };
       document.getElementById('current-date').textContent =
-        now.toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        now.toLocaleString('en-US', options).replace(',', '');
       document.getElementById('current-time').textContent =
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
@@ -394,15 +367,15 @@
       localStorage.setItem('reflections', JSON.stringify(reflections));
     }
 
-    async function saveJournal() {
+    async function saveReflections() {
       if (!user) return;
       const title = document.getElementById('title').value.trim();
-      const journalEntry = document.getElementById('journal-entry').value.trim();
+      const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       const reflectionData = {
         user_id: user.id,
         title,
-        reflection: journalEntry,
+        reflection,
         date,
         image: currentImage,
         created_at: new Date().toISOString()
@@ -438,74 +411,11 @@
       alert("Reflection saved!");
     }
 
-    async function signUp() {
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value.trim();
-      const authMessage = document.getElementById('auth-message');
-
-      if (!email || !password) {
-        authMessage.textContent = 'Please enter both email and password.';
-        return;
-      }
-
-      if (!supabase) { authMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin
-        }
-      });
-
-      if (error) {
-        authMessage.textContent = error.message;
-        return;
-      }
-
-      if (data.user) {
-        authMessage.textContent = 'Check your email for the confirmation link!';
-      }
-    }
-
-    async function signIn() {
-      const email = document.getElementById('signin-email').value.trim();
-      const password = document.getElementById('signin-password').value.trim();
-      const loginMessage = document.getElementById('login-message');
-
-      if (!email || !password) {
-        loginMessage.textContent = 'Please enter both email and password.';
-        return;
-      }
-
-      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        loginMessage.textContent = error.message;
-        return;
-      }
-
-      if (data.user) {
-        user = data.user;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-        document.getElementById('account-button').classList.remove('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-        await loadReflections();
-        goBack();
-      }
-    }
-
     function showRegisterScreen() {
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.remove('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('register-screen').classList.remove('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('auth-message').textContent = '';
@@ -513,10 +423,9 @@
 
     function showLoginScreen() {
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.remove('hidden');
-      document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('login-message').textContent = '';
@@ -529,14 +438,13 @@
         return;
       }
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('journal-section').classList.remove('hidden');
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
-      document.getElementById('journal-entry').value = '';
+      document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
       document.getElementById('preview-image').src = '';
       document.getElementById('preview-image').style.display = 'none';
@@ -544,7 +452,7 @@
       editingIndex = index;
       if (index !== null && reflections[index]) {
         document.getElementById('title').value = reflections[index].title;
-        document.getElementById('journal-entry').value = reflections[index].reflection;
+        document.getElementById('reflection').value = reflections[index].reflection;
         if (reflections[index].image) {
           document.getElementById('preview-image').src = reflections[index].image;
           document.getElementById('preview-image').style.display = 'block';
@@ -560,31 +468,13 @@
 
     function goBack() {
       if (recognition) recognition.stop();
-      document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('account-screen').classList.add('hidden');
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
-    }
-
-    function showAccountScreen() {
-      if (!user) {
-        showLoginScreen();
-        document.getElementById('login-message').textContent = 'Please log in to manage your account.';
-        return;
-      }
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('journal-section').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('account-screen').classList.remove('hidden');
-      document.getElementById('options-menu').style.display = 'none';
-      document.getElementById('account-message').textContent = '';
-      document.getElementById('account-email').value = (user && user.email) ? user.email : '';
     }
 
     async function showHistory() {
@@ -594,9 +484,9 @@
         return;
       }
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
@@ -682,7 +572,7 @@
     }
 
     function appendSmartSentence(text) {
-      const box = document.getElementById('journal-entry');
+      const box = document.getElementById('reflection');
       let t = (text || '').trim();
       if (!t) return;
       t = t.replace(/\s+/g, ' ');
@@ -703,8 +593,12 @@
 
     function canSave() {
       const title = document.getElementById('title').value.trim();
-      const journalEntry = document.getElementById('journal-entry').value.trim();
-      return !!(title && journalEntry);
+      const reflection = document.getElementById('reflection').value.trim();
+      return !!(title && reflection);
+    }
+
+    async function saveReflection() {
+      await saveReflections();
     }
 
     function previewImage(event) {
@@ -731,8 +625,64 @@
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 
+    async function handleSignUp() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const authMessage = document.getElementById('auth-message');
+
+      if (!email || !password) {
+        authMessage.textContent = 'Please enter both email and password.';
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
+        authMessage.textContent = error.message;
+        return;
+      }
+
+      if (data.user) {
+        authMessage.textContent = 'Check your email for the confirmation link!';
+      }
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const loginMessage = document.getElementById('login-message');
+
+      if (!email || !password) {
+        loginMessage.textContent = 'Please enter both email and password.';
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        loginMessage.textContent = error.message;
+        return;
+      }
+
+      if (data.user) {
+        user = data.user;
+        document.getElementById('auth-button').classList.remove('hidden');
+        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+        await loadReflections();
+        goBack();
+      }
+    }
+
     async function handleSignOut() {
-      if (!supabase) { alert(AUTH_UNAVAILABLE); return; }
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
@@ -743,109 +693,20 @@
       reflections = [];
       localStorage.removeItem('reflections');
       document.getElementById('auth-button').classList.add('hidden');
-      document.getElementById('account-button').classList.add('hidden');
-      const accountMenuBtn = document.getElementById('account-menu-button');
-      if (accountMenuBtn) accountMenuBtn.style.display = 'none';
       showRegisterScreen();
-    }
-
-    async function handleForgotPassword() {
-      const email = document.getElementById('signin-email').value.trim();
-      const loginMessage = document.getElementById('login-message');
-      if (!email) {
-        loginMessage.textContent = 'Enter your email to reset password.';
-        return;
-      }
-      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
-      });
-      if (error) {
-        loginMessage.textContent = error.message;
-        return;
-      }
-      loginMessage.textContent = 'Password reset email sent. Check your inbox.';
-    }
-
-    async function handleUpdateEmail() {
-      const email = document.getElementById('account-email').value.trim();
-      const accountMessage = document.getElementById('account-message');
-      if (!email) {
-        accountMessage.textContent = 'Email cannot be empty.';
-        return;
-      }
-      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.updateUser({ email });
-      if (error) {
-        accountMessage.textContent = error.message;
-        return;
-      }
-      if (data.user) {
-        accountMessage.textContent = 'Check your email to confirm the change.';
-      }
-    }
-
-    async function handleUpdatePassword() {
-      const newPassword = document.getElementById('new-password').value.trim();
-      const confirmPassword = document.getElementById('confirm-password').value.trim();
-      const accountMessage = document.getElementById('account-message');
-      if (!newPassword || !confirmPassword) {
-        accountMessage.textContent = 'Please enter and confirm your new password.';
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        accountMessage.textContent = 'Passwords do not match.';
-        return;
-      }
-      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        accountMessage.textContent = error.message;
-        return;
-      }
-      document.getElementById('new-password').value = '';
-      document.getElementById('confirm-password').value = '';
-      accountMessage.textContent = 'Password updated successfully.';
-    }
-
-    async function handleOAuth(provider) {
-      if (!supabase) { const m = AUTH_UNAVAILABLE; const authMessage = document.getElementById('auth-message'); const loginMessage = document.getElementById('login-message'); if (authMessage) authMessage.textContent = m; if (loginMessage) loginMessage.textContent = m; return; }
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: window.location.origin }
-      });
-      if (error) {
-        const authMessage = document.getElementById('auth-message');
-        const loginMessage = document.getElementById('login-message');
-        if (authMessage) authMessage.textContent = error.message;
-        if (loginMessage) loginMessage.textContent = error.message;
-      }
     }
 
     // Initialize auth state
     async function initAuth() {
-      try {
-        if (!window.supabase) {
-          const d = document.getElementById('debug');
-          if (d) { d.style.display = 'block'; d.textContent = 'Supabase CDN not loaded.'; }
-        } else if (!supabase) {
-          const d = document.getElementById('debug');
-          if (d) { d.style.display = 'block'; d.textContent = 'Supabase client not initialized.'; }
-        }
-      } catch (e) {}
-      if (!supabase) { console.error(AUTH_UNAVAILABLE); showRegisterScreen(); return; }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         user = session.user;
         document.getElementById('auth-button').classList.remove('hidden');
         document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-        document.getElementById('account-button').classList.remove('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
         await loadReflections();
         document.getElementById('main-screen').classList.remove('hidden');
-        document.getElementById('signup-form').classList.add('hidden');
-        document.getElementById('signin-form').classList.add('hidden');
+        document.getElementById('register-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.add('hidden');
       } else {
         showRegisterScreen();
       }
@@ -855,23 +716,13 @@
           user = session.user;
           document.getElementById('auth-button').classList.remove('hidden');
           document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-          document.getElementById('account-button').classList.remove('hidden');
-          const accountMenuBtn = document.getElementById('account-menu-button');
-          if (accountMenuBtn) accountMenuBtn.style.display = 'block';
           loadReflections();
           goBack();
-        } else if (event === 'PASSWORD_RECOVERY') {
-          user = (session && session.user) ? session.user : null;
-          showAccountScreen();
-          document.getElementById('account-message').textContent = 'Enter a new password to complete reset.';
         } else if (event === 'SIGNED_OUT') {
           user = null;
           reflections = [];
           localStorage.removeItem('reflections');
           document.getElementById('auth-button').classList.add('hidden');
-          document.getElementById('account-button').classList.add('hidden');
-          const accountMenuBtn2 = document.getElementById('account-menu-button');
-          if (accountMenuBtn2) accountMenuBtn2.style.display = 'none';
           showRegisterScreen();
         }
       });
@@ -881,17 +732,12 @@
     document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
     document.getElementById('stop-voice').addEventListener('click', stopVoiceRecognition);
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
-    document.getElementById('journal-entry').addEventListener('input', checkSaveEnabled);
+    document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
+    document.getElementById('save').addEventListener('click', saveReflection);
     document.getElementById('image-input').addEventListener('change', previewImage);
-    document.getElementById('signup-button').addEventListener('click', signUp);
-    document.getElementById('login-button').addEventListener('click', signIn);
+    document.getElementById('signup-button').addEventListener('click', handleSignUp);
+    document.getElementById('login-button').addEventListener('click', handleLogin);
     document.getElementById('auth-button').addEventListener('click', handleSignOut);
-    document.getElementById('forgot-password-button').addEventListener('click', handleForgotPassword);
-    document.getElementById('account-button').addEventListener('click', showAccountScreen);
-    document.getElementById('update-email-button').addEventListener('click', handleUpdateEmail);
-    document.getElementById('update-password-button').addEventListener('click', handleUpdatePassword);
-    document.getElementById('login-google').addEventListener('click', () => handleOAuth('google'));
-    document.getElementById('signup-google').addEventListener('click', () => handleOAuth('google'));
 
     // Load reflections and initialize auth on page load
     initAuth();
