@@ -2,10 +2,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
+// Your Firebase configuration
 const firebaseConfig = {
-  // Your Firebase config here (ensure it's correct)
+  apiKey: "AIzaSyCIRzXxvPxavnHpWTtVetqlu6AvxvNglYg",
+  authDomain: "soulreflection-57055.firebaseapp.com",
+  projectId: "soulreflection-57055",
+  storageBucket: "soulreflection-57055.firebasestorage.app",
+  messagingSenderId: "204371249472",
+  appId: "1:204371249472:web:1a78d82f0a727b92c452a5",
+  measurementId: "G-XXQ0GJQN1D"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -16,9 +24,9 @@ window.signUp = async function() {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    await sendEmailVerification(user); // Send verification email
-    console.log('Account created and verification email sent:', user.email);
-    alert('Account created! Please check your email for the confirmation link.');
+    await sendEmailVerification(user);
+    console.log('Verification email sent:', user.email);
+    alert('Account created! Please check your email (including spam) for the confirmation link.');
   } catch (error) {
     console.error('Sign-up error:', error);
     alert('Error: ' + error.message);
@@ -38,6 +46,21 @@ window.signIn = async function() {
   } catch (error) {
     console.error('Sign-in error:', error);
     alert('Error: ' + error.message);
+  }
+};
+
+window.resendVerification = async function() {
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      await sendEmailVerification(user);
+      alert('Verification email resent! Check your inbox or spam folder.');
+    } catch (error) {
+      console.error('Resend error:', error);
+      alert('Error: ' + error.message);
+    }
+  } else {
+    alert('Please sign up first.');
   }
 };
 
