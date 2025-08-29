@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#7c3aed">
+  <meta http-equiv="cache-control" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <meta http-equiv="pragma" content="no-cache">
   <title>Soul Reflections</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -36,7 +39,7 @@
       align-items: center;
       padding: 20px 15px;
     }
-    .prompt, h2, h3, p {
+    .prompt, h2, p {
       margin: 10px 0;
     }
     h2 {
@@ -208,35 +211,6 @@
       background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
       transform: translateY(-1px);
     }
-    .review-content {
-      text-align: left;
-      width: 90%;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-    .review-content h3 {
-      font-size: 1.3rem;
-      color: #6b4e9a;
-      margin-bottom: 10px;
-    }
-    .review-content p {
-      font-size: 1rem;
-      color: #4a4a4a;
-      line-height: 1.5;
-    }
-    .review-content small {
-      display: block;
-      margin-top: 10px;
-      color: #7c7c7c;
-    }
-    .review-content img {
-      max-width: 100%;
-      border-radius: 12px;
-      margin-top: 10px;
-    }
   </style>
 </head>
 <body>
@@ -310,15 +284,6 @@
       <button class="button" onclick="goBack()">Back</button>
     </div>
   </div>
-  <!-- Review Screen -->
-  <div id="review-screen" class="content hidden">
-    <h2>Reflection Details</h2>
-    <div id="review-content" class="review-content"></div>
-    <div class="button-group">
-      <button class="button" id="edit-from-review" onclick="editFromReview()">Edit</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-  </div>
   <!-- Account Screen -->
   <div id="account-screen" class="content hidden">
     <h2>Account</h2>
@@ -354,7 +319,6 @@
     let reflections = [];
     let currentImage = "";
     let editingIndex = null;
-    let reviewIndex = null;
     let user = null;
 
     const quotes = [
@@ -492,7 +456,7 @@
         editingIndex = null;
         await loadReflections();
         alert("Reflection saved!");
-        goBack();
+        showHistory(); // Show history after saving
       } catch (error) {
         console.error('Unexpected error saving reflection:', error);
         alert('Unexpected error saving reflection.');
@@ -501,55 +465,23 @@
 
     function updateHistoryUI() {
       const list = document.getElementById('history-list');
-      list.innerHTML = '';
+      list.innerHTML = reflections.length ? '' : '<p>No reflections yet.</p>';
       reflections.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
-          <p>${item.reflection.substring(0, 100)}${item.reflection.length > 100 ? '...' : ''}</p>
+          <p>${item.reflection}</p>
           <small>${item.date}</small>
           ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
           <div class="button-group">
             <button class="button" onclick="editReflection(${index})">Edit</button>
-            <button class="button" onclick="showReviewScreen(${index})">Review</button>
+            <button class="button" onclick="reviewReflection(${index})">Review</button>
             <button class="button" onclick="deleteReflection(${index})">Delete</button>
           </div>
         `;
         list.appendChild(div);
       });
-    }
-
-    function showReviewScreen(index) {
-      if (!user) {
-        showRegisterScreen();
-        document.getElementById('auth-message').textContent = 'Please sign up or log in to view reflections.';
-        return;
-      }
-      reviewIndex = index;
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-form').classList.add('hidden');
-      document.getElementById('signin-form').classList.add('hidden');
-      document.getElementById('journal-section').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.remove('hidden');
-      document.getElementById('options-menu').style.display = 'none';
-      
-      const reviewContent = document.getElementById('review-content');
-      const item = reflections[index];
-      reviewContent.innerHTML = `
-        <h3>${item.title || 'Untitled'}</h3>
-        <p>${item.reflection}</p>
-        <small>${item.date}</small>
-        ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
-      `;
-    }
-
-    function editFromReview() {
-      if (reviewIndex !== null) {
-        showEntryScreen(reviewIndex);
-      }
     }
 
     async function signUp() {
@@ -632,7 +564,6 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('auth-message').textContent = '';
     }
@@ -644,7 +575,6 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('login-message').textContent = '';
     }
@@ -661,7 +591,6 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('journal-entry').value = '';
@@ -693,11 +622,9 @@
       document.getElementById('signup-form').classList.add('hidden');
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
-      reviewIndex = null;
     }
 
     function showAccountScreen() {
@@ -711,7 +638,6 @@
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('account-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('account-message').textContent = '';
@@ -728,15 +654,17 @@
       document.getElementById('signup-form').classList.add('hidden');
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
-      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
-      updateHistoryUI();
     }
 
     function editReflection(index) {
       showEntryScreen(index);
+    }
+
+    function reviewReflection(index) {
+      alert(`Title: ${reflections[index].title || 'Untitled'}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
     async function deleteReflection(index) {
@@ -1003,7 +931,6 @@
           const accountMenuBtn = document.getElementById('account-menu-button');
           if (accountMenuBtn) accountMenuBtn.style.display = 'block';
           await loadReflections();
-          updateHistoryUI();
           document.getElementById('main-screen').classList.remove('hidden');
           document.getElementById('signup-form').classList.add('hidden');
           document.getElementById('signin-form').classList.add('hidden');
@@ -1020,7 +947,6 @@
             const accountMenuBtn = document.getElementById('account-menu-button');
             if (accountMenuBtn) accountMenuBtn.style.display = 'block';
             loadReflections();
-            updateHistoryUI();
             goBack();
           } else if (event === 'PASSWORD_RECOVERY') {
             user = (session && session.user) ? session.user : null;
