@@ -307,7 +307,7 @@
     // Initialize Supabase client
     const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-    const supabase = (window.supabase && window.supabase.createClient)
+    const supabase = window.supabase && window.supabase.createClient
       ? window.supabase.createClient(supabaseUrl, supabaseKey)
       : null;
     const AUTH_UNAVAILABLE = 'Authentication is unavailable. Check network and Supabase CDN.';
@@ -379,26 +379,42 @@
     }
 
     async function loadReflections() {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('reflections')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error loading reflections:', error);
-        alert('Failed to load reflections.');
+      if (!user || !supabase) {
+        console.error('No user or Supabase client available');
         return;
       }
-      reflections = data || [];
-      localStorage.setItem('reflections', JSON.stringify(reflections));
+      try {
+        const { data, error } = await supabase
+          .from('reflections')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.error('Error loading reflections:', error);
+          alert('Failed to load reflections: ' + error.message);
+          return;
+        }
+        reflections = data || [];
+        localStorage.setItem('reflections', JSON.stringify(reflections));
+        updateHistoryUI(); // Update UI after loading
+      } catch (error) {
+        console.error('Unexpected error loading reflections:', error);
+        alert('Unexpected error loading reflections.');
+      }
     }
 
     async function saveJournal() {
-      if (!user) return;
+      if (!user || !supabase) {
+        alert('Please log in to save reflections.');
+        return;
+      }
       const title = document.getElementById('title').value.trim();
       const journalEntry = document.getElementById('journal-entry').value.trim();
       const date = document.getElementById('current-date').textContent;
+      if (!title || !journalEntry) {
+        alert('Please provide both a title and reflection.');
+        return;
+      }
       const reflectionData = {
         user_id: user.id,
         title,
@@ -408,34 +424,61 @@
         created_at: new Date().toISOString()
       };
 
-      if (editingIndex !== null && reflections[editingIndex]) {
-        const { error } = await supabase
-          .from('reflections')
-          .update(reflectionData)
-          .eq('id', reflections[editingIndex].id);
-        if (error) {
-          console.error('Error updating reflection:', error);
-          alert('Failed to update reflection.');
-          return;
+      try {
+        if (editingIndex !== null && reflections[editingIndex]) {
+          const { error } = await supabase
+            .from('reflections')
+            .update(reflectionData)
+            .eq('id', reflections[editingIndex].id);
+          if (error) {
+            console.error('Error updating reflection:', error);
+            alert('Failed to update reflection: ' + error.message);
+            return;
+          }
+          reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id };
+        } else {
+          const { data, error } = await supabase
+            .from('reflections')
+            .insert([reflectionData])
+            .select();
+          if (error) {
+            console.error('Error saving reflection:', error);
+            alert('Failed to save reflection: ' + error.message);
+            return;
+          }
+          reflections.unshift(data[0]); // Add new reflection to start of array
         }
-        reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id };
-      } else {
-        const { data, error } = await supabase
-          .from('reflections')
-          .insert([reflectionData])
-          .select();
-        if (error) {
-          console.error('Error saving reflection:', error);
-          alert('Failed to save reflection.');
-          return;
-        }
-        reflections.push(data[0]);
+        localStorage.setItem('reflections', JSON.stringify(reflections));
+        currentImage = "";
+        editingIndex = null;
+        await loadReflections(); // Reload to ensure consistency
+        alert("Reflection saved!");
+        goBack();
+      } catch (error) {
+        console.error('Unexpected error saving reflection:', error);
+        alert('Unexpected error saving reflection.');
       }
-      localStorage.setItem('reflections', JSON.stringify(reflections));
-      currentImage = "";
-      editingIndex = null;
-      goBack();
-      alert("Reflection saved!");
+    }
+
+    function updateHistoryUI() {
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      reflections.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <h3>${item.title || 'Untitled'}</h3>
+          <p>${item.reflection}</p>
+          <small>${item.date}</small>
+          ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
+          <div class="button-group">
+            <button class="button" onclick="editReflection(${index})">Edit</button>
+            <button class="button" onclick="reviewReflection(${index})">Review</button>
+            <button class="button" onclick="deleteReflection(${index})">Delete</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
     }
 
     async function signUp() {
@@ -449,21 +492,26 @@
       }
 
       if (!supabase) { authMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
+        });
+
+        if (error) {
+          authMessage.textContent = error.message;
+          return;
         }
-      });
 
-      if (error) {
-        authMessage.textContent = error.message;
-        return;
-      }
-
-      if (data.user) {
-        authMessage.textContent = 'Check your email for the confirmation link!';
+        if (data.user) {
+          authMessage.textContent = 'Check your email for the confirmation link!';
+        }
+      } catch (error) {
+        authMessage.textContent = 'Unexpected error during sign-up.';
+        console.error('Sign-up error:', error);
       }
     }
 
@@ -478,25 +526,31 @@
       }
 
       if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
 
-      if (error) {
-        loginMessage.textContent = error.message;
-        return;
-      }
+        if (error) {
+          loginMessage.textContent = error.message;
+          return;
+        }
 
-      if (data.user) {
-        user = data.user;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-        document.getElementById('account-button').classList.remove('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-        await loadReflections();
-        goBack();
+        if (data.user) {
+          user = data.user;
+          document.getElementById('auth-button').classList.remove('hidden');
+          document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+          document.getElementById('account-button').classList.remove('hidden');
+          const accountMenuBtn = document.getElementById('account-menu-button');
+          if (accountMenuBtn) accountMenuBtn.style.display = 'block';
+          await loadReflections();
+          updateHistoryUI();
+          goBack();
+        }
+      } catch (error) {
+        loginMessage.textContent = 'Unexpected error during sign-in.';
+        console.error('Sign-in error:', error);
       }
     }
 
@@ -543,8 +597,8 @@
       currentImage = "";
       editingIndex = index;
       if (index !== null && reflections[index]) {
-        document.getElementById('title').value = reflections[index].title;
-        document.getElementById('journal-entry').value = reflections[index].reflection;
+        document.getElementById('title').value = reflections[index].title || '';
+        document.getElementById('journal-entry').value = reflections[index].reflection || '';
         if (reflections[index].image) {
           document.getElementById('preview-image').src = reflections[index].image;
           document.getElementById('preview-image').style.display = 'block';
@@ -600,24 +654,7 @@
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
-      const list = document.getElementById('history-list');
-      list.innerHTML = '';
-      reflections.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-          <h3>${item.title}</h3>
-          <p>${item.reflection}</p>
-          <small>${item.date}</small>
-          ${item.image ? `<img src="${item.image}">` : ""}
-          <div class="button-group">
-            <button class="button" onclick="editReflection(${index})">Edit</button>
-            <button class="button" onclick="reviewReflection(${index})">Review</button>
-            <button class="button" onclick="deleteReflection(${index})">Delete</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
+      updateHistoryUI();
     }
 
     function editReflection(index) {
@@ -625,23 +662,32 @@
     }
 
     function reviewReflection(index) {
-      alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
+      alert(`Title: ${reflections[index].title || 'Untitled'}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
     async function deleteReflection(index) {
+      if (!user || !supabase) {
+        alert('Please log in to delete reflections.');
+        return;
+      }
       if (confirm('Are you sure you want to delete this reflection?')) {
-        const { error } = await supabase
-          .from('reflections')
-          .delete()
-          .eq('id', reflections[index].id);
-        if (error) {
-          console.error('Error deleting reflection:', error);
-          alert('Failed to delete reflection.');
-          return;
+        try {
+          const { error } = await supabase
+            .from('reflections')
+            .delete()
+            .eq('id', reflections[index].id);
+          if (error) {
+            console.error('Error deleting reflection:', error);
+            alert('Failed to delete reflection: ' + error.message);
+            return;
+          }
+          reflections.splice(index, 1);
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          updateHistoryUI();
+        } catch (error) {
+          console.error('Unexpected error deleting reflection:', error);
+          alert('Unexpected error deleting reflection.');
         }
-        reflections.splice(index, 1);
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        showHistory();
       }
     }
 
@@ -722,7 +768,6 @@
     }
 
     function toggleOptionsMenu() {
-      console.log('Toggling options menu');
       const menu = document.getElementById('options-menu');
       if (!menu) {
         console.error('Options menu element not found');
@@ -733,20 +778,25 @@
 
     async function handleSignOut() {
       if (!supabase) { alert(AUTH_UNAVAILABLE); return; }
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        alert('Failed to sign out.');
-        return;
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Error signing out:', error);
+          alert('Failed to sign out: ' + error.message);
+          return;
+        }
+        user = null;
+        reflections = [];
+        localStorage.removeItem('reflections');
+        document.getElementById('auth-button').classList.add('hidden');
+        document.getElementById('account-button').classList.add('hidden');
+        const accountMenuBtn = document.getElementById('account-menu-button');
+        if (accountMenuBtn) accountMenuBtn.style.display = 'none';
+        showRegisterScreen();
+      } catch (error) {
+        console.error('Unexpected error signing out:', error);
+        alert('Unexpected error signing out.');
       }
-      user = null;
-      reflections = [];
-      localStorage.removeItem('reflections');
-      document.getElementById('auth-button').classList.add('hidden');
-      document.getElementById('account-button').classList.add('hidden');
-      const accountMenuBtn = document.getElementById('account-menu-button');
-      if (accountMenuBtn) accountMenuBtn.style.display = 'none';
-      showRegisterScreen();
     }
 
     async function handleForgotPassword() {
@@ -757,14 +807,19 @@
         return;
       }
       if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
-      });
-      if (error) {
-        loginMessage.textContent = error.message;
-        return;
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin
+        });
+        if (error) {
+          loginMessage.textContent = error.message;
+          return;
+        }
+        loginMessage.textContent = 'Password reset email sent. Check your inbox.';
+      } catch (error) {
+        loginMessage.textContent = 'Unexpected error during password reset.';
+        console.error('Password reset error:', error);
       }
-      loginMessage.textContent = 'Password reset email sent. Check your inbox.';
     }
 
     async function handleUpdateEmail() {
@@ -775,13 +830,18 @@
         return;
       }
       if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { data, error } = await supabase.auth.updateUser({ email });
-      if (error) {
-        accountMessage.textContent = error.message;
-        return;
-      }
-      if (data.user) {
-        accountMessage.textContent = 'Check your email to confirm the change.';
+      try {
+        const { data, error } = await supabase.auth.updateUser({ email });
+        if (error) {
+          accountMessage.textContent = error.message;
+          return;
+        }
+        if (data.user) {
+          accountMessage.textContent = 'Check your email to confirm the change.';
+        }
+      } catch (error) {
+        accountMessage.textContent = 'Unexpected error updating email.';
+        console.error('Update email error:', error);
       }
     }
 
@@ -798,31 +858,50 @@
         return;
       }
       if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        accountMessage.textContent = error.message;
-        return;
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          accountMessage.textContent = error.message;
+          return;
+        }
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        accountMessage.textContent = 'Password updated successfully.';
+      } catch (error) {
+        accountMessage.textContent = 'Unexpected error updating password.';
+        console.error('Update password error:', error);
       }
-      document.getElementById('new-password').value = '';
-      document.getElementById('confirm-password').value = '';
-      accountMessage.textContent = 'Password updated successfully.';
     }
 
     async function handleOAuth(provider) {
-      if (!supabase) { const m = AUTH_UNAVAILABLE; const authMessage = document.getElementById('auth-message'); const loginMessage = document.getElementById('login-message'); if (authMessage) authMessage.textContent = m; if (loginMessage) loginMessage.textContent = m; return; }
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: window.location.origin }
-      });
-      if (error) {
+      if (!supabase) {
+        const m = AUTH_UNAVAILABLE;
         const authMessage = document.getElementById('auth-message');
         const loginMessage = document.getElementById('login-message');
-        if (authMessage) authMessage.textContent = error.message;
-        if (loginMessage) loginMessage.textContent = error.message;
+        if (authMessage) authMessage.textContent = m;
+        if (loginMessage) loginMessage.textContent = m;
+        return;
+      }
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin }
+        });
+        if (error) {
+          const authMessage = document.getElementById('auth-message');
+          const loginMessage = document.getElementById('login-message');
+          if (authMessage) authMessage.textContent = error.message;
+          if (loginMessage) loginMessage.textContent = error.message;
+        }
+      } catch (error) {
+        console.error('OAuth error:', error);
+        const authMessage = document.getElementById('auth-message');
+        const loginMessage = document.getElementById('login-message');
+        if (authMessage) authMessage.textContent = 'Unexpected error during OAuth.';
+        if (loginMessage) loginMessage.textContent = 'Unexpected error during OAuth.';
       }
     }
 
-    // Initialize auth state
     async function initAuth() {
       try {
         if (!window.supabase) {
@@ -832,49 +911,62 @@
           const d = document.getElementById('debug');
           if (d) { d.style.display = 'block'; d.textContent = 'Supabase client not initialized.'; }
         }
-      } catch (e) {}
-      if (!supabase) { console.error(AUTH_UNAVAILABLE); showRegisterScreen(); return; }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        user = session.user;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-        document.getElementById('account-button').classList.remove('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-        await loadReflections();
-        document.getElementById('main-screen').classList.remove('hidden');
-        document.getElementById('signup-form').classList.add('hidden');
-        document.getElementById('signin-form').classList.add('hidden');
-      } else {
-        showRegisterScreen();
+      } catch (e) {
+        console.error('Init auth error:', e);
       }
-
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN') {
+      if (!supabase) {
+        console.error(AUTH_UNAVAILABLE);
+        showRegisterScreen();
+        return;
+      }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
           user = session.user;
           document.getElementById('auth-button').classList.remove('hidden');
           document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
           document.getElementById('account-button').classList.remove('hidden');
           const accountMenuBtn = document.getElementById('account-menu-button');
           if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-          loadReflections();
-          goBack();
-        } else if (event === 'PASSWORD_RECOVERY') {
-          user = (session && session.user) ? session.user : null;
-          showAccountScreen();
-          document.getElementById('account-message').textContent = 'Enter a new password to complete reset.';
-        } else if (event === 'SIGNED_OUT') {
-          user = null;
-          reflections = [];
-          localStorage.removeItem('reflections');
-          document.getElementById('auth-button').classList.add('hidden');
-          document.getElementById('account-button').classList.add('hidden');
-          const accountMenuBtn2 = document.getElementById('account-menu-button');
-          if (accountMenuBtn2) accountMenuBtn2.style.display = 'none';
+          await loadReflections();
+          updateHistoryUI();
+          document.getElementById('main-screen').classList.remove('hidden');
+          document.getElementById('signup-form').classList.add('hidden');
+          document.getElementById('signin-form').classList.add('hidden');
+        } else {
           showRegisterScreen();
         }
-      });
+
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN') {
+            user = session.user;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+            document.getElementById('account-button').classList.remove('hidden');
+            const accountMenuBtn = document.getElementById('account-menu-button');
+            if (accountMenuBtn) accountMenuBtn.style.display = 'block';
+            loadReflections();
+            updateHistoryUI();
+            goBack();
+          } else if (event === 'PASSWORD_RECOVERY') {
+            user = (session && session.user) ? session.user : null;
+            showAccountScreen();
+            document.getElementById('account-message').textContent = 'Enter a new password to complete reset.';
+          } else if (event === 'SIGNED_OUT') {
+            user = null;
+            reflections = [];
+            localStorage.removeItem('reflections');
+            document.getElementById('auth-button').classList.add('hidden');
+            document.getElementById('account-button').classList.add('hidden');
+            const accountMenuBtn2 = document.getElementById('account-menu-button');
+            if (accountMenuBtn2) accountMenuBtn2.style.display = 'none';
+            showRegisterScreen();
+          }
+        });
+      } catch (error) {
+        console.error('Init auth error:', error);
+        showRegisterScreen();
+      }
     }
 
     // Event listeners
@@ -883,8 +975,6 @@
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('journal-entry').addEventListener('input', checkSaveEnabled);
     document.getElementById('image-input').addEventListener('change', previewImage);
-    document.getElementById('signup-button').addEventListener('click', signUp);
-    document.getElementById('login-button').addEventListener('click', signIn);
     document.getElementById('auth-button').addEventListener('click', handleSignOut);
     document.getElementById('forgot-password-button').addEventListener('click', handleForgotPassword);
     document.getElementById('account-button').addEventListener('click', showAccountScreen);
