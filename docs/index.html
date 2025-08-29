@@ -396,7 +396,7 @@
         }
         reflections = data || [];
         localStorage.setItem('reflections', JSON.stringify(reflections));
-        updateHistoryUI(); // Update UI after loading
+        updateHistoryUI();
       } catch (error) {
         console.error('Unexpected error loading reflections:', error);
         alert('Unexpected error loading reflections.');
@@ -420,7 +420,7 @@
         title,
         reflection: journalEntry,
         date,
-        image: currentImage,
+        image: currentImage || null,
         created_at: new Date().toISOString()
       };
 
@@ -446,12 +446,12 @@
             alert('Failed to save reflection: ' + error.message);
             return;
           }
-          reflections.unshift(data[0]); // Add new reflection to start of array
+          reflections.unshift(data[0]);
         }
         localStorage.setItem('reflections', JSON.stringify(reflections));
         currentImage = "";
         editingIndex = null;
-        await loadReflections(); // Reload to ensure consistency
+        await loadReflections();
         alert("Reflection saved!");
         goBack();
       } catch (error) {
