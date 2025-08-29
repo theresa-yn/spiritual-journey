@@ -36,7 +36,7 @@
       align-items: center;
       padding: 20px 15px;
     }
-    .prompt, h2, p {
+    .prompt, h2, h3, p {
       margin: 10px 0;
     }
     h2 {
@@ -208,6 +208,35 @@
       background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
       transform: translateY(-1px);
     }
+    .review-content {
+      text-align: left;
+      width: 90%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    .review-content h3 {
+      font-size: 1.3rem;
+      color: #6b4e9a;
+      margin-bottom: 10px;
+    }
+    .review-content p {
+      font-size: 1rem;
+      color: #4a4a4a;
+      line-height: 1.5;
+    }
+    .review-content small {
+      display: block;
+      margin-top: 10px;
+      color: #7c7c7c;
+    }
+    .review-content img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -281,6 +310,15 @@
       <button class="button" onclick="goBack()">Back</button>
     </div>
   </div>
+  <!-- Review Screen -->
+  <div id="review-screen" class="content hidden">
+    <h2>Reflection Details</h2>
+    <div id="review-content" class="review-content"></div>
+    <div class="button-group">
+      <button class="button" id="edit-from-review" onclick="editFromReview()">Edit</button>
+      <button class="button" onclick="goBack()">Back</button>
+    </div>
+  </div>
   <!-- Account Screen -->
   <div id="account-screen" class="content hidden">
     <h2>Account</h2>
@@ -316,6 +354,7 @@
     let reflections = [];
     let currentImage = "";
     let editingIndex = null;
+    let reviewIndex = null;
     let user = null;
 
     const quotes = [
@@ -468,17 +507,49 @@
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
-          <p>${item.reflection}</p>
+          <p>${item.reflection.substring(0, 100)}${item.reflection.length > 100 ? '...' : ''}</p>
           <small>${item.date}</small>
           ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
           <div class="button-group">
             <button class="button" onclick="editReflection(${index})">Edit</button>
-            <button class="button" onclick="reviewReflection(${index})">Review</button>
+            <button class="button" onclick="showReviewScreen(${index})">Review</button>
             <button class="button" onclick="deleteReflection(${index})">Delete</button>
           </div>
         `;
         list.appendChild(div);
       });
+    }
+
+    function showReviewScreen(index) {
+      if (!user) {
+        showRegisterScreen();
+        document.getElementById('auth-message').textContent = 'Please sign up or log in to view reflections.';
+        return;
+      }
+      reviewIndex = index;
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('signup-form').classList.add('hidden');
+      document.getElementById('signin-form').classList.add('hidden');
+      document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('account-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.remove('hidden');
+      document.getElementById('options-menu').style.display = 'none';
+      
+      const reviewContent = document.getElementById('review-content');
+      const item = reflections[index];
+      reviewContent.innerHTML = `
+        <h3>${item.title || 'Untitled'}</h3>
+        <p>${item.reflection}</p>
+        <small>${item.date}</small>
+        ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
+      `;
+    }
+
+    function editFromReview() {
+      if (reviewIndex !== null) {
+        showEntryScreen(reviewIndex);
+      }
     }
 
     async function signUp() {
@@ -561,6 +632,7 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('auth-message').textContent = '';
     }
@@ -572,6 +644,7 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('login-message').textContent = '';
     }
@@ -588,6 +661,7 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('journal-section').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('journal-entry').value = '';
@@ -619,9 +693,11 @@
       document.getElementById('signup-form').classList.add('hidden');
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('account-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
+      reviewIndex = null;
     }
 
     function showAccountScreen() {
@@ -635,6 +711,7 @@
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('account-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('account-message').textContent = '';
@@ -651,6 +728,7 @@
       document.getElementById('signup-form').classList.add('hidden');
       document.getElementById('signin-form').classList.add('hidden');
       document.getElementById('journal-section').classList.add('hidden');
+      document.getElementById('review-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
@@ -659,10 +737,6 @@
 
     function editReflection(index) {
       showEntryScreen(index);
-    }
-
-    function reviewReflection(index) {
-      alert(`Title: ${reflections[index].title || 'Untitled'}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
     async function deleteReflection(index) {
