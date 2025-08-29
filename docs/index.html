@@ -1,13 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#7c3aed">
-  <meta http-equiv="cache-control" content="no-cache">
-  <meta http-equiv="expires" content="0">
-  <meta http-equiv="pragma" content="no-cache">
   <title>Soul Reflections</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -256,8 +252,8 @@
   <div id="main-screen" class="content hidden">
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>My Garden</h2>
-    <p>Tap the plus button to begin planning</p>
+    <h2>Soul Reflections</h2>
+    <p>Tap the plus button to begin reflecting</p>
   </div>
   <!-- Journal Section -->
   <div id="journal-section" class="content hidden">
@@ -308,15 +304,18 @@
     <button id="account-menu-button" onclick="showAccountScreen()" style="display:none">Account</button>
   </div>
   <script>
-    // Initialize Supabase
+    // Initialize Supabase client
     const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(supabaseUrl, supabaseKey)
+      : null;
+    const AUTH_UNAVAILABLE = 'Authentication is unavailable. Check network and Supabase CDN.';
 
     let recognition;
     let reflections = [];
     let currentImage = "";
-    let editingId = null;
+    let editingIndex = null;
     let user = null;
 
     const quotes = [
@@ -369,6 +368,10 @@
 
     function updateDateTime() {
       const now = new Date();
+      const options = {
+        weekday: 'long', month: 'short', day: 'numeric',
+        year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+      };
       document.getElementById('current-date').textContent =
         now.toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
       document.getElementById('current-time').textContent =
@@ -376,104 +379,63 @@
     }
 
     async function loadReflections() {
-      if (!user) {
-        console.error('No user available');
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('reflections')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error loading reflections:', error);
+        alert('Failed to load reflections.');
         return;
       }
-      try {
-        const { data, error } = await supabase
-          .from('reflections')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        reflections = data || [];
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        updateHistoryUI();
-      } catch (error) {
-        console.error('Error loading reflections:', error);
-        alert('Failed to load reflections: ' + error.message);
-      }
+      reflections = data || [];
+      localStorage.setItem('reflections', JSON.stringify(reflections));
     }
 
     async function saveJournal() {
-      if (!user) {
-        alert('Please log in to save reflections.');
-        return;
-      }
+      if (!user) return;
       const title = document.getElementById('title').value.trim();
       const journalEntry = document.getElementById('journal-entry').value.trim();
       const date = document.getElementById('current-date').textContent;
-      if (!title || !journalEntry) {
-        alert('Please provide both a title and reflection.');
-        return;
-      }
       const reflectionData = {
         user_id: user.id,
         title,
         reflection: journalEntry,
         date,
-        image: currentImage || null,
+        image: currentImage,
         created_at: new Date().toISOString()
       };
 
-      try {
-        if (editingId) {
-          const { error } = await supabase
-            .from('reflections')
-            .update(reflectionData)
-            .eq('id', editingId)
-            .eq('user_id', user.id);
-          
-          if (error) throw error;
-          
-          const index = reflections.findIndex(r => r.id === editingId);
-          if (index !== -1) {
-            reflections[index] = { ...reflectionData, id: editingId };
-          }
-        } else {
-          const { data, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select();
-          
-          if (error) throw error;
-          
-          reflections.unshift({ ...reflectionData, id: data[0].id });
+      if (editingIndex !== null && reflections[editingIndex]) {
+        const { error } = await supabase
+          .from('reflections')
+          .update(reflectionData)
+          .eq('id', reflections[editingIndex].id);
+        if (error) {
+          console.error('Error updating reflection:', error);
+          alert('Failed to update reflection.');
+          return;
         }
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        currentImage = "";
-        editingId = null;
-        await loadReflections();
-        alert("Reflection saved!");
-        showHistory();
-      } catch (error) {
-        console.error('Error saving reflection:', error);
-        alert('Failed to save reflection: ' + error.message);
+        reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id };
+      } else {
+        const { data, error } = await supabase
+          .from('reflections')
+          .insert([reflectionData])
+          .select();
+        if (error) {
+          console.error('Error saving reflection:', error);
+          alert('Failed to save reflection.');
+          return;
+        }
+        reflections.push(data[0]);
       }
-    }
-
-    function updateHistoryUI() {
-      const list = document.getElementById('history-list');
-      list.innerHTML = reflections.length ? '' : '<p>No reflections yet.</p>';
-      reflections.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-          <h3>${item.title || 'Untitled'}</h3>
-          <p>${item.reflection}</p>
-          <small>${item.date}</small>
-          ${item.image ? `<img src="${item.image}" alt="Reflection Image">` : ""}
-          <div class="button-group">
-            <button class="button" onclick="editReflection('${item.id}')">Edit</button>
-            <button class="button" onclick="reviewReflection('${item.id}')">Review</button>
-            <button class="button" onclick="deleteReflection('${item.id}')">Delete</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
+      localStorage.setItem('reflections', JSON.stringify(reflections));
+      currentImage = "";
+      editingIndex = null;
+      goBack();
+      alert("Reflection saved!");
     }
 
     async function signUp() {
@@ -486,16 +448,22 @@
         return;
       }
 
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password
-        });
-        if (error) throw error;
-        authMessage.textContent = 'Account created! Please check your email to verify.';
-      } catch (error) {
+      if (!supabase) { authMessage.textContent = AUTH_UNAVAILABLE; return; }
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
         authMessage.textContent = error.message;
-        console.error('Sign-up error:', error);
+        return;
+      }
+
+      if (data.user) {
+        authMessage.textContent = 'Check your email for the confirmation link!';
       }
     }
 
@@ -509,13 +477,18 @@
         return;
       }
 
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        if (error) throw error;
-        
+      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        loginMessage.textContent = error.message;
+        return;
+      }
+
+      if (data.user) {
         user = data.user;
         document.getElementById('auth-button').classList.remove('hidden');
         document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
@@ -523,11 +496,7 @@
         const accountMenuBtn = document.getElementById('account-menu-button');
         if (accountMenuBtn) accountMenuBtn.style.display = 'block';
         await loadReflections();
-        updateHistoryUI();
         goBack();
-      } catch (error) {
-        loginMessage.textContent = error.message;
-        console.error('Sign-in error:', error);
       }
     }
 
@@ -553,7 +522,7 @@
       document.getElementById('login-message').textContent = '';
     }
 
-    function showEntryScreen(id = null) {
+    function showEntryScreen(index = null) {
       if (!user) {
         showRegisterScreen();
         document.getElementById('auth-message').textContent = 'Please sign up or log in to create reflections.';
@@ -572,15 +541,14 @@
       document.getElementById('preview-image').src = '';
       document.getElementById('preview-image').style.display = 'none';
       currentImage = "";
-      editingId = id;
-      if (id && reflections.find(r => r.id === id)) {
-        const reflection = reflections.find(r => r.id === id);
-        document.getElementById('title').value = reflection.title || '';
-        document.getElementById('journal-entry').value = reflection.reflection || '';
-        if (reflection.image) {
-          document.getElementById('preview-image').src = reflection.image;
+      editingIndex = index;
+      if (index !== null && reflections[index]) {
+        document.getElementById('title').value = reflections[index].title;
+        document.getElementById('journal-entry').value = reflections[index].reflection;
+        if (reflections[index].image) {
+          document.getElementById('preview-image').src = reflections[index].image;
           document.getElementById('preview-image').style.display = 'block';
-          currentImage = reflection.image;
+          currentImage = reflections[index].image;
         }
       }
       document.getElementById('save').disabled = !canSave();
@@ -599,7 +567,7 @@
       document.getElementById('account-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
-      editingId = null;
+      editingIndex = null;
     }
 
     function showAccountScreen() {
@@ -632,41 +600,48 @@
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      reflections.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <h3>${item.title}</h3>
+          <p>${item.reflection}</p>
+          <small>${item.date}</small>
+          ${item.image ? `<img src="${item.image}">` : ""}
+          <div class="button-group">
+            <button class="button" onclick="editReflection(${index})">Edit</button>
+            <button class="button" onclick="reviewReflection(${index})">Review</button>
+            <button class="button" onclick="deleteReflection(${index})">Delete</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
     }
 
-    function editReflection(id) {
-      showEntryScreen(id);
+    function editReflection(index) {
+      showEntryScreen(index);
     }
 
-    function reviewReflection(id) {
-      const reflection = reflections.find(r => r.id === id);
-      if (reflection) {
-        alert(`Title: ${reflection.title || 'Untitled'}\n\nReflection: ${reflection.reflection}\n\nDate: ${reflection.date}`);
-      }
+    function reviewReflection(index) {
+      alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
-    async function deleteReflection(id) {
-      if (!user) {
-        alert('Please log in to delete reflections.');
-        return;
-      }
+    async function deleteReflection(index) {
       if (confirm('Are you sure you want to delete this reflection?')) {
-        try {
-          const { error } = await supabase
-            .from('reflections')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', user.id);
-          
-          if (error) throw error;
-          
-          reflections = reflections.filter(r => r.id !== id);
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-          updateHistoryUI();
-        } catch (error) {
+        const { error } = await supabase
+          .from('reflections')
+          .delete()
+          .eq('id', reflections[index].id);
+        if (error) {
           console.error('Error deleting reflection:', error);
-          alert('Failed to delete reflection: ' + error.message);
+          alert('Failed to delete reflection.');
+          return;
         }
+        reflections.splice(index, 1);
+        localStorage.setItem('reflections', JSON.stringify(reflections));
+        showHistory();
       }
     }
 
@@ -732,39 +707,22 @@
       return !!(title && journalEntry);
     }
 
-    async function previewImage(event) {
+    function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
-        if (!user) {
-          alert('Please log in to upload images.');
-          return;
-        }
-        try {
-          // Upload to Supabase Storage
-          const fileName = `${user.id}/${Date.now()}_${file.name}`;
-          const { data, error } = await supabase.storage
-            .from('reflection-images')
-            .upload(fileName, file);
-          
-          if (error) throw error;
-          
-          // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('reflection-images')
-            .getPublicUrl(fileName);
-          
+        const reader = new FileReader();
+        reader.onload = (e) => {
           const preview = document.getElementById('preview-image');
-          preview.src = urlData.publicUrl;
+          preview.src = e.target.result;
           preview.style.display = 'block';
-          currentImage = urlData.publicUrl;
-        } catch (error) {
-          console.error('Image upload error:', error);
-          alert('Failed to upload image: ' + error.message);
-        }
+          currentImage = e.target.result;
+        };
+        reader.readAsDataURL(file);
       }
     }
 
     function toggleOptionsMenu() {
+      console.log('Toggling options menu');
       const menu = document.getElementById('options-menu');
       if (!menu) {
         console.error('Options menu element not found');
@@ -774,22 +732,21 @@
     }
 
     async function handleSignOut() {
-      try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-        document.getElementById('auth-button').classList.add('hidden');
-        document.getElementById('account-button').classList.add('hidden');
-        const accountMenuBtn = document.getElementById('account-menu-button');
-        if (accountMenuBtn) accountMenuBtn.style.display = 'none';
-        showRegisterScreen();
-      } catch (error) {
+      if (!supabase) { alert(AUTH_UNAVAILABLE); return; }
+      const { error } = await supabase.auth.signOut();
+      if (error) {
         console.error('Error signing out:', error);
-        alert('Failed to sign out: ' + error.message);
+        alert('Failed to sign out.');
+        return;
       }
+      user = null;
+      reflections = [];
+      localStorage.removeItem('reflections');
+      document.getElementById('auth-button').classList.add('hidden');
+      document.getElementById('account-button').classList.add('hidden');
+      const accountMenuBtn = document.getElementById('account-menu-button');
+      if (accountMenuBtn) accountMenuBtn.style.display = 'none';
+      showRegisterScreen();
     }
 
     async function handleForgotPassword() {
@@ -799,14 +756,15 @@
         loginMessage.textContent = 'Enter your email to reset password.';
         return;
       }
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        if (error) throw error;
-        loginMessage.textContent = 'Password reset email sent. Check your inbox.';
-      } catch (error) {
+      if (!supabase) { loginMessage.textContent = AUTH_UNAVAILABLE; return; }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+      if (error) {
         loginMessage.textContent = error.message;
-        console.error('Password reset error:', error);
+        return;
       }
+      loginMessage.textContent = 'Password reset email sent. Check your inbox.';
     }
 
     async function handleUpdateEmail() {
@@ -816,13 +774,14 @@
         accountMessage.textContent = 'Email cannot be empty.';
         return;
       }
-      try {
-        const { error } = await supabase.auth.updateUser({ email });
-        if (error) throw error;
-        accountMessage.textContent = 'Email updated successfully.';
-      } catch (error) {
+      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
+      const { data, error } = await supabase.auth.updateUser({ email });
+      if (error) {
         accountMessage.textContent = error.message;
-        console.error('Update email error:', error);
+        return;
+      }
+      if (data.user) {
+        accountMessage.textContent = 'Check your email to confirm the change.';
       }
     }
 
@@ -838,63 +797,84 @@
         accountMessage.textContent = 'Passwords do not match.';
         return;
       }
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) throw error;
-        document.getElementById('new-password').value = '';
-        document.getElementById('confirm-password').value = '';
-        accountMessage.textContent = 'Password updated successfully.';
-      } catch (error) {
+      if (!supabase) { accountMessage.textContent = AUTH_UNAVAILABLE; return; }
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
         accountMessage.textContent = error.message;
-        console.error('Update password error:', error);
+        return;
       }
+      document.getElementById('new-password').value = '';
+      document.getElementById('confirm-password').value = '';
+      accountMessage.textContent = 'Password updated successfully.';
     }
 
-    async function handleOAuth() {
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google'
-        });
-        if (error) throw error;
-        // Note: User will be updated via auth state change listener
-      } catch (error) {
+    async function handleOAuth(provider) {
+      if (!supabase) { const m = AUTH_UNAVAILABLE; const authMessage = document.getElementById('auth-message'); const loginMessage = document.getElementById('login-message'); if (authMessage) authMessage.textContent = m; if (loginMessage) loginMessage.textContent = m; return; }
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin }
+      });
+      if (error) {
         const authMessage = document.getElementById('auth-message');
         const loginMessage = document.getElementById('login-message');
         if (authMessage) authMessage.textContent = error.message;
         if (loginMessage) loginMessage.textContent = error.message;
-        console.error('OAuth error:', error);
       }
     }
 
+    // Initialize auth state
     async function initAuth() {
       try {
-        supabase.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            user = session.user;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
-            document.getElementById('account-button').classList.remove('hidden');
-            const accountMenuBtn = document.getElementById('account-menu-button');
-            if (accountMenuBtn) accountMenuBtn.style.display = 'block';
-            loadReflections();
-            document.getElementById('main-screen').classList.remove('hidden');
-            document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('signin-form').classList.add('hidden');
-          } else {
-            user = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            document.getElementById('auth-button').classList.add('hidden');
-            document.getElementById('account-button').classList.add('hidden');
-            const accountMenuBtn = document.getElementById('account-menu-button');
-            if (accountMenuBtn) accountMenuBtn.style.display = 'none';
-            showRegisterScreen();
-          }
-        });
-      } catch (error) {
-        console.error('Init auth error:', error);
+        if (!window.supabase) {
+          const d = document.getElementById('debug');
+          if (d) { d.style.display = 'block'; d.textContent = 'Supabase CDN not loaded.'; }
+        } else if (!supabase) {
+          const d = document.getElementById('debug');
+          if (d) { d.style.display = 'block'; d.textContent = 'Supabase client not initialized.'; }
+        }
+      } catch (e) {}
+      if (!supabase) { console.error(AUTH_UNAVAILABLE); showRegisterScreen(); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        user = session.user;
+        document.getElementById('auth-button').classList.remove('hidden');
+        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+        document.getElementById('account-button').classList.remove('hidden');
+        const accountMenuBtn = document.getElementById('account-menu-button');
+        if (accountMenuBtn) accountMenuBtn.style.display = 'block';
+        await loadReflections();
+        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('signup-form').classList.add('hidden');
+        document.getElementById('signin-form').classList.add('hidden');
+      } else {
         showRegisterScreen();
       }
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN') {
+          user = session.user;
+          document.getElementById('auth-button').classList.remove('hidden');
+          document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+          document.getElementById('account-button').classList.remove('hidden');
+          const accountMenuBtn = document.getElementById('account-menu-button');
+          if (accountMenuBtn) accountMenuBtn.style.display = 'block';
+          loadReflections();
+          goBack();
+        } else if (event === 'PASSWORD_RECOVERY') {
+          user = (session && session.user) ? session.user : null;
+          showAccountScreen();
+          document.getElementById('account-message').textContent = 'Enter a new password to complete reset.';
+        } else if (event === 'SIGNED_OUT') {
+          user = null;
+          reflections = [];
+          localStorage.removeItem('reflections');
+          document.getElementById('auth-button').classList.add('hidden');
+          document.getElementById('account-button').classList.add('hidden');
+          const accountMenuBtn2 = document.getElementById('account-menu-button');
+          if (accountMenuBtn2) accountMenuBtn2.style.display = 'none';
+          showRegisterScreen();
+        }
+      });
     }
 
     // Event listeners
@@ -903,13 +883,15 @@
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('journal-entry').addEventListener('input', checkSaveEnabled);
     document.getElementById('image-input').addEventListener('change', previewImage);
+    document.getElementById('signup-button').addEventListener('click', signUp);
+    document.getElementById('login-button').addEventListener('click', signIn);
     document.getElementById('auth-button').addEventListener('click', handleSignOut);
     document.getElementById('forgot-password-button').addEventListener('click', handleForgotPassword);
     document.getElementById('account-button').addEventListener('click', showAccountScreen);
     document.getElementById('update-email-button').addEventListener('click', handleUpdateEmail);
     document.getElementById('update-password-button').addEventListener('click', handleUpdatePassword);
-    document.getElementById('login-google').addEventListener('click', handleOAuth);
-    document.getElementById('signup-google').addEventListener('click', handleOAuth);
+    document.getElementById('login-google').addEventListener('click', () => handleOAuth('google'));
+    document.getElementById('signup-google').addEventListener('click', () => handleOAuth('google'));
 
     // Load reflections and initialize auth on page load
     initAuth();
@@ -927,4 +909,3 @@
   </script>
 </body>
 </html>
-```
