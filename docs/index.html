@@ -461,6 +461,73 @@
       0% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); }
       100% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.8); }
     }
+
+    /* Light Theme Banner */
+    .light-banner {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(224, 242, 254, 0.9) 100%);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(12, 74, 110, 0.1);
+      padding: 20px 0;
+      position: relative;
+      z-index: 5;
+      box-shadow: 0 4px 20px rgba(12, 74, 110, 0.1);
+      animation: bannerSlideDown 0.6s ease-out;
+    }
+
+    .banner-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 20px;
+      gap: 20px;
+    }
+
+    .banner-icon {
+      font-size: 2.5rem;
+      animation: bannerIconFloat 3s ease-in-out infinite;
+    }
+
+    .banner-text h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      letter-spacing: 0.5px;
+    }
+
+    .banner-text p {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    @keyframes bannerSlideDown {
+      0% {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes bannerIconFloat {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Hide banner in dark theme */
+    [data-theme="dark"] .light-banner {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -506,6 +573,17 @@
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
       <button id="auth-button" class="button hidden">Sign Out</button>
+    </div>
+  </div>
+  
+  <!-- Banner for Light Theme -->
+  <div id="light-banner" class="light-banner" style="display: none;">
+    <div class="banner-content">
+      <div class="banner-icon">🌤️</div>
+      <div class="banner-text">
+        <h3>Welcome to Your Spiritual Journey</h3>
+        <p>Find peace and clarity in the light of day</p>
+      </div>
     </div>
   </div>
   <!-- Main Screen -->
@@ -916,6 +994,7 @@
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       const clouds = document.querySelectorAll('.cloud');
+      const lightBanner = document.getElementById('light-banner');
       
       if (currentTheme === 'dark') {
         // Switch to sky theme
@@ -924,6 +1003,7 @@
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
         clouds.forEach(cloud => cloud.style.display = 'block');
+        lightBanner.style.display = 'block';
         localStorage.setItem('theme', 'sky');
       } else {
         // Switch to dark theme
@@ -932,6 +1012,7 @@
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
         clouds.forEach(cloud => cloud.style.display = 'none');
+        lightBanner.style.display = 'none';
         localStorage.setItem('theme', 'dark');
       }
     }
@@ -941,6 +1022,7 @@
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       const clouds = document.querySelectorAll('.cloud');
+      const lightBanner = document.getElementById('light-banner');
       
       if (savedTheme === 'sky') {
         document.documentElement.setAttribute('data-theme', 'sky');
@@ -948,12 +1030,14 @@
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
         clouds.forEach(cloud => cloud.style.display = 'block');
+        lightBanner.style.display = 'block';
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
         clouds.forEach(cloud => cloud.style.display = 'none');
+        lightBanner.style.display = 'none';
       }
     }
 
