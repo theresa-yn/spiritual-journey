@@ -151,7 +151,10 @@
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border-color);
       z-index: 10;
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
     }
     .content {
       flex-grow: 1;
@@ -159,7 +162,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px 15px;
+      padding: 80px 15px 20px 15px;
       position: relative;
       z-index: 1;
     }
