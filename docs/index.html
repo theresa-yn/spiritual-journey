@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#0f0f23">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Spiritual Journey</title>
+  <title>My Garden</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
   <script>
     // Fallback if the main CDN fails
@@ -23,60 +23,18 @@
     }
   </script>
   <style>
-    /* CSS Variables for theming */
-    :root {
-      /* Dark Theme (default) */
-      --bg-primary: #0f0f23;
-      --bg-secondary: #1a1a2e;
-      --bg-tertiary: #16213e;
-      --text-primary: #ffffff;
-      --text-secondary: #e2e8f0;
-      --text-muted: #cbd5e1;
-      --accent-primary: #a855f7;
-      --accent-secondary: #6366f1;
-      --accent-tertiary: #8b5cf6;
-      --header-bg: rgba(15, 15, 35, 0.9);
-      --border-color: rgba(255, 255, 255, 0.1);
-      --input-bg: rgba(15, 15, 35, 0.8);
-      --card-bg: rgba(15, 15, 35, 0.8);
-      --star-color: #ffffff;
-      --button-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      --button-hover: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
-    }
-
-    /* Sky Theme */
-    [data-theme="sky"] {
-      --bg-primary: #e0f2fe;
-      --bg-secondary: #bae6fd;
-      --bg-tertiary: #7dd3fc;
-      --text-primary: #0c4a6e;
-      --text-secondary: #0369a1;
-      --text-muted: #0ea5e9;
-      --accent-primary: #0284c7;
-      --accent-secondary: #0369a1;
-      --accent-tertiary: #0c4a6e;
-      --header-bg: rgba(224, 242, 254, 0.9);
-      --border-color: rgba(12, 74, 110, 0.2);
-      --input-bg: rgba(255, 255, 255, 0.8);
-      --card-bg: rgba(255, 255, 255, 0.9);
-      --star-color: #fbbf24;
-      --button-gradient: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-      --button-hover: linear-gradient(135deg, #0369a1 0%, #0c4a6e 100%);
-    }
-
     body {
       font-family: 'Georgia', serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
-      color: var(--text-primary);
+      background: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      color: #ffffff;
       text-align: center;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
       position: relative;
-      transition: all 0.3s ease;
     }
     
     /* Animated Stars Background */
@@ -92,7 +50,7 @@
     
     .star {
       position: absolute;
-      background: var(--star-color);
+      background: #ffffff;
       border-radius: 50%;
       animation: twinkle 3s infinite;
     }
@@ -126,7 +84,7 @@
     /* Moving stars */
     .moving-star {
       position: absolute;
-      background: var(--star-color);
+      background: #ffffff;
       border-radius: 50%;
       animation: moveStar 8s linear infinite;
     }
@@ -143,162 +101,13 @@
       90% { opacity: 1; }
       100% { transform: translateX(calc(100vw + 100px)) translateY(-50px); opacity: 0; }
     }
-
-    /* Sky theme specific elements */
-    [data-theme="sky"] .stars {
-      display: none;
-    }
-
-    [data-theme="sky"] .moving-star {
-      display: none;
-    }
-
-    /* Enhanced cloud effects for sky theme */
-    [data-theme="sky"] .cloud {
-      filter: blur(0.5px);
-    }
-
-    [data-theme="sky"] .cloud:hover {
-      filter: blur(0.2px);
-      transform: scale(1.02);
-      transition: all 0.3s ease;
-    }
-
-    /* Cloud animation for sky theme */
-    .cloud {
-      position: fixed;
-      z-index: 1;
-      opacity: 0.9;
-    }
-
-    .cloud::before,
-    .cloud::after,
-    .cloud .cloud-part {
-      content: '';
-      position: absolute;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 70%, rgba(255, 255, 255, 0.6) 100%);
-      border-radius: 50%;
-      box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.1),
-        inset 0 1px 2px rgba(255, 255, 255, 0.8);
-    }
-
-    .cloud::before {
-      width: 70%;
-      height: 100%;
-      top: 0;
-      left: 15%;
-    }
-
-    .cloud::after {
-      width: 50%;
-      height: 70%;
-      top: 15%;
-      left: 0;
-    }
-
-    .cloud .cloud-part {
-      width: 45%;
-      height: 60%;
-      top: 20%;
-      right: 0;
-    }
-
-    .cloud .cloud-part:nth-child(2) {
-      width: 35%;
-      height: 50%;
-      top: 35%;
-      left: 25%;
-    }
-
-    .cloud .cloud-part:nth-child(3) {
-      width: 30%;
-      height: 40%;
-      top: 10%;
-      left: 60%;
-    }
-
-    .cloud-1 {
-      top: 12%;
-      left: -150px;
-      width: 150px;
-      height: 60px;
-      animation: floatCloud1 28s linear infinite;
-      opacity: 0.95;
-    }
-
-    .cloud-2 {
-      top: 32%;
-      right: -120px;
-      width: 120px;
-      height: 45px;
-      animation: floatCloud2 22s linear infinite reverse;
-      opacity: 0.85;
-    }
-
-    .cloud-3 {
-      top: 52%;
-      left: -100px;
-      width: 100px;
-      height: 40px;
-      animation: floatCloud3 35s linear infinite;
-      opacity: 0.75;
-    }
-
-    .cloud-4 {
-      top: 72%;
-      right: -80px;
-      width: 80px;
-      height: 35px;
-      animation: floatCloud4 18s linear infinite;
-      opacity: 0.7;
-    }
-
-    @keyframes floatCloud1 {
-      0% { transform: translateX(-150px) translateY(0px); }
-      100% { transform: translateX(calc(100vw + 150px)) translateY(-10px); }
-    }
-
-    @keyframes floatCloud2 {
-      0% { transform: translateX(120px) translateY(0px); }
-      100% { transform: translateX(calc(-100vw - 120px)) translateY(5px); }
-    }
-
-    @keyframes floatCloud3 {
-      0% { transform: translateX(-100px) translateY(0px); }
-      100% { transform: translateX(calc(100vw + 100px)) translateY(-8px); }
-    }
-
-    @keyframes floatCloud4 {
-      0% { transform: translateX(80px) translateY(0px); }
-      100% { transform: translateX(calc(-100vw - 80px)) translateY(3px); }
-    }
-
-    /* Sun for sky theme */
-    [data-theme="sky"] .sun {
-      position: fixed;
-      top: 10%;
-      right: 10%;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
-      border-radius: 50%;
-      box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
-      z-index: 1;
-      animation: sunGlow 4s ease-in-out infinite alternate;
-    }
-
-    @keyframes sunGlow {
-      0% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); }
-      100% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.8); }
-    }
     .header {
       display: flex;
       justify-content: space-between;
       padding: 12px 20px;
-      background: var(--header-bg);
+      background: rgba(15, 15, 35, 0.9);
       backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       z-index: 10;
       position: relative;
     }
@@ -318,21 +127,21 @@
     h2 {
       font-size: 1.6rem;
       font-weight: 400;
-      color: var(--accent-primary);
+      color: #a855f7;
       letter-spacing: 0.5px;
       text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
     }
     .prompt {
       font-size: 1.1rem;
       font-style: italic;
-      color: var(--text-secondary);
+      color: #e2e8f0;
     }
     p {
       font-size: 0.95rem;
-      color: var(--text-muted);
+      color: #cbd5e1;
     }
     .button {
-      background: var(--button-gradient);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: #ffffff;
       border: none;
       padding: 10px 20px;
@@ -346,7 +155,7 @@
       transition: all 0.3s ease-in-out;
     }
     .button:hover {
-      background: var(--button-hover);
+      background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
       color: #ffffff;
       box-shadow: 0 6px 14px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3);
       transform: translateY(-2px);
@@ -387,7 +196,7 @@
       right: 20px;
       width: 50px;
       height: 50px;
-      background: var(--button-gradient);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: #ffffff;
       border-radius: 50%;
       display: flex;
@@ -400,7 +209,7 @@
       z-index: 1000;
     }
     .floating-plus:hover {
-      background: var(--button-hover);
+      background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
       color: #ffffff;
       box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3);
       transform: translateY(-2px);
@@ -410,12 +219,12 @@
       width: 90%;
       padding: 12px;
       font-size: 1rem;
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.3);
       border-radius: 12px;
       margin: 10px 0;
       font-family: 'Georgia', serif;
-      background: var(--input-bg);
-      color: var(--text-primary);
+      background: rgba(15, 15, 35, 0.8);
+      color: #ffffff;
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(139, 92, 246, 0.1);
     }
     textarea { min-height: 130px; resize: vertical; }
@@ -423,12 +232,12 @@
     .history-item {
       text-align: left;
       padding: 15px;
-      background: var(--card-bg);
+      background: rgba(15, 15, 35, 0.8);
       margin: 8px 0;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 15px rgba(139, 92, 246, 0.1);
       cursor: pointer;
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.2);
     }
     .history-item img {
       max-width: 100%;
@@ -440,13 +249,13 @@
       padding: 6px 14px;
       font-size: 0.85rem;
       border-radius: 20px;
-      background: var(--button-gradient);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: #ffffff;
       box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
       transition: all 0.3s ease-in-out;
     }
     .history-item button:hover {
-      background: var(--button-hover);
+      background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
       color: #ffffff;
       box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
       transform: translateY(-1px);
@@ -460,14 +269,14 @@
     #current-date {
       font-size: 1.1rem;
       font-weight: 400;
-      color: var(--accent-secondary);
+      color: #6b4e9a;
       margin-bottom: 6px;
       letter-spacing: 0.5px;
     }
     #current-time {
       font-size: 0.9rem;
       font-weight: 300;
-      color: var(--text-muted);
+      color: #7c7c7c;
       letter-spacing: 0.5px;
     }
     .button-group {
@@ -489,19 +298,19 @@
       position: fixed;
       bottom: 80px;
       right: 20px;
-      background: var(--card-bg);
+      background: rgba(15, 15, 35, 0.9);
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);
       padding: 10px;
       display: none;
       z-index: 999;
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.3);
     }
     .options-menu button {
       display: block;
       width: 100%;
       margin: 5px 0;
-      background: var(--button-gradient);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: #ffffff;
       border: none;
       padding: 8px;
@@ -510,9 +319,125 @@
       transition: all 0.3s ease-in-out;
     }
     .options-menu button:hover {
-      background: var(--button-hover);
+      background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
       color: #ffffff;
       transform: translateY(-1px);
+    }
+
+    /* Cloud animation for sky theme */
+    .cloud {
+      position: fixed;
+      z-index: 1;
+      opacity: 0.85;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+    }
+
+    .cloud::before {
+      width: 60%;
+      height: 100%;
+      top: 0;
+      left: 20%;
+    }
+
+    .cloud::after {
+      width: 40%;
+      height: 60%;
+      top: 20%;
+      left: 0;
+    }
+
+    .cloud .cloud-part {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+    }
+
+    .cloud .cloud-part:nth-child(1) {
+      width: 35%;
+      height: 50%;
+      top: 25%;
+      right: 0;
+    }
+
+    .cloud .cloud-part:nth-child(2) {
+      width: 25%;
+      height: 40%;
+      top: 35%;
+      left: 60%;
+    }
+
+    .cloud-1 {
+      top: 20%;
+      left: -120px;
+      width: 120px;
+      height: 50px;
+      animation: floatCloud1 30s linear infinite;
+    }
+
+    .cloud-2 {
+      top: 45%;
+      right: -100px;
+      width: 100px;
+      height: 40px;
+      animation: floatCloud2 25s linear infinite reverse;
+    }
+
+    .cloud-3 {
+      top: 70%;
+      left: -80px;
+      width: 80px;
+      height: 35px;
+      animation: floatCloud3 35s linear infinite;
+    }
+
+    @keyframes floatCloud1 {
+      0% { transform: translateX(-120px); }
+      100% { transform: translateX(calc(100vw + 120px)); }
+    }
+
+    @keyframes floatCloud2 {
+      0% { transform: translateX(100px); }
+      100% { transform: translateX(calc(-100vw - 100px)); }
+    }
+
+    @keyframes floatCloud3 {
+      0% { transform: translateX(-80px); }
+      100% { transform: translateX(calc(100vw + 80px)); }
+    }
+
+    /* Simple cloud effects for sky theme */
+    [data-theme="sky"] .cloud {
+      transition: opacity 0.3s ease;
+    }
+
+    /* Sun for sky theme */
+    .sun {
+      position: fixed;
+      top: 10%;
+      right: 10%;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+      z-index: 1;
+      animation: sunGlow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes sunGlow {
+      0% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); }
+      100% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.8); }
     }
   </style>
 </head>
@@ -553,20 +478,12 @@
   <div class="cloud cloud-1" style="display: none;">
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
-    <div class="cloud-part"></div>
   </div>
   <div class="cloud cloud-2" style="display: none;">
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
-    <div class="cloud-part"></div>
   </div>
   <div class="cloud cloud-3" style="display: none;">
-    <div class="cloud-part"></div>
-    <div class="cloud-part"></div>
-    <div class="cloud-part"></div>
-  </div>
-  <div class="cloud cloud-4" style="display: none;">
-    <div class="cloud-part"></div>
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
   </div>
@@ -621,15 +538,9 @@
     <button class="button" onclick="newQuestion()">New Question</button>
     <input type="text" id="title" placeholder="Title">
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
-    <div style="margin: 15px 0;">
-      <label for="image-input" class="button" style="display: inline-block; cursor: pointer; margin-bottom: 10px;">
-        📷 Add Photo
-      </label>
-      <input type="file" accept="image/*" id="image-input" style="display: none;">
-      <div id="image-preview-container" style="display: none; margin-top: 10px;">
-        <img id="preview-image" class="preview" src="" alt="Preview">
-        <button type="button" class="button" onclick="removeImage()" style="margin-top: 5px; background: #dc2626;">Remove Photo</button>
-      </div>
+    <div>
+      <input type="file" accept="image/*" id="image-input" capture="environment">
+      <img id="preview-image" class="preview" src="" alt="Preview">
     </div>
     <div class="button-group">
       <button class="button" id="start-voice">Start Speaking</button>
@@ -644,13 +555,12 @@
     <div id="history-list"></div>
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
-      <button class="button" onclick="testDelete()" style="background: #059669;">Debug</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
   <div id="options-menu" class="options-menu">
-    <button onclick="showEntryScreen()">Start Journaling</button>
-    <button onclick="showHistory()">Past Reflections</button>
+    <button onclick="showEntryScreen()">New Seed</button>
+    <button onclick="showHistory()">My Plants</button>
   </div>
   <script>
     // Initialize Supabase client
@@ -751,13 +661,6 @@
     async function loadReflections() {
       if (!user) return;
       
-      // First try to load from localStorage as it's faster and more reliable
-      const localReflections = localStorage.getItem('reflections');
-      if (localReflections) {
-        reflections = JSON.parse(localReflections);
-        console.log('Loaded reflections from localStorage:', reflections.length);
-      }
-      
       try {
         const { data, error } = await supabase
           .from('reflections')
@@ -766,26 +669,27 @@
           .order('created_at', { ascending: false });
         
         if (error) {
-          console.error('Error loading reflections from database:', error);
-          // Keep using localStorage data if database fails
-          if (!reflections) {
+          console.error('Error loading reflections:', error);
+          // Fallback to localStorage if database fails
+          const localReflections = localStorage.getItem('reflections');
+          if (localReflections) {
+            reflections = JSON.parse(localReflections);
+            console.log('Using local reflections as fallback');
+          } else {
             reflections = [];
           }
           return;
         }
         
-        // Merge database data with localStorage data, prioritizing database
-        if (data && data.length > 0) {
-          reflections = data;
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-          console.log('Updated reflections from database:', reflections.length);
-        } else if (!reflections) {
-          reflections = [];
-        }
+        reflections = data || [];
+        localStorage.setItem('reflections', JSON.stringify(reflections));
       } catch (err) {
         console.error('Unexpected error loading reflections:', err);
-        // Keep using localStorage data if database fails
-        if (!reflections) {
+        // Fallback to localStorage
+        const localReflections = localStorage.getItem('reflections');
+        if (localReflections) {
+          reflections = JSON.parse(localReflections);
+        } else {
           reflections = [];
         }
       }
@@ -887,7 +791,7 @@
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
       document.getElementById('preview-image').src = '';
-      document.getElementById('image-preview-container').style.display = 'none';
+      document.getElementById('preview-image').style.display = 'none';
       currentImage = "";
       editingIndex = index;
       if (index !== null && reflections[index]) {
@@ -895,7 +799,7 @@
         document.getElementById('reflection').value = reflections[index].reflection;
         if (reflections[index].image) {
           document.getElementById('preview-image').src = reflections[index].image;
-          document.getElementById('image-preview-container').style.display = 'block';
+          document.getElementById('preview-image').style.display = 'block';
           currentImage = reflections[index].image;
         }
       }
@@ -941,40 +845,24 @@
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
-      
-      // Load reflections from both database and localStorage
       await loadReflections();
-      
-      // Also check localStorage as fallback
-      const localReflections = localStorage.getItem('reflections');
-      if (localReflections && (!reflections || reflections.length === 0)) {
-        reflections = JSON.parse(localReflections);
-      }
-      
       const list = document.getElementById('history-list');
       list.innerHTML = '';
-      
-      if (!reflections || reflections.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: #cbd5e1; font-style: italic;">No reflections yet. Start journaling to see them here!</p>';
-        return;
-      }
-      
       reflections.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
-          <h3>${item.title || 'Untitled'}</h3>
-          <p>${item.reflection || 'No content'}</p>
-          <small>${item.date || 'No date'}</small>
+          <h3>${item.title}</h3>
+          <p>${item.reflection}</p>
+          <small>${item.date}</small>
           ${item.image ? `<img src="${item.image}">` : ""}
           <div class="button-group">
             <button class="button" onclick="editReflection(${index})">Edit</button>
             <button class="button" onclick="reviewReflection(${index})">Review</button>
-            <button class="button" onclick="deleteReflection(${index})" style="background: #dc2626;">Delete</button>
+            <button class="button" onclick="deleteReflection(${index})">Delete</button>
           </div>
         `;
         list.appendChild(div);
-        console.log(`Created history item ${index} with delete button`);
       });
     }
 
@@ -987,68 +875,72 @@
     }
 
     async function deleteReflection(index) {
-      console.log('Delete function called with index:', index);
-      
-      // Get current reflections from localStorage to ensure we have the latest data
-      let currentReflections = [];
-      try {
-        const stored = localStorage.getItem('reflections');
-        if (stored) {
-          currentReflections = JSON.parse(stored);
-        }
-      } catch (err) {
-        console.error('Error reading reflections from localStorage:', err);
-        currentReflections = reflections || [];
-      }
-      
-      if (!currentReflections || !currentReflections[index]) {
-        console.error('No reflection found at index:', index, 'Total reflections:', currentReflections.length);
-        alert('Reflection not found. Please refresh the page and try again.');
-        return;
-      }
-      
-      const reflectionToDelete = currentReflections[index];
-      console.log('Attempting to delete reflection:', reflectionToDelete);
-      
       if (confirm('Are you sure you want to delete this reflection?')) {
         try {
-          // Only try to delete from database if the reflection has a database ID
-          if (reflectionToDelete.id && typeof reflectionToDelete.id === 'number') {
-            console.log('Attempting database deletion for ID:', reflectionToDelete.id);
-            const { error } = await supabase
-              .from('reflections')
-              .delete()
-              .eq('id', reflectionToDelete.id);
-            
-            if (error) {
-              console.error('Error deleting reflection from database:', error);
-            } else {
-              console.log('Successfully deleted reflection from database');
-            }
-          } else {
-            console.log('Reflection has no database ID, deleting locally only');
+          const { error } = await supabase
+            .from('reflections')
+            .delete()
+            .eq('id', reflections[index].id);
+          if (error) {
+            console.error('Error deleting reflection:', error);
+            // Continue with local deletion even if database fails
           }
-          
-          // Remove from current reflections array
-          currentReflections.splice(index, 1);
-          
-          // Update global reflections array
-          reflections = currentReflections;
-          
-          // Save to localStorage
-          localStorage.setItem('reflections', JSON.stringify(currentReflections));
-          console.log('Deleted reflection locally, remaining count:', currentReflections.length);
-          
-          // Show success message
-          alert('Reflection deleted successfully!');
-          
-          // Refresh the history view
+          reflections.splice(index, 1);
+          localStorage.setItem('reflections', JSON.stringify(reflections));
           showHistory();
-          
         } catch (err) {
           console.error('Unexpected error deleting reflection:', err);
-          alert('Error deleting reflection. Please try again.');
+          // Fallback to local deletion
+          reflections.splice(index, 1);
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          showHistory();
         }
+      }
+    }
+
+    // Theme switching functions
+    function toggleTheme() {
+      const themeToggle = document.getElementById('theme-toggle');
+      const sun = document.querySelector('.sun');
+      const clouds = document.querySelectorAll('.cloud');
+      
+      if (currentTheme === 'dark') {
+        // Switch to sky theme
+        document.documentElement.setAttribute('data-theme', 'sky');
+        currentTheme = 'sky';
+        themeToggle.textContent = '🌙';
+        sun.style.display = 'block';
+        clouds.forEach(cloud => cloud.style.display = 'block');
+        localStorage.setItem('theme', 'sky');
+      } else {
+        // Switch to dark theme
+        document.documentElement.removeAttribute('data-theme');
+        currentTheme = 'dark';
+        themeToggle.textContent = '☀️';
+        sun.style.display = 'none';
+        clouds.forEach(cloud => cloud.style.display = 'none');
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const themeToggle = document.getElementById('theme-toggle');
+      const sun = document.querySelector('.sun');
+      const clouds = document.querySelectorAll('.cloud');
+      
+      if (savedTheme === 'sky') {
+        document.documentElement.setAttribute('data-theme', 'sky');
+        currentTheme = 'sky';
+        themeToggle.textContent = '🌙';
+        sun.style.display = 'block';
+        clouds.forEach(cloud => cloud.style.display = 'block');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        currentTheme = 'dark';
+        themeToggle.textContent = '☀️';
+        sun.style.display = 'none';
+        clouds.forEach(cloud => cloud.style.display = 'none');
       }
     }
 
@@ -1121,94 +1013,14 @@
     function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
-        // Check file size (limit to 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image file is too large. Please select an image smaller than 5MB.');
-          return;
-        }
-        
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-          alert('Please select a valid image file.');
-          return;
-        }
-        
         const reader = new FileReader();
         reader.onload = (e) => {
           const preview = document.getElementById('preview-image');
-          const container = document.getElementById('image-preview-container');
           preview.src = e.target.result;
-          container.style.display = 'block';
+          preview.style.display = 'block';
           currentImage = e.target.result;
         };
-        reader.onerror = () => {
-          alert('Error reading the image file. Please try again.');
-        };
         reader.readAsDataURL(file);
-      }
-    }
-
-    function removeImage() {
-      const preview = document.getElementById('preview-image');
-      const container = document.getElementById('image-preview-container');
-      const input = document.getElementById('image-input');
-      
-      preview.src = '';
-      container.style.display = 'none';
-      input.value = '';
-      currentImage = '';
-    }
-
-    // Debug function to test delete functionality
-    function testDelete() {
-      console.log('Current reflections:', reflections);
-      console.log('LocalStorage reflections:', localStorage.getItem('reflections'));
-      alert('Check console for reflection data');
-    }
-
-    // Theme switching functions
-    function toggleTheme() {
-      const themeToggle = document.getElementById('theme-toggle');
-      const sun = document.querySelector('.sun');
-      const clouds = document.querySelectorAll('.cloud');
-      
-      if (currentTheme === 'dark') {
-        // Switch to sky theme
-        document.documentElement.setAttribute('data-theme', 'sky');
-        currentTheme = 'sky';
-        themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
-        clouds.forEach(cloud => cloud.style.display = 'block');
-        localStorage.setItem('theme', 'sky');
-      } else {
-        // Switch to dark theme
-        document.documentElement.removeAttribute('data-theme');
-        currentTheme = 'dark';
-        themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
-        clouds.forEach(cloud => cloud.style.display = 'none');
-        localStorage.setItem('theme', 'dark');
-      }
-    }
-
-    function loadTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      const themeToggle = document.getElementById('theme-toggle');
-      const sun = document.querySelector('.sun');
-      const clouds = document.querySelectorAll('.cloud');
-      
-      if (savedTheme === 'sky') {
-        document.documentElement.setAttribute('data-theme', 'sky');
-        currentTheme = 'sky';
-        themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
-        clouds.forEach(cloud => cloud.style.display = 'block');
-      } else {
-        document.documentElement.removeAttribute('data-theme');
-        currentTheme = 'dark';
-        themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
-        clouds.forEach(cloud => cloud.style.display = 'none');
       }
     }
 
