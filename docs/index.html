@@ -328,98 +328,105 @@
     .cloud {
       position: fixed;
       z-index: 1;
-      opacity: 0.9;
-      background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 50%, #87CEEB 100%);
-      border-radius: 100px;
+      opacity: 0.95;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 70%, rgba(255, 255, 255, 0.6) 100%);
+      border-radius: 50px;
       box-shadow: 
-        0 4px 12px rgba(135, 206, 235, 0.3),
-        inset 0 2px 4px rgba(255, 255, 255, 0.6),
-        inset 0 -2px 4px rgba(135, 206, 235, 0.4);
+        0 8px 32px rgba(255, 255, 255, 0.3),
+        0 4px 16px rgba(255, 255, 255, 0.2),
+        inset 0 2px 8px rgba(255, 255, 255, 0.8);
       position: relative;
-      filter: blur(0.5px);
+      filter: blur(0.3px);
     }
 
     .cloud::before,
     .cloud::after {
       content: '';
       position: absolute;
-      background: linear-gradient(135deg, #B0E0E6 0%, #87CEEB 100%);
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
       border-radius: 50%;
-      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.7);
+      box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.9);
     }
 
     .cloud::before {
-      width: 70%;
+      width: 80%;
       height: 100%;
       top: 0;
-      left: 15%;
+      left: 10%;
     }
 
     .cloud::after {
-      width: 50%;
-      height: 70%;
-      top: 15%;
+      width: 60%;
+      height: 80%;
+      top: 10%;
       left: 0;
     }
 
     .cloud .cloud-part {
       position: absolute;
-      background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%);
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
       border-radius: 50%;
-      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.7);
+      box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.9);
     }
 
     .cloud .cloud-part:nth-child(1) {
-      width: 40%;
-      height: 60%;
-      top: 20%;
+      width: 50%;
+      height: 70%;
+      top: 15%;
       right: 0;
     }
 
     .cloud .cloud-part:nth-child(2) {
-      width: 30%;
-      height: 50%;
-      top: 30%;
-      left: 55%;
+      width: 35%;
+      height: 60%;
+      top: 25%;
+      left: 50%;
+    }
+
+    .cloud .cloud-part:nth-child(3) {
+      width: 25%;
+      height: 45%;
+      top: 40%;
+      left: 70%;
     }
 
     .cloud-1 {
-      top: 25%;
-      left: -140px;
-      width: 140px;
-      height: 70px;
-      animation: floatCloud1 35s linear infinite;
+      top: 20%;
+      left: -160px;
+      width: 160px;
+      height: 80px;
+      animation: floatCloud1 40s linear infinite;
     }
 
     .cloud-2 {
-      top: 50%;
-      right: -120px;
-      width: 120px;
-      height: 60px;
-      animation: floatCloud2 30s linear infinite reverse;
+      top: 45%;
+      right: -140px;
+      width: 140px;
+      height: 70px;
+      animation: floatCloud2 35s linear infinite reverse;
     }
 
     .cloud-3 {
-      top: 75%;
-      left: -100px;
-      width: 100px;
-      height: 50px;
-      animation: floatCloud3 40s linear infinite;
+      top: 70%;
+      left: -120px;
+      width: 120px;
+      height: 60px;
+      animation: floatCloud3 45s linear infinite;
     }
 
     @keyframes floatCloud1 {
-      0% { transform: translateX(-140px); }
-      100% { transform: translateX(calc(100vw + 140px)); }
+      0% { transform: translateX(-160px); }
+      100% { transform: translateX(calc(100vw + 160px)); }
     }
 
     @keyframes floatCloud2 {
-      0% { transform: translateX(120px); }
-      100% { transform: translateX(calc(-100vw - 120px)); }
+      0% { transform: translateX(140px); }
+      100% { transform: translateX(calc(-100vw - 140px)); }
     }
 
     @keyframes floatCloud3 {
-      0% { transform: translateX(-100px); }
-      100% { transform: translateX(calc(100vw + 100px)); }
+      0% { transform: translateX(-120px); }
+      100% { transform: translateX(calc(100vw + 120px)); }
     }
 
     /* Simple cloud effects for sky theme */
@@ -484,12 +491,15 @@
   <div class="cloud cloud-1" style="display: none;">
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
+    <div class="cloud-part"></div>
   </div>
   <div class="cloud cloud-2" style="display: none;">
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
+    <div class="cloud-part"></div>
   </div>
   <div class="cloud cloud-3" style="display: none;">
+    <div class="cloud-part"></div>
     <div class="cloud-part"></div>
     <div class="cloud-part"></div>
   </div>
