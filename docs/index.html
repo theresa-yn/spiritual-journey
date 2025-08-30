@@ -1250,34 +1250,48 @@
     }
 
     async function handleSignOut() {
-      // Check if using local authentication
-      const localAuth = localStorage.getItem('localAuth');
+      console.log('Sign out function called');
+      console.log('Current user:', user);
+      console.log('Local auth status:', localStorage.getItem('localAuth'));
       
-      if (localAuth === 'true') {
-        // Local sign out
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-        localStorage.removeItem('localUser');
-        localStorage.removeItem('localAuth');
-        document.getElementById('auth-button').classList.add('hidden');
-        showRegisterScreen();
-        console.log('Signed out from local authentication');
-      } else {
-        // Supabase sign out
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error('Error signing out:', error);
-          alert('Failed to sign out.');
-          return;
+      try {
+        // Check if using local authentication
+        const localAuth = localStorage.getItem('localAuth');
+        
+        if (localAuth === 'true') {
+          // Local sign out
+          console.log('Performing local sign out');
+          user = null;
+          reflections = [];
+          localStorage.removeItem('reflections');
+          localStorage.removeItem('localUser');
+          localStorage.removeItem('localAuth');
+          document.getElementById('auth-button').classList.add('hidden');
+          showRegisterScreen();
+          console.log('Successfully signed out from local authentication');
+          alert('Successfully signed out!');
+        } else {
+          // Supabase sign out
+          console.log('Performing Supabase sign out');
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('Supabase sign out error:', error);
+            alert('Failed to sign out from Supabase: ' + error.message);
+            return;
+          }
+          user = null;
+          reflections = [];
+          localStorage.removeItem('reflections');
+          localStorage.removeItem('localUser');
+          localStorage.removeItem('localAuth');
+          document.getElementById('auth-button').classList.add('hidden');
+          showRegisterScreen();
+          console.log('Successfully signed out from Supabase');
+          alert('Successfully signed out!');
         }
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-        localStorage.removeItem('localUser');
-        localStorage.removeItem('localAuth');
-        document.getElementById('auth-button').classList.add('hidden');
-        showRegisterScreen();
+      } catch (err) {
+        console.error('Unexpected error during sign out:', err);
+        alert('An unexpected error occurred during sign out. Please try again.');
       }
     }
 
