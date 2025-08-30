@@ -488,8 +488,14 @@
     <input type="text" id="title" placeholder="Title">
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
-      <input type="file" accept="image/*" id="image-input" capture="environment">
-      <img id="preview-image" class="preview" src="" alt="Preview">
+      <label for="image-input" class="button" style="display: inline-block; margin: 10px 0; cursor: pointer;">
+        📷 Add Photo
+      </label>
+      <input type="file" accept="image/*" id="image-input" capture="environment" style="display: none;">
+      <div id="image-preview-container" style="display: none;">
+        <img id="preview-image" class="preview" src="" alt="Preview">
+        <button type="button" class="button" onclick="removeImage()" style="margin-top: 10px;">Remove Photo</button>
+      </div>
     </div>
     <div class="button-group">
       <button class="button" id="start-voice">Start Speaking</button>
@@ -739,8 +745,7 @@
       document.getElementById('title').value = '';
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
-      document.getElementById('preview-image').src = '';
-      document.getElementById('preview-image').style.display = 'none';
+      document.getElementById('image-preview-container').style.display = 'none';
       currentImage = "";
       editingIndex = index;
       if (index !== null && reflections[index]) {
@@ -748,7 +753,7 @@
         document.getElementById('reflection').value = reflections[index].reflection;
         if (reflections[index].image) {
           document.getElementById('preview-image').src = reflections[index].image;
-          document.getElementById('preview-image').style.display = 'block';
+          document.getElementById('image-preview-container').style.display = 'block';
           currentImage = reflections[index].image;
         }
       }
@@ -1000,15 +1005,41 @@
     function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image file is too large. Please select an image smaller than 5MB.');
+          return;
+        }
+        
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select a valid image file.');
+          return;
+        }
+        
         const reader = new FileReader();
         reader.onload = (e) => {
           const preview = document.getElementById('preview-image');
+          const container = document.getElementById('image-preview-container');
           preview.src = e.target.result;
-          preview.style.display = 'block';
+          container.style.display = 'block';
           currentImage = e.target.result;
+          console.log('Image preview loaded successfully');
+        };
+        reader.onerror = () => {
+          alert('Error reading the image file. Please try again.');
         };
         reader.readAsDataURL(file);
       }
+    }
+
+    function removeImage() {
+      const container = document.getElementById('image-preview-container');
+      const input = document.getElementById('image-input');
+      container.style.display = 'none';
+      input.value = '';
+      currentImage = '';
+      console.log('Image removed');
     }
 
     function toggleOptionsMenu() {
