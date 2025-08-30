@@ -1,1 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication Debug</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <script>
+    // Fallback if the main CDN fails
+    if (typeof window.supabase === 'undefined') {
+      console.log('Trying fallback CDN...');
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js';
+      script.onload = function() {
+        console.log('Fallback CDN loaded successfully');
+      };
+      script.onerror = function() {
+        console.error('Both CDNs failed to load');
+      };
+      document.head.appendChild(script);
+    }
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .warning { background: #fff3cd; color: #856404; }
+    .info { background: #d1ecf1; color: #0c5460; }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #0056b3; }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .log {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Authentication Debug Tool</h1>
+  
+  <div class="container">
+    <h2>Supabase Configuration</h2>
+    <div id="config-status" class="status info">Checking configuration...</div>
+    <p><strong>URL:</strong> <span id="supabase-url"></span></p>
+    <p><strong>Key:</strong> <span id="supabase-key-preview"></span></p>
+  </div>
+
+  <div class="container">
+    <h2>Connection Test</h2>
+    <div id="connection-status" class="status info">Testing connection...</div>
+    <button onclick="testConnection()">Test Connection</button>
+  </div>
+
+  <div class="container">
+    <h2>Authentication Test</h2>
+    <div id="auth-status" class="status info">Ready to test</div>
+    
+    <h3>Sign Up Test</h3>
+    <input type="email" id="signup-email" placeholder="Email for sign up test">
+    <input type="password" id="signup-password" placeholder="Password (min 6 chars)">
+    <button onclick="testSignUp()">Test Sign Up</button>
+    
+    <h3>Sign In Test</h3>
+    <input type="email" id="signin-email" placeholder="Email for sign in test">
+    <input type="password" id="signin-password" placeholder="Password">
+    <button onclick="testSignIn()">Test Sign In</button>
+    
+    <button onclick="testSignOut()">Test Sign Out</button>
+  </div>
+
+  <div class="container">
+    <h2>Database Test</h2>
+    <div id="db-status" class="status info">Ready to test</div>
+    <button onclick="testDatabase()">Test Database Access</button>
+  </div>
+
+  <div class="container">
+    <h2>Debug Log</h2>
+    <div id="debug-log" class="log"></div>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+
+  <script>
+    // Supabase configuration
+    let supabase;
+    
+    function initializeSupabase() {
+      if (typeof window.supabase === 'undefined') {
+        console.error('Supabase library not loaded');
+        return false;
+      }
+      
+      const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
+      
+      try {
+        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        console.log('Supabase client initialized successfully');
+        return true;
+      } catch (error) {
+        console.error('Failed to initialize Supabase client:', error);
+        return false;
+      }
+    }
+
+    let currentUser = null;
+
+    function log(message) {
+      const logElement = document.getElementById('debug-log');
+      const timestamp = new Date().toLocaleTimeString();
+      logElement.textContent += `[${timestamp}] ${message}\n`;
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(message);
+    }
+
+    function clearLog() {
+      document.getElementById('debug-log').textContent = '';
+    }
+
+    function updateStatus(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = `status ${type}`;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      log('Debug tool initialized');
+      
+      // Initialize Supabase first
+      if (!initializeSupabase()) {
+        log('Failed to initialize Supabase');
+        updateStatus('config-status', 'Failed to load Supabase library', 'error');
+        return;
+      }
+      
+      // Show configuration
+      document.getElementById('supabase-url').textContent = 'https://ccdbajqwlwgduilomlmq.supabase.co';
+      document.getElementById('supabase-key-preview').textContent = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU'.substring(0, 20) + '...';
+      
+      updateStatus('config-status', 'Configuration loaded', 'success');
+      
+      // Test connection
+      testConnection();
+      
+      // Check current session
+      checkSession();
+    });
+
+    async function testConnection() {
+      updateStatus('connection-status', 'Testing connection...', 'info');
+      log('Testing Supabase connection...');
+      
+      try {
+        // Test auth connection first
+        const { data: authData, error: authError } = await supabase.auth.getSession();
+        
+        if (authError) {
+          log(`Auth connection error: ${authError.message}`);
+          updateStatus('connection-status', `Auth connection failed: ${authError.message}`, 'error');
+          return;
+        }
+        
+        log('Auth connection successful');
+        
+        // Test database connection
+        const { data: dbData, error: dbError } = await supabase.from('reflections').select('count').limit(1);
+        
+        if (dbError) {
+          log(`Database connection error: ${dbError.message}`);
+          updateStatus('connection-status', `Auth OK, Database failed: ${dbError.message}`, 'warning');
+        } else {
+          log('Database connection successful');
+          updateStatus('connection-status', 'All connections successful', 'success');
+        }
+      } catch (err) {
+        log(`Unexpected error: ${err.message}`);
+        updateStatus('connection-status', `Unexpected error: ${err.message}`, 'error');
+      }
+    }
+
+    async function checkSession() {
+      log('Checking current session...');
+      
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          log(`Session check error: ${error.message}`);
+        } else if (session) {
+          currentUser = session.user;
+          log(`User logged in: ${currentUser.email}`);
+          updateStatus('auth-status', `Logged in as: ${currentUser.email}`, 'success');
+        } else {
+          log('No active session');
+          updateStatus('auth-status', 'No active session', 'info');
+        }
+      } catch (err) {
+        log(`Session check error: ${err.message}`);
+      }
+    }
+
+    async function testSignUp() {
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      
+      if (!email || !password) {
+        log('Please enter email and password');
+        return;
+      }
+      
+      log(`Attempting sign up for: ${email}`);
+      
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
+        });
+        
+        if (error) {
+          log(`Sign up error: ${error.message}`);
+          updateStatus('auth-status', `Sign up failed: ${error.message}`, 'error');
+        } else {
+          log(`Sign up successful for: ${data.user?.email}`);
+          if (data.user && !data.user.email_confirmed_at) {
+            log('Email confirmation required');
+            updateStatus('auth-status', 'Sign up successful - check email for confirmation', 'warning');
+          } else {
+            currentUser = data.user;
+            updateStatus('auth-status', `Signed up and logged in as: ${currentUser.email}`, 'success');
+          }
+        }
+      } catch (err) {
+        log(`Unexpected sign up error: ${err.message}`);
+        updateStatus('auth-status', `Unexpected error: ${err.message}`, 'error');
+      }
+    }
+
+    async function testSignIn() {
+      const email = document.getElementById('signin-email').value;
+      const password = document.getElementById('signin-password').value;
+      
+      if (!email || !password) {
+        log('Please enter email and password');
+        return;
+      }
+      
+      log(`Attempting sign in for: ${email}`);
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          log(`Sign in error: ${error.message}`);
+          updateStatus('auth-status', `Sign in failed: ${error.message}`, 'error');
+        } else {
+          currentUser = data.user;
+          log(`Sign in successful for: ${currentUser.email}`);
+          updateStatus('auth-status', `Signed in as: ${currentUser.email}`, 'success');
+        }
+      } catch (err) {
+        log(`Unexpected sign in error: ${err.message}`);
+        updateStatus('auth-status', `Unexpected error: ${err.message}`, 'error');
+      }
+    }
+
+    async function testSignOut() {
+      log('Attempting sign out...');
+      
+      try {
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          log(`Sign out error: ${error.message}`);
+          updateStatus('auth-status', `Sign out failed: ${error.message}`, 'error');
+        } else {
+          currentUser = null;
+          log('Sign out successful');
+          updateStatus('auth-status', 'Signed out successfully', 'success');
+        }
+      } catch (err) {
+        log(`Unexpected sign out error: ${err.message}`);
+        updateStatus('auth-status', `Unexpected error: ${err.message}`, 'error');
+      }
+    }
+
+    async function testDatabase() {
+      if (!currentUser) {
+        log('No user logged in - cannot test database access');
+        updateStatus('db-status', 'No user logged in', 'warning');
+        return;
+      }
+      
+      log('Testing database access...');
+      
+      try {
+        // Test reading
+        const { data: readData, error: readError } = await supabase
+          .from('reflections')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .limit(5);
+        
+        if (readError) {
+          log(`Database read error: ${readError.message}`);
+          updateStatus('db-status', `Read failed: ${readError.message}`, 'error');
+          return;
+        }
+        
+        log(`Successfully read ${readData.length} reflections`);
+        
+        // Test writing
+        const testReflection = {
+          user_id: currentUser.id,
+          title: 'Test Entry',
+          reflection: 'This is a test entry from debug tool',
+          date: new Date().toLocaleDateString(),
+          created_at: new Date().toISOString()
+        };
+        
+        const { data: writeData, error: writeError } = await supabase
+          .from('reflections')
+          .insert([testReflection])
+          .select();
+        
+        if (writeError) {
+          log(`Database write error: ${writeError.message}`);
+          updateStatus('db-status', `Write failed: ${writeError.message}`, 'error');
+          return;
+        }
+        
+        log('Successfully wrote test reflection');
+        
+        // Clean up test data
+        if (writeData && writeData[0]) {
+          const { error: deleteError } = await supabase
+            .from('reflections')
+            .delete()
+            .eq('id', writeData[0].id);
+          
+          if (deleteError) {
+            log(`Cleanup error: ${deleteError.message}`);
+          } else {
+            log('Successfully cleaned up test data');
+          }
+        }
+        
+        updateStatus('db-status', 'Database access working correctly', 'success');
+        
+      } catch (err) {
+        log(`Unexpected database error: ${err.message}`);
+        updateStatus('db-status', `Unexpected error: ${err.message}`, 'error');
+      }
+    }
+
+    // Listen for auth state changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      log(`Auth state changed: ${event}`);
+      if (session) {
+        currentUser = session.user;
+        log(`User: ${currentUser.email}`);
+      } else {
+        currentUser = null;
+        log('No user');
+      }
+    });
+  </script>
+</body>
+</html>
 
