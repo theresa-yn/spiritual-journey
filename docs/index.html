@@ -510,6 +510,7 @@
     <div id="history-list"></div>
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
+      <button class="button" onclick="syncReflections()">🔄 Sync</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -617,6 +618,9 @@
       if (!user) return;
       
       try {
+        console.log('Loading reflections for user:', user.id);
+        
+        // Try to load from database first
         const { data, error } = await supabase
           .from('reflections')
           .select('*')
@@ -624,7 +628,7 @@
           .order('created_at', { ascending: false });
         
         if (error) {
-          console.error('Error loading reflections:', error);
+          console.error('Error loading reflections from database:', error);
           // Fallback to localStorage if database fails
           const localReflections = localStorage.getItem('reflections');
           if (localReflections) {
@@ -636,8 +640,33 @@
           return;
         }
         
-        reflections = data || [];
+        // Merge database reflections with local ones
+        const localReflections = localStorage.getItem('reflections');
+        let localData = [];
+        if (localReflections) {
+          localData = JSON.parse(localReflections);
+        }
+        
+        // Combine and deduplicate reflections
+        const dbReflections = data || [];
+        const combinedReflections = [...dbReflections];
+        
+        // Add local reflections that aren't in database
+        localData.forEach(localReflection => {
+          const exists = dbReflections.some(dbReflection => 
+            dbReflection.id === localReflection.id || 
+            (dbReflection.title === localReflection.title && 
+             dbReflection.date === localReflection.date)
+          );
+          if (!exists) {
+            combinedReflections.push(localReflection);
+          }
+        });
+        
+        reflections = combinedReflections;
         localStorage.setItem('reflections', JSON.stringify(reflections));
+        console.log('Loaded', reflections.length, 'reflections (database + local)');
+        
       } catch (err) {
         console.error('Unexpected error loading reflections:', err);
         // Fallback to localStorage
@@ -696,7 +725,7 @@
         currentImage = "";
         editingIndex = null;
         goBack();
-        alert("Reflection saved!");
+        alert("Reflection saved and synced to cloud!");
       } catch (err) {
         console.error('Unexpected error saving reflection:', err);
         // Fallback to local storage only
@@ -817,6 +846,61 @@
       console.log('Reflections length:', reflections.length);
       console.log('localStorage reflections:', localStorage.getItem('reflections'));
       alert(`Total reflections: ${reflections.length}\nCheck console for details.`);
+    }
+
+    async function syncReflections() {
+      if (!user) {
+        alert('Please log in to sync reflections.');
+        return;
+      }
+      
+      try {
+        console.log('Starting manual sync...');
+        
+        // Upload local reflections to database
+        const localReflections = localStorage.getItem('reflections');
+        if (localReflections) {
+          const localData = JSON.parse(localReflections);
+          let uploadedCount = 0;
+          
+          for (const reflection of localData) {
+            if (!reflection.id || reflection.id.toString().startsWith('local_')) {
+              // This is a local reflection, upload it
+              const { error } = await supabase
+                .from('reflections')
+                .insert([{
+                  user_id: user.id,
+                  title: reflection.title,
+                  reflection: reflection.reflection,
+                  date: reflection.date,
+                  image: reflection.image,
+                  created_at: reflection.created_at || new Date().toISOString()
+                }]);
+              
+              if (!error) {
+                uploadedCount++;
+                console.log('Uploaded reflection:', reflection.title);
+              } else {
+                console.error('Error uploading reflection:', error);
+              }
+            }
+          }
+          
+          if (uploadedCount > 0) {
+            alert(`Successfully synced ${uploadedCount} reflections to the cloud!`);
+          }
+        }
+        
+        // Reload reflections from database
+        await loadReflections();
+        refreshHistoryDisplay();
+        
+        console.log('Sync completed');
+        
+      } catch (err) {
+        console.error('Error during sync:', err);
+        alert('Sync failed. Please check your internet connection and try again.');
+      }
     }
 
     function refreshHistoryDisplay() {
