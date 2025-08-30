@@ -1112,7 +1112,7 @@
             // Local login successful
             user = userData;
             document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+            document.getElementById('auth-button').textContent = 'Sign Out';
             await loadReflections();
             goBack(true);
             loginMessage.textContent = 'Login successful!';
@@ -1143,7 +1143,7 @@
         if (data.user) {
           user = data.user;
           document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+          document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           goBack(true);
           loginMessage.textContent = 'Login successful!';
@@ -1309,7 +1309,7 @@
         if (localAuth === 'true' && localUser) {
           user = JSON.parse(localUser);
           document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+          document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           document.getElementById('main-screen').classList.remove('hidden');
           document.getElementById('register-screen').classList.add('hidden');
@@ -1327,7 +1327,7 @@
         if (session && session.user) {
           user = session.user;
           document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+          document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           document.getElementById('main-screen').classList.remove('hidden');
           document.getElementById('register-screen').classList.add('hidden');
@@ -1342,7 +1342,7 @@
           if (event === 'SIGNED_IN' && session) {
             user = session.user;
             document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+            document.getElementById('auth-button').textContent = 'Sign Out';
             loadReflections();
             goBack();
           } else if (event === 'SIGNED_OUT') {
