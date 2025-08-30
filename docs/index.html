@@ -460,24 +460,7 @@
       100% { transform: translateX(calc(100vw + 60px)); }
     }
 
-    /* Sun for sky theme */
-    .sun {
-      position: fixed;
-      top: 25%;
-      right: 8%;
-      width: 40px;
-      height: 40px;
-      background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
-      border-radius: 50%;
-      box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
-      z-index: 1;
-      animation: sunGlow 4s ease-in-out infinite alternate;
-    }
 
-    @keyframes sunGlow {
-      0% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
-      100% { box-shadow: 0 0 35px rgba(251, 191, 36, 0.6); }
-    }
 
 
   </style>
@@ -512,8 +495,7 @@
     <div class="moving-star"></div>
   </div>
   
-  <!-- Sun for Sky Theme -->
-  <div class="sun" style="display: none;"></div>
+
   
   <!-- Simple Clouds for Sky Theme -->
   <div class="cloud cloud-1" style="display: none;"></div>
@@ -935,7 +917,6 @@
     // Theme switching functions
     function toggleTheme() {
       const themeToggle = document.getElementById('theme-toggle');
-      const sun = document.querySelector('.sun');
       const clouds = document.querySelectorAll('.cloud');
       
       if (currentTheme === 'dark') {
@@ -943,7 +924,6 @@
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
         clouds.forEach(cloud => cloud.style.display = 'block');
         localStorage.setItem('theme', 'sky');
       } else {
@@ -951,7 +931,6 @@
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
         clouds.forEach(cloud => cloud.style.display = 'none');
         localStorage.setItem('theme', 'dark');
       }
@@ -960,20 +939,17 @@
     function loadTheme() {
       const savedTheme = localStorage.getItem('theme');
       const themeToggle = document.getElementById('theme-toggle');
-      const sun = document.querySelector('.sun');
       const clouds = document.querySelectorAll('.cloud');
       
       if (savedTheme === 'sky') {
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
         clouds.forEach(cloud => cloud.style.display = 'block');
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
         clouds.forEach(cloud => cloud.style.display = 'none');
       }
     }
