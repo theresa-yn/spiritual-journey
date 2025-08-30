@@ -446,7 +446,7 @@
 
   <!-- Main Screen -->
   <div id="main-screen" class="content hidden">
-    <div id="welcome-message" class="prompt" style="display: none; color: #7c3aed; font-weight: bold; margin-bottom: 20px;"></div>
+    <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <h2>My Spiritual Journey</h2>
@@ -772,7 +772,7 @@
       // Show welcome message if user just signed up
       if (showWelcome && user) {
         const welcomeMessage = document.getElementById('welcome-message');
-        welcomeMessage.textContent = `Welcome, ${user.email}! Your account has been created and you're now logged in.`;
+        welcomeMessage.textContent = 'Welcome! Your account has been created and you\'re now logged in.';
         welcomeMessage.style.display = 'block';
         
         // Hide welcome message after 5 seconds
