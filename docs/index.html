@@ -154,35 +154,71 @@
     }
 
     /* Cloud animation for sky theme */
-    [data-theme="sky"]::before {
-      content: '';
+    .cloud {
       position: fixed;
-      top: 20%;
-      left: -100px;
-      width: 100px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50px;
-      animation: floatCloud 20s linear infinite;
       z-index: 1;
+      opacity: 0.8;
     }
 
-    [data-theme="sky"]::after {
+    .cloud::before,
+    .cloud::after {
       content: '';
-      position: fixed;
-      top: 40%;
-      right: -80px;
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+    }
+
+    .cloud::before {
+      width: 60%;
+      height: 100%;
+      top: 0;
+      left: 20%;
+    }
+
+    .cloud::after {
+      width: 40%;
+      height: 60%;
+      top: 20%;
+      left: 0;
+    }
+
+    .cloud-1 {
+      top: 15%;
+      left: -120px;
+      width: 120px;
+      height: 45px;
+      animation: floatCloud1 25s linear infinite;
+    }
+
+    .cloud-2 {
+      top: 35%;
+      right: -100px;
+      width: 100px;
+      height: 35px;
+      animation: floatCloud2 20s linear infinite reverse;
+    }
+
+    .cloud-3 {
+      top: 55%;
+      left: -80px;
       width: 80px;
       height: 30px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 40px;
-      animation: floatCloud 15s linear infinite reverse;
-      z-index: 1;
+      animation: floatCloud3 30s linear infinite;
     }
 
-    @keyframes floatCloud {
-      0% { transform: translateX(-100px); }
-      100% { transform: translateX(calc(100vw + 100px)); }
+    @keyframes floatCloud1 {
+      0% { transform: translateX(-120px); }
+      100% { transform: translateX(calc(100vw + 120px)); }
+    }
+
+    @keyframes floatCloud2 {
+      0% { transform: translateX(100px); }
+      100% { transform: translateX(calc(-100vw - 100px)); }
+    }
+
+    @keyframes floatCloud3 {
+      0% { transform: translateX(-80px); }
+      100% { transform: translateX(calc(100vw + 80px)); }
     }
 
     /* Sun for sky theme */
@@ -459,6 +495,11 @@
   
   <!-- Sun for Sky Theme -->
   <div class="sun" style="display: none;"></div>
+  
+  <!-- Clouds for Sky Theme -->
+  <div class="cloud cloud-1" style="display: none;"></div>
+  <div class="cloud cloud-2" style="display: none;"></div>
+  <div class="cloud cloud-3" style="display: none;"></div>
   
   <div class="header">
     <span id="current-time"></span>
@@ -1059,6 +1100,7 @@
     function toggleTheme() {
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
+      const clouds = document.querySelectorAll('.cloud');
       
       if (currentTheme === 'dark') {
         // Switch to sky theme
@@ -1066,6 +1108,7 @@
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
+        clouds.forEach(cloud => cloud.style.display = 'block');
         localStorage.setItem('theme', 'sky');
       } else {
         // Switch to dark theme
@@ -1073,6 +1116,7 @@
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
+        clouds.forEach(cloud => cloud.style.display = 'none');
         localStorage.setItem('theme', 'dark');
       }
     }
@@ -1081,17 +1125,20 @@
       const savedTheme = localStorage.getItem('theme');
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
+      const clouds = document.querySelectorAll('.cloud');
       
       if (savedTheme === 'sky') {
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
+        clouds.forEach(cloud => cloud.style.display = 'block');
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
+        clouds.forEach(cloud => cloud.style.display = 'none');
       }
     }
 
