@@ -328,92 +328,98 @@
     .cloud {
       position: fixed;
       z-index: 1;
-      opacity: 0.85;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 50px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      opacity: 0.9;
+      background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 50%, #87CEEB 100%);
+      border-radius: 100px;
+      box-shadow: 
+        0 4px 12px rgba(135, 206, 235, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.6),
+        inset 0 -2px 4px rgba(135, 206, 235, 0.4);
       position: relative;
+      filter: blur(0.5px);
     }
 
     .cloud::before,
     .cloud::after {
       content: '';
       position: absolute;
-      background: rgba(255, 255, 255, 0.9);
+      background: linear-gradient(135deg, #B0E0E6 0%, #87CEEB 100%);
       border-radius: 50%;
+      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.7);
     }
 
     .cloud::before {
-      width: 60%;
+      width: 70%;
       height: 100%;
       top: 0;
-      left: 20%;
+      left: 15%;
     }
 
     .cloud::after {
-      width: 40%;
-      height: 60%;
-      top: 20%;
+      width: 50%;
+      height: 70%;
+      top: 15%;
       left: 0;
     }
 
     .cloud .cloud-part {
       position: absolute;
-      background: rgba(255, 255, 255, 0.9);
+      background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%);
       border-radius: 50%;
+      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.7);
     }
 
     .cloud .cloud-part:nth-child(1) {
-      width: 35%;
-      height: 50%;
-      top: 25%;
+      width: 40%;
+      height: 60%;
+      top: 20%;
       right: 0;
     }
 
     .cloud .cloud-part:nth-child(2) {
-      width: 25%;
-      height: 40%;
-      top: 35%;
-      left: 60%;
+      width: 30%;
+      height: 50%;
+      top: 30%;
+      left: 55%;
     }
 
     .cloud-1 {
-      top: 20%;
-      left: -120px;
-      width: 120px;
-      height: 50px;
-      animation: floatCloud1 30s linear infinite;
+      top: 25%;
+      left: -140px;
+      width: 140px;
+      height: 70px;
+      animation: floatCloud1 35s linear infinite;
     }
 
     .cloud-2 {
-      top: 45%;
-      right: -100px;
-      width: 100px;
-      height: 40px;
-      animation: floatCloud2 25s linear infinite reverse;
+      top: 50%;
+      right: -120px;
+      width: 120px;
+      height: 60px;
+      animation: floatCloud2 30s linear infinite reverse;
     }
 
     .cloud-3 {
-      top: 70%;
-      left: -80px;
-      width: 80px;
-      height: 35px;
-      animation: floatCloud3 35s linear infinite;
+      top: 75%;
+      left: -100px;
+      width: 100px;
+      height: 50px;
+      animation: floatCloud3 40s linear infinite;
     }
 
     @keyframes floatCloud1 {
-      0% { transform: translateX(-120px); }
-      100% { transform: translateX(calc(100vw + 120px)); }
+      0% { transform: translateX(-140px); }
+      100% { transform: translateX(calc(100vw + 140px)); }
     }
 
     @keyframes floatCloud2 {
-      0% { transform: translateX(100px); }
-      100% { transform: translateX(calc(-100vw - 100px)); }
+      0% { transform: translateX(120px); }
+      100% { transform: translateX(calc(-100vw - 120px)); }
     }
 
     @keyframes floatCloud3 {
-      0% { transform: translateX(-80px); }
-      100% { transform: translateX(calc(100vw + 80px)); }
+      0% { transform: translateX(-100px); }
+      100% { transform: translateX(calc(100vw + 100px)); }
     }
 
     /* Simple cloud effects for sky theme */
