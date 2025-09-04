@@ -653,6 +653,33 @@
 
     // Simple username system
     let currentUser = null;
+    
+    // Generate consistent UUID for database compatibility based on username
+    function generateConsistentUUID(username) {
+      // Simple deterministic UUID generation based on username
+      const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace
+      const input = namespace + username.toLowerCase();
+      
+      // Simple hash function
+      let hash = 0;
+      for (let i = 0; i < input.length; i++) {
+        const char = input.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      
+      // Create UUID v4 format but deterministic
+      const hex = Math.abs(hash).toString(16).padStart(8, '0');
+      const uuid = [
+        hex.substring(0, 8),
+        hex.substring(0, 4),
+        '4' + hex.substring(1, 4), // Version 4
+        ((parseInt(hex.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hex.substring(1, 4), // Variant
+        hex.substring(0, 12)
+      ].join('-');
+      
+      return uuid;
+    }
 
     function setUsername() {
       console.log('=== SET USERNAME CALLED ===');
@@ -676,9 +703,9 @@
         return;
       }
       
-      // Create simple user with consistent ID
-      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
-      console.log('Generated user ID:', userId);
+      // Generate a consistent UUID-based user ID for database compatibility
+      const userId = generateConsistentUUID(username);
+      console.log('Generated consistent UUID user ID:', userId);
       
       currentUser = {
         username: username,
