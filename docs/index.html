@@ -794,8 +794,6 @@
     function showEntryScreen(index = null) {
       // No authentication required - allow everyone to create reflections
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
@@ -831,8 +829,6 @@
       if (recognition) recognition.stop();
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
@@ -853,8 +849,6 @@
     async function showHistory() {
       // No authentication required - allow everyone to view reflections
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
@@ -2053,8 +2047,6 @@
           document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           document.getElementById('main-screen').classList.remove('hidden');
-          document.getElementById('register-screen').classList.add('hidden');
-          document.getElementById('login-screen').classList.add('hidden');
           console.log('Logged in with cloud authentication');
           return;
         }
@@ -2084,8 +2076,6 @@
           document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           document.getElementById('main-screen').classList.remove('hidden');
-          document.getElementById('register-screen').classList.add('hidden');
-          document.getElementById('login-screen').classList.add('hidden');
           console.log('Successfully migrated and logged in with cloud authentication');
           return;
         }
@@ -2102,13 +2092,9 @@
           document.getElementById('auth-button').textContent = 'Sign Out';
           await loadReflections();
           document.getElementById('main-screen').classList.remove('hidden');
-          document.getElementById('register-screen').classList.add('hidden');
-          document.getElementById('login-screen').classList.add('hidden');
         } else {
           // No authentication required - show main screen directly
           document.getElementById('main-screen').classList.remove('hidden');
-          document.getElementById('register-screen').classList.add('hidden');
-          document.getElementById('login-screen').classList.add('hidden');
           await loadReflections();
         }
 
@@ -2138,8 +2124,6 @@
         console.error('Error initializing auth:', err);
         // No authentication required - show main screen directly
         document.getElementById('main-screen').classList.remove('hidden');
-        document.getElementById('register-screen').classList.add('hidden');
-        document.getElementById('login-screen').classList.add('hidden');
         await loadReflections();
       }
     }
