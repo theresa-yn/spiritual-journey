@@ -455,7 +455,7 @@
     <span id="current-time"></span>
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
-      <button id="auth-button" class="button hidden">Sign Out</button>
+      <!-- Authentication removed - automatic sync without signup -->
     </div>
   </div>
   
@@ -466,7 +466,8 @@
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <h2>My Spiritual Journey</h2>
-    <p>Tap the plus button</p>
+    <p>Tap the plus button to start your journey</p>
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Automatically syncs across all your devices</p>
   </div>
   <!-- Registration Screen -->
   <div id="register-screen" class="content">
@@ -677,10 +678,16 @@
     }
 
     async function loadReflections() {
-      if (!user) return;
+      // Get or create device ID
+      let deviceId = localStorage.getItem('deviceId');
+      if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        localStorage.setItem('deviceId', deviceId);
+        console.log('Generated new device ID:', deviceId);
+      }
       
       try {
-        console.log('Loading reflections for user:', user.id);
+        console.log('Loading reflections for device:', deviceId);
         
         // Always load from local storage first (guaranteed to work)
         const localReflections = localStorage.getItem('reflections');
@@ -694,13 +701,12 @@
         
         // Try to load from cloud database (optional)
         try {
-          const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
-          console.log('Cloud user ID:', cloudUserId);
+          console.log('Cloud device ID:', deviceId);
           
           const { data, error } = await supabase
             .from('reflections')
             .select('*')
-            .eq('user_id', cloudUserId)
+            .eq('user_id', deviceId)
             .order('created_at', { ascending: false });
           
           if (error) {
@@ -757,21 +763,21 @@
     }
 
     async function saveReflections() {
-      // Only allow saving if user is logged in as a cloud user
-      if (!user) {
-        alert("Please sign up or log in to save your journals!");
-        return;
-      }
-      
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Create a unique cloud user ID based on email
-      const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+      // Create a unique device ID for automatic sync
+      let deviceId = localStorage.getItem('deviceId');
+      if (!deviceId) {
+        // Generate a unique device ID based on browser fingerprint
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        localStorage.setItem('deviceId', deviceId);
+        console.log('Generated new device ID:', deviceId);
+      }
       
       const reflectionData = {
-        user_id: cloudUserId,
+        user_id: deviceId,
         title,
         reflection,
         date,
@@ -855,11 +861,7 @@
     }
 
     function showEntryScreen(index = null) {
-      if (!user) {
-        showRegisterScreen();
-        document.getElementById('auth-message').textContent = 'Please sign up or log in to create reflections.';
-        return;
-      }
+      // No authentication required - allow everyone to create reflections
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('register-screen').classList.add('hidden');
       document.getElementById('login-screen').classList.add('hidden');
@@ -918,11 +920,7 @@
     }
 
     async function showHistory() {
-      if (!user) {
-        showRegisterScreen();
-        document.getElementById('auth-message').textContent = 'Please sign up or log in to view reflections.';
-        return;
-      }
+      // No authentication required - allow everyone to view reflections
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('register-screen').classList.add('hidden');
       document.getElementById('login-screen').classList.add('hidden');
@@ -2176,7 +2174,11 @@
           document.getElementById('register-screen').classList.add('hidden');
           document.getElementById('login-screen').classList.add('hidden');
         } else {
-          showRegisterScreen();
+          // No authentication required - show main screen directly
+          document.getElementById('main-screen').classList.remove('hidden');
+          document.getElementById('register-screen').classList.add('hidden');
+          document.getElementById('login-screen').classList.add('hidden');
+          await loadReflections();
         }
 
         supabase.auth.onAuthStateChange((event, session) => {
