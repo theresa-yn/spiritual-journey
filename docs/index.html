@@ -655,9 +655,9 @@
     // Simple username system
     let currentUser = null;
     
-    // Generate proper UUID for database compatibility
-    function generateProperUUID(username) {
-      // Use crypto API to generate a proper UUID, but make it deterministic
+    // Generate deterministic UUID for database compatibility
+    function generateDeterministicUUID(username) {
+      // Create a deterministic UUID based on username for cross-device sync
       const input = username.toLowerCase();
       
       // Create a seed from the username
@@ -668,20 +668,28 @@
         seed = seed & seed;
       }
       
-      // Generate a proper UUID v4 using crypto API
-      if (crypto && crypto.randomUUID) {
-        // Use browser's crypto API for proper UUID generation
-        const uuid = crypto.randomUUID();
-        console.log('Generated crypto UUID:', uuid);
-        return uuid;
-      } else {
-        // Fallback: generate a proper UUID manually
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          const r = (seed + Math.random() * 16) % 16 | 0;
-          const v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      }
+      // Generate deterministic UUID v4 format
+      // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+      const positiveSeed = Math.abs(seed);
+      
+      // Create deterministic hex string from seed
+      const hex1 = (positiveSeed).toString(16).padStart(8, '0');
+      const hex2 = (positiveSeed * 7).toString(16).padStart(4, '0');
+      const hex3 = (positiveSeed * 13).toString(16).padStart(4, '0');
+      const hex4 = (positiveSeed * 17).toString(16).padStart(4, '0');
+      const hex5 = (positiveSeed * 19).toString(16).padStart(12, '0');
+      
+      // Format as proper UUID: 8-4-4-4-12
+      const uuid = [
+        hex1,                                    // 8 chars
+        hex2,                                    // 4 chars
+        '4' + hex3.substring(1),                // 4 chars (version 4)
+        ((parseInt(hex4.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hex4.substring(1), // 4 chars (variant)
+        hex5                                     // 12 chars
+      ].join('-');
+      
+      console.log('Generated deterministic UUID for', username, ':', uuid);
+      return uuid;
     }
     
     // Migrate old user format to new proper UUID format
@@ -692,8 +700,8 @@
       if (user.userId.startsWith('user_') || /^\d+$/.test(user.userId)) {
         console.log('Migrating old user format to proper UUID:', user.userId);
         
-        // Generate new proper UUID based on username
-        const newUserId = generateProperUUID(user.username);
+        // Generate new deterministic UUID based on username
+        const newUserId = generateDeterministicUUID(user.username);
         
         // Create new user object with proper UUID
         const migratedUser = {
@@ -744,9 +752,9 @@
         return;
       }
       
-      // Generate a proper UUID for database compatibility
-      const userId = generateProperUUID(username);
-      console.log('Generated proper UUID:', userId);
+      // Generate a deterministic UUID for database compatibility
+      const userId = generateDeterministicUUID(username);
+      console.log('Generated deterministic UUID:', userId);
       
       currentUser = {
         username: username,
@@ -891,9 +899,9 @@
       console.log('Current user ID:', oldUserId);
       console.log('Username:', username);
       
-      // Generate new proper UUID
-      const newUserId = generateProperUUID(username);
-      console.log('New proper UUID:', newUserId);
+      // Generate new deterministic UUID
+      const newUserId = generateDeterministicUUID(username);
+      console.log('New deterministic UUID:', newUserId);
       
       // Create new user object
       const newUser = {
