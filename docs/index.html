@@ -715,29 +715,21 @@
     }
 
     async function saveReflections() {
+      // Only allow saving if user is logged in as a cloud user
+      if (!user) {
+        alert("Please sign up or log in to save your journals!");
+        return;
+      }
+      
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Create a unique user ID - use email if available, otherwise use anonymous
-      let userId = 'anonymous';
-      if (user && user.email) {
-        userId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
-      } else {
-        // Check for stored user data
-        const cloudUser = localStorage.getItem('cloudUser');
-        const localUser = localStorage.getItem('localUser');
-        if (cloudUser) {
-          const userData = JSON.parse(cloudUser);
-          userId = 'cloud_' + userData.email.replace(/[^a-zA-Z0-9]/g, '_');
-        } else if (localUser) {
-          const userData = JSON.parse(localUser);
-          userId = 'local_' + userData.email.replace(/[^a-zA-Z0-9]/g, '_');
-        }
-      }
+      // Create a unique cloud user ID based on email
+      const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
       
       const reflectionData = {
-        user_id: userId,
+        user_id: cloudUserId,
         title,
         reflection,
         date,
@@ -758,15 +750,6 @@
       // Save to local storage immediately
       localStorage.setItem('reflections', JSON.stringify(reflections));
       console.log('Saved to local storage:', reflections.length, 'reflections');
-      
-      // If no user is logged in, just save locally and return
-      if (!user && userId === 'anonymous') {
-        currentImage = "";
-        editingIndex = null;
-        goBack();
-        alert("✅ Journal saved locally! Sign up to sync across devices.");
-        return;
-      }
 
       // Try to save to cloud database (optional)
       try {
@@ -1389,9 +1372,9 @@
       try {
         loginMessage.textContent = 'Logging in...';
         
-        // Try cloud authentication first
+        // Only try cloud authentication
         const cloudUser = localStorage.getItem('cloudUser');
-        const storedPassword = localStorage.getItem('userPassword');
+        const storedPassword = localStorage.getItem('cloudPassword');
         
         if (cloudUser && storedPassword) {
           const userData = JSON.parse(cloudUser);
@@ -1404,23 +1387,6 @@
             goBack(true);
             loginMessage.textContent = '✅ Login successful! Your journals are synced to the cloud.';
             console.log('Logged in with cloud authentication');
-            return;
-          }
-        }
-        
-        // Try local authentication (for backward compatibility)
-        const localUser = localStorage.getItem('localUser');
-        if (localUser && storedPassword) {
-          const userData = JSON.parse(localUser);
-          if (userData.email === email && storedPassword === password) {
-            // Local login successful
-            user = userData;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = 'Sign Out';
-            await loadReflections();
-            goBack(true);
-            loginMessage.textContent = 'Login successful! (Local account - upgrade to cloud for cross-device sync)';
-            console.log('Logged in with local authentication');
             return;
           }
         }
@@ -1482,18 +1448,8 @@
         return;
       }
       
-      // Check if user has a local or cloud account
-      const localUser = localStorage.getItem('localUser');
+      // Check if user has a cloud account
       const cloudUser = localStorage.getItem('cloudUser');
-      
-      if (localUser) {
-        const userData = JSON.parse(localUser);
-        if (userData.email === email) {
-          // Show simple password reset for local accounts
-          showSimplePasswordReset(email);
-          return;
-        }
-      }
       
       if (cloudUser) {
         const userData = JSON.parse(cloudUser);
@@ -1628,39 +1584,23 @@
       }
       
       try {
-        // Check both local and cloud users
-        const localUser = localStorage.getItem('localUser');
+        // Only check cloud users
         const cloudUser = localStorage.getItem('cloudUser');
         
-        let userFound = false;
-        
-        // Try local user first
-        if (localUser) {
-          const userData = JSON.parse(localUser);
-          if (userData.email === email) {
-            userData.password = newPassword;
-            localStorage.setItem('localUser', JSON.stringify(userData));
-            localStorage.setItem('userPassword', newPassword);
-            userFound = true;
-          }
-        }
-        
-        // Try cloud user
-        if (!userFound && cloudUser) {
+        if (cloudUser) {
           const userData = JSON.parse(cloudUser);
           if (userData.email === email) {
             userData.password = newPassword;
             localStorage.setItem('cloudUser', JSON.stringify(userData));
             localStorage.setItem('cloudPassword', newPassword);
-            userFound = true;
+            
+            messageEl.textContent = '✅ Password reset successfully! You can now log in.';
+            setTimeout(() => {
+              closeResetModal();
+            }, 2000);
+          } else {
+            messageEl.textContent = 'Account not found. Please sign up first.';
           }
-        }
-        
-        if (userFound) {
-          messageEl.textContent = '✅ Password reset successfully! You can now log in.';
-          setTimeout(() => {
-            closeResetModal();
-          }, 2000);
         } else {
           messageEl.textContent = 'Account not found. Please sign up first.';
         }
@@ -1691,23 +1631,23 @@
     async function handleSignOut() {
       console.log('Sign out function called');
       console.log('Current user:', user);
-      console.log('Local auth status:', localStorage.getItem('localAuth'));
       
       try {
-        // Check if using local authentication
-        const localAuth = localStorage.getItem('localAuth');
+        // Check if using cloud authentication
+        const cloudAuth = localStorage.getItem('cloudAuth');
         
-        if (localAuth === 'true') {
-          // Local sign out
-          console.log('Performing local sign out');
+        if (cloudAuth === 'true') {
+          // Cloud sign out
+          console.log('Performing cloud sign out');
           user = null;
           reflections = [];
           localStorage.removeItem('reflections');
-          localStorage.removeItem('localUser');
-          localStorage.removeItem('localAuth');
+          localStorage.removeItem('cloudUser');
+          localStorage.removeItem('cloudAuth');
+          localStorage.removeItem('cloudPassword');
           document.getElementById('auth-button').classList.add('hidden');
           showRegisterScreen();
-          console.log('Successfully signed out from local authentication');
+          console.log('Successfully signed out from cloud authentication');
           alert('Successfully signed out!');
         } else {
           // Supabase sign out
@@ -1724,8 +1664,9 @@
                 user = null;
                 reflections = [];
                 localStorage.removeItem('reflections');
-                localStorage.removeItem('localUser');
-                localStorage.removeItem('localAuth');
+                localStorage.removeItem('cloudUser');
+                localStorage.removeItem('cloudAuth');
+                localStorage.removeItem('cloudPassword');
                 document.getElementById('auth-button').classList.add('hidden');
                 showRegisterScreen();
                 console.log('Successfully cleaned up local session');
@@ -1742,8 +1683,9 @@
             user = null;
             reflections = [];
             localStorage.removeItem('reflections');
-            localStorage.removeItem('localUser');
-            localStorage.removeItem('localAuth');
+            localStorage.removeItem('cloudUser');
+            localStorage.removeItem('cloudAuth');
+            localStorage.removeItem('cloudPassword');
             document.getElementById('auth-button').classList.add('hidden');
             showRegisterScreen();
             console.log('Successfully cleaned up local session after Supabase error');
@@ -1814,7 +1756,7 @@
     // Initialize auth state
     async function initAuth() {
       try {
-        // Check for cloud authentication first
+        // Only check for cloud authentication
         const cloudAuth = localStorage.getItem('cloudAuth');
         const cloudUser = localStorage.getItem('cloudUser');
         
@@ -1827,22 +1769,6 @@
           document.getElementById('register-screen').classList.add('hidden');
           document.getElementById('login-screen').classList.add('hidden');
           console.log('Logged in with cloud authentication');
-          return;
-        }
-        
-        // Check for local authentication (backward compatibility)
-        const localAuth = localStorage.getItem('localAuth');
-        const localUser = localStorage.getItem('localUser');
-        
-        if (localAuth === 'true' && localUser) {
-          user = JSON.parse(localUser);
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          document.getElementById('main-screen').classList.remove('hidden');
-          document.getElementById('register-screen').classList.add('hidden');
-          document.getElementById('login-screen').classList.add('hidden');
-          console.log('Logged in with local authentication');
           return;
         }
         
@@ -1877,8 +1803,9 @@
             user = null;
             reflections = [];
             localStorage.removeItem('reflections');
-            localStorage.removeItem('localUser');
-            localStorage.removeItem('localAuth');
+            localStorage.removeItem('cloudUser');
+            localStorage.removeItem('cloudAuth');
+            localStorage.removeItem('cloudPassword');
             document.getElementById('auth-button').classList.add('hidden');
             showRegisterScreen();
           } else if (event === 'TOKEN_REFRESHED' && session) {
