@@ -500,8 +500,8 @@
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
     <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
-    <button class="button" onclick="exportData()" style="background: #3b82f6; margin-top: 10px;">Export Data</button>
-    <button class="button" onclick="importData()" style="background: #8b5cf6; margin-top: 10px;">Import Data</button>
+    <button class="button" onclick="shareData()" style="background: #3b82f6; margin-top: 10px;">Share Data</button>
+    <button class="button" onclick="loadSharedData()" style="background: #8b5cf6; margin-top: 10px;">Load Shared Data</button>
     <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
@@ -912,8 +912,8 @@
       console.log('UUID update complete. New user:', currentUser);
     }
 
-    function exportData() {
-      console.log('=== EXPORTING DATA ===');
+    async function shareData() {
+      console.log('=== SHARING DATA ===');
       
       if (!currentUser) {
         alert('❌ No user found. Please set a username first.');
@@ -926,98 +926,111 @@
         const localReflections = localStorage.getItem(userReflectionsKey);
         const reflections = localReflections ? JSON.parse(localReflections) : [];
         
-        // Create export data
-        const exportData = {
+        // Create share data
+        const shareData = {
           username: currentUser.username,
           userId: currentUser.userId,
           reflections: reflections,
-          exportDate: new Date().toISOString()
+          shareDate: new Date().toISOString()
         };
         
-        // Create and download file
-        const dataStr = JSON.stringify(exportData, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
+        // Encode data as base64
+        const dataStr = JSON.stringify(shareData);
+        const encodedData = btoa(dataStr);
         
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `spiritual-journey-${currentUser.username}-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Create share URL
+        const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
         
-        alert('✅ Data Exported!\n\nFile: spiritual-journey-' + currentUser.username + '.json\n\nYou can now transfer this file to other devices and use Import Data.');
+        // Try to copy to clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          alert('✅ Data Shared!\n\nShare URL copied to clipboard!\n\nSend this URL to your other devices:\n' + shareUrl.substring(0, 100) + '...\n\nOn other devices, use "Load Shared Data" to import.');
+        } else {
+          // Fallback: show URL in alert
+          alert('✅ Data Shared!\n\nShare this URL with your other devices:\n\n' + shareUrl + '\n\nOn other devices, use "Load Shared Data" to import.');
+        }
         
       } catch (err) {
-        console.error('Export failed:', err);
-        alert('❌ Export Failed\n\nError: ' + err.message);
+        console.error('Share failed:', err);
+        alert('❌ Share Failed\n\nError: ' + err.message);
       }
     }
 
-    function importData() {
-      console.log('=== IMPORTING DATA ===');
+    function loadSharedData() {
+      console.log('=== LOADING SHARED DATA ===');
       
       if (!currentUser) {
         alert('❌ No user found. Please set a username first.');
         return;
       }
       
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
+      // Check if there's data in the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const encodedData = urlParams.get('data');
       
-      input.onchange = function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          try {
-            const importData = JSON.parse(e.target.result);
-            
-            if (!importData.reflections || !Array.isArray(importData.reflections)) {
-              alert('❌ Invalid file format. Please select a valid export file.');
-              return;
-            }
-            
-            // Merge with existing data
-            const userReflectionsKey = 'reflections_' + currentUser.userId;
-            const existingReflections = localStorage.getItem(userReflectionsKey);
-            const currentReflections = existingReflections ? JSON.parse(existingReflections) : [];
-            
-            // Merge reflections (avoid duplicates)
-            const mergedReflections = [...currentReflections];
-            for (const importedReflection of importData.reflections) {
-              const exists = mergedReflections.some(existing => 
-                existing.title === importedReflection.title && 
-                existing.date === importedReflection.date &&
-                existing.reflection === importedReflection.reflection
-              );
-              if (!exists) {
-                mergedReflections.push(importedReflection);
-              }
-            }
-            
-            // Save merged data
-            localStorage.setItem(userReflectionsKey, JSON.stringify(mergedReflections));
-            reflections = mergedReflections;
-            
-            // Refresh display
-            refreshHistoryDisplay();
-            
-            alert('✅ Data Imported!\n\nImported ' + importData.reflections.length + ' reflections.\nTotal reflections: ' + mergedReflections.length);
-            
-          } catch (err) {
-            console.error('Import failed:', err);
-            alert('❌ Import Failed\n\nError: ' + err.message + '\n\nPlease select a valid export file.');
+      if (encodedData) {
+        try {
+          // Decode the data
+          const dataStr = atob(encodedData);
+          const sharedData = JSON.parse(dataStr);
+          
+          if (!sharedData.reflections || !Array.isArray(sharedData.reflections)) {
+            alert('❌ Invalid shared data format.');
+            return;
           }
-        };
-        
-        reader.readAsText(file);
-      };
-      
-      input.click();
+          
+          // Merge with existing data
+          const userReflectionsKey = 'reflections_' + currentUser.userId;
+          const existingReflections = localStorage.getItem(userReflectionsKey);
+          const currentReflections = existingReflections ? JSON.parse(existingReflections) : [];
+          
+          // Merge reflections (avoid duplicates)
+          const mergedReflections = [...currentReflections];
+          for (const sharedReflection of sharedData.reflections) {
+            const exists = mergedReflections.some(existing => 
+              existing.title === sharedReflection.title && 
+              existing.date === sharedReflection.date &&
+              existing.reflection === sharedReflection.reflection
+            );
+            if (!exists) {
+              mergedReflections.push(sharedReflection);
+            }
+          }
+          
+          // Save merged data
+          localStorage.setItem(userReflectionsKey, JSON.stringify(mergedReflections));
+          reflections = mergedReflections;
+          
+          // Refresh display
+          refreshHistoryDisplay();
+          
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          alert('✅ Shared Data Loaded!\n\nImported ' + sharedData.reflections.length + ' reflections.\nTotal reflections: ' + mergedReflections.length);
+          
+        } catch (err) {
+          console.error('Load shared data failed:', err);
+          alert('❌ Load Shared Data Failed\n\nError: ' + err.message);
+        }
+      } else {
+        // Prompt for URL
+        const shareUrl = prompt('Enter the share URL from another device:');
+        if (shareUrl) {
+          try {
+            const url = new URL(shareUrl);
+            const dataParam = url.searchParams.get('data');
+            if (dataParam) {
+              // Set the data parameter and reload
+              window.location.search = '?data=' + dataParam;
+            } else {
+              alert('❌ Invalid share URL. Please check the URL and try again.');
+            }
+          } catch (err) {
+            alert('❌ Invalid URL format. Please check the URL and try again.');
+          }
+        }
+      }
     }
 
     function clearAllData() {
@@ -2609,6 +2622,13 @@
         // No user logged in, show account screen
         console.log('No valid user found, showing account screen');
         showAccountScreen();
+        
+        // Check if there's shared data in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedData = urlParams.get('data');
+        if (encodedData) {
+          console.log('Found shared data in URL, will load after user login');
+        }
         
       } catch (err) {
         console.error('Error initializing auth:', err);
