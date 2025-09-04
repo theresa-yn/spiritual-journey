@@ -672,20 +672,19 @@
       // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
       const positiveSeed = Math.abs(seed);
       
-      // Create deterministic hex string from seed
-      const hex1 = (positiveSeed).toString(16).padStart(8, '0');
-      const hex2 = (positiveSeed * 7).toString(16).padStart(4, '0');
-      const hex3 = (positiveSeed * 13).toString(16).padStart(4, '0');
-      const hex4 = (positiveSeed * 17).toString(16).padStart(4, '0');
-      const hex5 = (positiveSeed * 19).toString(16).padStart(12, '0');
+      // Create 32 hex characters from the seed
+      const hexString = positiveSeed.toString(16).padStart(8, '0') + 
+                       (positiveSeed * 7).toString(16).padStart(8, '0') +
+                       (positiveSeed * 13).toString(16).padStart(8, '0') +
+                       (positiveSeed * 17).toString(16).padStart(8, '0');
       
       // Format as proper UUID: 8-4-4-4-12
       const uuid = [
-        hex1,                                    // 8 chars
-        hex2,                                    // 4 chars
-        '4' + hex3.substring(1),                // 4 chars (version 4)
-        ((parseInt(hex4.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hex4.substring(1), // 4 chars (variant)
-        hex5                                     // 12 chars
+        hexString.substring(0, 8),                    // 8 chars
+        hexString.substring(8, 12),                   // 4 chars
+        '4' + hexString.substring(13, 16),           // 4 chars (version 4)
+        ((parseInt(hexString.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hexString.substring(17, 20), // 4 chars (variant)
+        hexString.substring(20, 32)                   // 12 chars
       ].join('-');
       
       console.log('Generated deterministic UUID for', username, ':', uuid);
