@@ -1035,8 +1035,21 @@
 
     async function deleteReflection(index) {
       console.log('Delete function called with index:', index);
-      console.log('Current reflections array length:', reflections.length);
+      console.log('Current reflections array length:', reflections ? reflections.length : 'undefined');
       console.log('Current reflections array:', reflections);
+      
+      // Ensure reflections array is initialized
+      if (!reflections) {
+        console.error('Reflections array is not initialized');
+        try {
+          await loadReflections();
+          console.log('Reloaded reflections, new length:', reflections.length);
+        } catch (loadErr) {
+          console.error('Failed to reload reflections:', loadErr);
+          alert('Failed to load reflections. Please refresh the page and try again.');
+          return;
+        }
+      }
       
       if (!reflections || reflections.length === 0) {
         console.error('No reflections found');
@@ -1064,35 +1077,53 @@
           console.log('Remaining reflections:', reflections.length);
           
           // Update localStorage immediately
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-          console.log('Updated reflections in localStorage');
+          try {
+            localStorage.setItem('reflections', JSON.stringify(reflections));
+            console.log('Updated reflections in localStorage');
+          } catch (localErr) {
+            console.error('Error updating localStorage:', localErr);
+            throw new Error('Failed to save changes locally: ' + localErr.message);
+          }
           
           // Try database deletion if the reflection has an ID
           if (deletedReflection.id) {
-            console.log('Attempting database deletion for ID:', deletedReflection.id);
-            const { error } = await supabase
-              .from('reflections')
-              .delete()
-              .eq('id', deletedReflection.id);
-            
-            if (error) {
-              console.error('Database deletion error:', error);
-              alert('Reflection deleted locally but there was an issue with the database. It will be removed when you refresh.');
-            } else {
-              console.log('Database deletion successful');
+            try {
+              console.log('Attempting database deletion for ID:', deletedReflection.id);
+              const { error } = await supabase
+                .from('reflections')
+                .delete()
+                .eq('id', deletedReflection.id);
+              
+              if (error) {
+                console.error('Database deletion error:', error);
+                // Don't throw here - local deletion was successful
+                alert('Reflection deleted locally but there was an issue with the database. It will be removed when you refresh.');
+              } else {
+                console.log('Database deletion successful');
+              }
+            } catch (dbErr) {
+              console.error('Database operation failed:', dbErr);
+              // Don't throw here - local deletion was successful
+              alert('Reflection deleted locally but database sync failed. It will be removed when you refresh.');
             }
           } else {
             console.log('No database ID found, local deletion only');
           }
           
           // Refresh the history display without reloading from storage
-          console.log('Calling refreshHistoryDisplay with', reflections.length, 'reflections');
-          refreshHistoryDisplay();
-          alert('Reflection deleted successfully!');
+          try {
+            console.log('Calling refreshHistoryDisplay with', reflections.length, 'reflections');
+            refreshHistoryDisplay();
+            alert('Reflection deleted successfully!');
+          } catch (displayErr) {
+            console.error('Error refreshing display:', displayErr);
+            throw new Error('Failed to refresh display: ' + displayErr.message);
+          }
           
         } catch (err) {
           console.error('Unexpected error deleting reflection:', err);
-          alert('There was an error deleting the reflection. Please try again.');
+          console.error('Error details:', err.message, err.stack);
+          alert(`Error deleting reflection: ${err.message}. Please check the console for details.`);
         }
       }
     }
