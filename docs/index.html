@@ -469,12 +469,10 @@
   <!-- Account Setup Screen -->
   <div id="account-screen" class="content">
     <h2>Welcome to Your Spiritual Journey</h2>
-    <p>Enter your username to sync your journals across all devices</p>
+    <p>Create an account or sign in to sync your journals across all devices</p>
     
-    <div id="account-form">
-      <input type="text" id="username" placeholder="Enter your username" maxlength="20">
-      <button class="button" onclick="setUsername()">Continue</button>
-    </div>
+    <button class="button" onclick="showSignupScreen()" style="background: #3b82f6; margin-bottom: 15px;">📧 Create Account</button>
+    <button class="button" onclick="showLoginScreen()" style="background: #10b981; margin-bottom: 15px;">🔑 Sign In</button>
     
     <div id="account-message" class="prompt" style="display: none; margin-top: 15px;"></div>
   </div>
