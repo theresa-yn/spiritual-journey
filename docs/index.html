@@ -812,7 +812,7 @@
           const { data, error } = await supabase
             .from('reflections')
             .select('*')
-            .eq('user_id', currentUser.userId)
+            .eq('username', currentUser.username)
             .limit(1);
           
           if (error) {
@@ -851,11 +851,11 @@
       try {
         console.log('Starting manual sync for user:', currentUser.userId);
         
-        // Load reflections from database
+        // Load reflections from database using username instead of user_id
         const { data, error } = await supabase
           .from('reflections')
           .select('*')
-          .eq('user_id', currentUser.userId)
+          .eq('username', currentUser.username)
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -997,7 +997,7 @@
           const { data, error } = await supabase
             .from('reflections')
             .select('*')
-            .eq('user_id', userId)
+            .eq('username', currentUser.username)
             .order('created_at', { ascending: false });
           
           if (error) {
@@ -1076,7 +1076,7 @@
       console.log('Current user object:', currentUser);
       
       const reflectionData = {
-        user_id: userId,
+        username: currentUser.username,
         title,
         reflection,
         date,
