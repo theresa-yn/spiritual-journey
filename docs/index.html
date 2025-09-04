@@ -461,7 +461,7 @@
   
 
   <!-- Main Screen -->
-  <div id="main-screen" class="content hidden">
+  <div id="main-screen" class="content">
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
@@ -469,76 +469,7 @@
     <p>Tap the plus button to start your journey</p>
     <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Automatically syncs across all your devices</p>
   </div>
-  <!-- Registration Screen -->
-  <div id="register-screen" class="content">
-    <h2>Create Your Account</h2>
-    <p>Choose how you'd like to sign up</p>
-    
-    <!-- Quick Sign Up Options -->
-    <div class="button-group" style="margin-bottom: 20px;">
-      <button class="button" onclick="signUpWithGoogle()" style="background: #4285f4; color: white;">
-        📧 Sign up with Email (Verification Required)
-      </button>
-    </div>
-    
-    <div style="text-align: center; margin: 20px 0; color: var(--text-muted);">
-      <span>or</span>
-    </div>
-    
-    <!-- Traditional Email/Password -->
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <div class="button-group">
-      <button class="button" id="signup-button">Create Account with Email</button>
-      <button class="button" onclick="showLoginScreen()">Log In</button>
-      <button class="button" onclick="resendConfirmation()">Resend Email</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-    <p id="auth-message" class="prompt"></p>
-  </div>
-  <!-- Login Screen -->
-  <div id="login-screen" class="content hidden">
-    <h2>Log In</h2>
-    <p>Access your saved reflections</p>
-    
-    <!-- Quick Login Options -->
-    <div class="button-group" style="margin-bottom: 20px;">
-      <button class="button" onclick="loginWithGoogle()" style="background: #4285f4; color: white;">
-        📧 Log in with Email
-      </button>
-    </div>
-    
-    <div style="text-align: center; margin: 20px 0; color: var(--text-muted);">
-      <span>or</span>
-    </div>
-    
-    <!-- Traditional Email/Password -->
-    <input type="email" id="login-email" placeholder="Email">
-    <input type="password" id="login-password" placeholder="Password">
-    <div class="button-group">
-      <button class="button" id="login-button">Log In with Email</button>
-      <button class="button" onclick="showRegisterScreen()">Sign Up</button>
-      <button class="button" onclick="handleForgotPassword()">Forgot Password?</button>
-      <button class="button" onclick="goBack()">Back</button>
-    </div>
-    <p id="login-message" class="prompt"></p>
-  </div>
-  <!-- Email Verification Screen -->
-  <div id="verification-screen" class="content hidden">
-    <h2>Verify Your Email</h2>
-    <p>We've sent a confirmation link to your email address</p>
-    <p id="verification-email" class="prompt"></p>
-    <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color);">
-      <p style="margin: 0 0 10px 0; color: var(--text-secondary);">Click the link below to confirm your email:</p>
-      <a id="confirmation-link" href="#" target="_blank" style="color: var(--accent-primary); word-break: break-all; text-decoration: underline;">Loading confirmation link...</a>
-    </div>
-    <div class="button-group">
-      <button class="button" onclick="checkEmailVerification()">I've Clicked the Link</button>
-      <button class="button" onclick="resendVerificationLink()">Resend Link</button>
-      <button class="button" onclick="goBackToRegister()">Back to Sign Up</button>
-    </div>
-    <p id="verification-message" class="prompt"></p>
-  </div>
+  <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
   <div id="entry-screen" class="content hidden">
     <h2 id="current-date"></h2>
@@ -2205,7 +2136,11 @@
         });
       } catch (err) {
         console.error('Error initializing auth:', err);
-        showRegisterScreen();
+        // No authentication required - show main screen directly
+        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('register-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.add('hidden');
+        await loadReflections();
       }
     }
 
