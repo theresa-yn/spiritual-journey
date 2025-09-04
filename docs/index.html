@@ -500,6 +500,7 @@
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
     <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
+    <button class="button" onclick="manualSync()" style="background: #f59e0b; margin-top: 10px;">Manual Sync</button>
     <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
@@ -704,16 +705,79 @@
       showAccountScreen();
     }
 
-    function testSync() {
+    async function testSync() {
       console.log('=== SYNC TEST ===');
       console.log('Current user:', currentUser);
       console.log('LocalStorage currentUser:', localStorage.getItem('currentUser'));
       console.log('All localStorage keys:', Object.keys(localStorage));
       
       if (currentUser) {
-        alert('✅ Sync Test\n\nUsername: ' + currentUser.username + '\nUser ID: ' + currentUser.userId + '\n\nThis ID will be the same on all devices!');
+        // Test database connection
+        try {
+          console.log('Testing database connection...');
+          const { data, error } = await supabase
+            .from('reflections')
+            .select('*')
+            .eq('user_id', currentUser.userId)
+            .limit(1);
+          
+          if (error) {
+            console.error('Database error:', error);
+            alert('❌ Database Error\n\nError: ' + error.message + '\n\nUser ID: ' + currentUser.userId);
+          } else {
+            console.log('Database test successful:', data);
+            alert('✅ Sync Test\n\nUsername: ' + currentUser.username + '\nUser ID: ' + currentUser.userId + '\n\nDatabase: Connected ✅\nRecords found: ' + data.length + '\n\nThis ID will be the same on all devices!');
+          }
+        } catch (dbErr) {
+          console.error('Database connection failed:', dbErr);
+          alert('❌ Database Connection Failed\n\nError: ' + dbErr.message + '\n\nUser ID: ' + currentUser.userId);
+        }
       } else {
         alert('❌ No user found. Please set a username first.');
+      }
+    }
+
+    async function manualSync() {
+      console.log('=== MANUAL SYNC ===');
+      
+      if (!currentUser) {
+        alert('❌ No user found. Please set a username first.');
+        return;
+      }
+      
+      try {
+        console.log('Starting manual sync for user:', currentUser.userId);
+        
+        // Load reflections from database
+        const { data, error } = await supabase
+          .from('reflections')
+          .select('*')
+          .eq('user_id', currentUser.userId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Database error during sync:', error);
+          alert('❌ Sync Failed\n\nDatabase Error: ' + error.message);
+          return;
+        }
+        
+        console.log('Loaded from database:', data);
+        
+        // Update local storage
+        const userReflectionsKey = 'reflections_' + currentUser.userId;
+        localStorage.setItem(userReflectionsKey, JSON.stringify(data));
+        
+        // Update reflections array
+        reflections = data || [];
+        
+        // Refresh display
+        refreshHistoryDisplay();
+        
+        alert('✅ Manual Sync Complete!\n\nLoaded ' + (data ? data.length : 0) + ' reflections from database.\n\nUser ID: ' + currentUser.userId);
+        
+      } catch (err) {
+        console.error('Manual sync error:', err);
+        alert('❌ Sync Error\n\nError: ' + err.message);
       }
     }
 
