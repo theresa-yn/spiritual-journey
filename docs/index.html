@@ -658,36 +658,33 @@
     // Generate consistent UUID for database compatibility based on username
     function generateConsistentUUID(username) {
       // Simple deterministic UUID generation based on username
-      const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace
-      const input = namespace + username.toLowerCase();
+      const input = username.toLowerCase();
       
-      // Simple hash function to create multiple hash values
-      let hash1 = 0, hash2 = 0, hash3 = 0, hash4 = 0;
+      // Create a simple hash from the username
+      let hash = 0;
       for (let i = 0; i < input.length; i++) {
         const char = input.charCodeAt(i);
-        hash1 = ((hash1 << 5) - hash1) + char;
-        hash2 = ((hash2 << 3) - hash2) + char;
-        hash3 = ((hash3 << 7) - hash3) + char;
-        hash4 = ((hash4 << 11) - hash4) + char;
-        hash1 = hash1 & hash1; // Convert to 32-bit integer
-        hash2 = hash2 & hash2;
-        hash3 = hash3 & hash3;
-        hash4 = hash4 & hash4;
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
       }
       
-      // Create proper UUID v4 format with all required parts
-      const hex1 = Math.abs(hash1).toString(16).padStart(8, '0');
-      const hex2 = Math.abs(hash2).toString(16).padStart(4, '0');
-      const hex3 = Math.abs(hash3).toString(16).padStart(4, '0');
-      const hex4 = Math.abs(hash4).toString(16).padStart(4, '0');
-      const hex5 = Math.abs(hash1 + hash2).toString(16).padStart(12, '0');
+      // Generate deterministic but valid UUID v4 format
+      // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+      const positiveHash = Math.abs(hash);
       
+      // Create 32 hex characters from the hash
+      const hexString = positiveHash.toString(16).padStart(8, '0') + 
+                       (positiveHash * 7).toString(16).padStart(8, '0') +
+                       (positiveHash * 13).toString(16).padStart(8, '0') +
+                       (positiveHash * 17).toString(16).padStart(8, '0');
+      
+      // Format as proper UUID: 8-4-4-4-12
       const uuid = [
-        hex1,
-        hex2,
-        '4' + hex3.substring(1), // Version 4
-        ((parseInt(hex4.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hex4.substring(1), // Variant
-        hex5
+        hexString.substring(0, 8),                    // 8 chars
+        hexString.substring(8, 12),                   // 4 chars
+        '4' + hexString.substring(13, 16),           // 4 chars (version 4)
+        ((parseInt(hexString.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hexString.substring(17, 20), // 4 chars (variant)
+        hexString.substring(20, 32)                   // 12 chars
       ].join('-');
       
       return uuid;
