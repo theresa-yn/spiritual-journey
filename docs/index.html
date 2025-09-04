@@ -810,9 +810,9 @@
         try {
           console.log('Testing database connection...');
           const { data, error } = await supabase
-            .from('journals')
+            .from('reflections')
             .select('*')
-            .eq('username', currentUser.username)
+            .eq('user_email', currentUser.username)
             .limit(1);
           
           if (error) {
@@ -851,11 +851,11 @@
       try {
         console.log('Starting manual sync for user:', currentUser.userId);
         
-        // Load reflections from database using username instead of user_id
+        // Load reflections from database using user_email instead of user_id
         const { data, error } = await supabase
-          .from('journals')
+          .from('reflections')
           .select('*')
-          .eq('username', currentUser.username)
+          .eq('user_email', currentUser.username)
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -995,9 +995,9 @@
           console.log('Cloud user ID:', userId);
           
           const { data, error } = await supabase
-            .from('journals')
+            .from('reflections')
             .select('*')
-            .eq('username', currentUser.username)
+            .eq('user_email', currentUser.username)
             .order('created_at', { ascending: false });
           
           if (error) {
@@ -1076,7 +1076,7 @@
       console.log('Current user object:', currentUser);
       
       const reflectionData = {
-        username: currentUser.username,
+        user_email: currentUser.username,
         title,
         reflection,
         date,
@@ -1104,7 +1104,7 @@
         if (editingIndex !== null && reflections[editingIndex]) {
           // Update in cloud
           const { error } = await supabase
-            .from('journals')
+            .from('reflections')
             .update(reflectionData)
             .eq('id', reflections[editingIndex].id);
           if (error) {
@@ -1115,7 +1115,7 @@
         } else {
           // Insert in cloud
           const { data, error } = await supabase
-            .from('journals')
+            .from('reflections')
             .insert([reflectionData])
             .select();
           if (error) {
