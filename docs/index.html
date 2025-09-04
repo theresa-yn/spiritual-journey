@@ -476,10 +476,10 @@
     <!-- Quick Sign Up Options -->
     <div class="button-group" style="margin-bottom: 20px;">
       <button class="button" onclick="signUpWithGoogle()" style="background: #4285f4; color: white;">
-        📧 Sign up with Google Email
+        📧 Sign up with Email (Verification Required)
       </button>
       <button class="button" onclick="signUpWithPhone()" style="background: #25d366; color: white;">
-        📱 Sign up with Phone Number
+        📱 Sign up with Phone + Email
       </button>
     </div>
     
@@ -506,10 +506,10 @@
     <!-- Quick Login Options -->
     <div class="button-group" style="margin-bottom: 20px;">
       <button class="button" onclick="loginWithGoogle()" style="background: #4285f4; color: white;">
-        📧 Log in with Google Email
+        📧 Log in with Email
       </button>
       <button class="button" onclick="loginWithPhone()" style="background: #25d366; color: white;">
-        📱 Log in with Phone Number
+        📱 Log in with Phone
       </button>
     </div>
     
@@ -527,6 +527,19 @@
       <button class="button" onclick="goBack()">Back</button>
     </div>
     <p id="login-message" class="prompt"></p>
+  </div>
+  <!-- Email Verification Screen -->
+  <div id="verification-screen" class="content hidden">
+    <h2>Verify Your Email</h2>
+    <p>We've sent a verification code to your email address</p>
+    <p id="verification-email" class="prompt"></p>
+    <input type="text" id="verification-code" placeholder="Enter 6-digit code" maxlength="6">
+    <div class="button-group">
+      <button class="button" onclick="verifyEmail()">Verify Email</button>
+      <button class="button" onclick="resendVerificationCode()">Resend Code</button>
+      <button class="button" onclick="goBackToRegister()">Back to Sign Up</button>
+    </div>
+    <p id="verification-message" class="prompt"></p>
   </div>
   <!-- Entry Screen -->
   <div id="entry-screen" class="content hidden">
@@ -1509,42 +1522,52 @@
         authMessage.textContent = 'Opening Google authentication...';
         
         // Simple Google email input (since we can't use OAuth without backend)
-        const googleEmail = prompt('Enter your Google email address:');
+        const googleEmail = prompt('Enter your email address:');
         if (!googleEmail) {
-          authMessage.textContent = 'Google sign up cancelled.';
+          authMessage.textContent = 'Email sign up cancelled.';
           return;
         }
         
-        if (!googleEmail.includes('@gmail.com') && !googleEmail.includes('@googlemail.com')) {
-          authMessage.textContent = 'Please enter a valid Google email address.';
+        // Basic email validation
+        if (!googleEmail.includes('@') || !googleEmail.includes('.')) {
+          authMessage.textContent = 'Please enter a valid email address.';
           return;
         }
         
-        // Create cloud user with Google email
-        const cloudUser = {
+        // Check if email already exists
+        const existingUser = localStorage.getItem('cloudUser');
+        if (existingUser) {
+          const userData = JSON.parse(existingUser);
+          if (userData.email === googleEmail) {
+            authMessage.textContent = 'This email is already registered. Please log in instead.';
+            return;
+          }
+        }
+        
+        // Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store pending verification data
+        const pendingUser = {
           email: googleEmail,
           name: googleEmail.split('@')[0],
-          provider: 'google',
+          provider: 'email',
+          verificationCode: verificationCode,
           created_at: new Date().toISOString()
         };
         
-        // Save to cloud storage
-        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-        localStorage.setItem('cloudAuth', 'true');
-        localStorage.setItem('cloudPassword', 'google_auth'); // Special password for Google users
+        localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
         
-        // Set user and log in
-        user = cloudUser;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = 'Sign Out';
-        await loadReflections();
-        goBack(true);
-        authMessage.textContent = '✅ Google account created successfully!';
-        console.log('Signed up with Google email:', googleEmail);
+        // Show verification screen
+        showVerificationScreen(googleEmail);
+        
+        // Simulate sending email (in real app, this would call your backend)
+        console.log('Verification code for', googleEmail, ':', verificationCode);
+        alert(`Verification code sent to ${googleEmail}\n\nCode: ${verificationCode}\n\n(In a real app, this would be sent via email)`);
         
       } catch (err) {
-        console.error('Google sign up error:', err);
-        authMessage.textContent = 'Error creating Google account. Please try again.';
+        console.error('Email sign up error:', err);
+        authMessage.textContent = 'Error creating email account. Please try again.';
       }
     }
 
@@ -1593,7 +1616,20 @@
       try {
         authMessage.textContent = 'Opening phone authentication...';
         
-        // Simple phone number input
+        // Ask for email address for verification
+        const email = prompt('Enter your email address for verification:');
+        if (!email) {
+          authMessage.textContent = 'Phone sign up cancelled.';
+          return;
+        }
+        
+        // Basic email validation
+        if (!email.includes('@') || !email.includes('.')) {
+          authMessage.textContent = 'Please enter a valid email address.';
+          return;
+        }
+        
+        // Ask for phone number
         const phoneNumber = prompt('Enter your phone number (with country code, e.g., +1234567890):');
         if (!phoneNumber) {
           authMessage.textContent = 'Phone sign up cancelled.';
@@ -1606,28 +1642,37 @@
           return;
         }
         
-        // Create cloud user with phone number
-        const cloudUser = {
-          email: phoneNumber + '@phone.local', // Use phone as email identifier
+        // Check if email already exists
+        const existingUser = localStorage.getItem('cloudUser');
+        if (existingUser) {
+          const userData = JSON.parse(existingUser);
+          if (userData.email === email) {
+            authMessage.textContent = 'This email is already registered. Please log in instead.';
+            return;
+          }
+        }
+        
+        // Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store pending verification data
+        const pendingUser = {
+          email: email,
           phone: phoneNumber,
-          name: 'Phone User',
+          name: email.split('@')[0],
           provider: 'phone',
+          verificationCode: verificationCode,
           created_at: new Date().toISOString()
         };
         
-        // Save to cloud storage
-        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-        localStorage.setItem('cloudAuth', 'true');
-        localStorage.setItem('cloudPassword', 'phone_auth'); // Special password for phone users
+        localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
         
-        // Set user and log in
-        user = cloudUser;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = 'Sign Out';
-        await loadReflections();
-        goBack(true);
-        authMessage.textContent = '✅ Phone account created successfully!';
-        console.log('Signed up with phone:', phoneNumber);
+        // Show verification screen
+        showVerificationScreen(email);
+        
+        // Simulate sending email (in real app, this would call your backend)
+        console.log('Verification code for', email, ':', verificationCode);
+        alert(`Verification code sent to ${email}\n\nCode: ${verificationCode}\n\n(In a real app, this would be sent via email)`);
         
       } catch (err) {
         console.error('Phone sign up error:', err);
@@ -1670,6 +1715,124 @@
       } catch (err) {
         console.error('Phone login error:', err);
         loginMessage.textContent = 'Error logging in with phone. Please try again.';
+      }
+    }
+
+    // Email Verification Functions
+    function showVerificationScreen(email) {
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('verification-screen').classList.remove('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
+      
+      document.getElementById('verification-email').textContent = email;
+      document.getElementById('verification-code').value = '';
+      document.getElementById('verification-message').textContent = '';
+    }
+
+    function goBackToRegister() {
+      document.getElementById('verification-screen').classList.add('hidden');
+      document.getElementById('register-screen').classList.remove('hidden');
+      localStorage.removeItem('pendingUser');
+    }
+
+    async function verifyEmail() {
+      const verificationCode = document.getElementById('verification-code').value.trim();
+      const verificationMessage = document.getElementById('verification-message');
+      
+      if (!verificationCode) {
+        verificationMessage.textContent = 'Please enter the verification code.';
+        return;
+      }
+      
+      if (verificationCode.length !== 6) {
+        verificationMessage.textContent = 'Please enter a 6-digit verification code.';
+        return;
+      }
+      
+      try {
+        // Get pending user data
+        const pendingUserData = localStorage.getItem('pendingUser');
+        if (!pendingUserData) {
+          verificationMessage.textContent = 'No pending verification found. Please sign up again.';
+          return;
+        }
+        
+        const pendingUser = JSON.parse(pendingUserData);
+        
+        // Check verification code
+        if (verificationCode !== pendingUser.verificationCode) {
+          verificationMessage.textContent = 'Invalid verification code. Please try again.';
+          return;
+        }
+        
+        // Create verified cloud user
+        const cloudUser = {
+          email: pendingUser.email,
+          name: pendingUser.name,
+          provider: pendingUser.provider,
+          phone: pendingUser.phone || null,
+          verified: true,
+          created_at: pendingUser.created_at,
+          verified_at: new Date().toISOString()
+        };
+        
+        // Save to cloud storage
+        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
+        localStorage.setItem('cloudAuth', 'true');
+        localStorage.setItem('cloudPassword', 'verified_auth');
+        
+        // Clean up pending data
+        localStorage.removeItem('pendingUser');
+        
+        // Set user and log in
+        user = cloudUser;
+        document.getElementById('auth-button').classList.remove('hidden');
+        document.getElementById('auth-button').textContent = 'Sign Out';
+        await loadReflections();
+        goBack(true);
+        
+        verificationMessage.textContent = '✅ Email verified successfully! Account created.';
+        console.log('Email verified and account created for:', pendingUser.email);
+        
+      } catch (err) {
+        console.error('Email verification error:', err);
+        verificationMessage.textContent = 'Error verifying email. Please try again.';
+      }
+    }
+
+    async function resendVerificationCode() {
+      const verificationMessage = document.getElementById('verification-message');
+      
+      try {
+        // Get pending user data
+        const pendingUserData = localStorage.getItem('pendingUser');
+        if (!pendingUserData) {
+          verificationMessage.textContent = 'No pending verification found. Please sign up again.';
+          return;
+        }
+        
+        const pendingUser = JSON.parse(pendingUserData);
+        
+        // Generate new verification code
+        const newVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Update pending user with new code
+        pendingUser.verificationCode = newVerificationCode;
+        localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
+        
+        // Simulate sending email (in real app, this would call your backend)
+        console.log('New verification code for', pendingUser.email, ':', newVerificationCode);
+        alert(`New verification code sent to ${pendingUser.email}\n\nCode: ${newVerificationCode}\n\n(In a real app, this would be sent via email)`);
+        
+        verificationMessage.textContent = 'New verification code sent!';
+        
+      } catch (err) {
+        console.error('Resend verification error:', err);
+        verificationMessage.textContent = 'Error resending verification code. Please try again.';
       }
     }
 
