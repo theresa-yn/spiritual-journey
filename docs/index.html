@@ -715,16 +715,29 @@
     }
 
     async function saveReflections() {
-      if (!user) return;
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Create a unique cloud user ID based on email
-      const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+      // Create a unique user ID - use email if available, otherwise use anonymous
+      let userId = 'anonymous';
+      if (user && user.email) {
+        userId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+      } else {
+        // Check for stored user data
+        const cloudUser = localStorage.getItem('cloudUser');
+        const localUser = localStorage.getItem('localUser');
+        if (cloudUser) {
+          const userData = JSON.parse(cloudUser);
+          userId = 'cloud_' + userData.email.replace(/[^a-zA-Z0-9]/g, '_');
+        } else if (localUser) {
+          const userData = JSON.parse(localUser);
+          userId = 'local_' + userData.email.replace(/[^a-zA-Z0-9]/g, '_');
+        }
+      }
       
       const reflectionData = {
-        user_id: cloudUserId,
+        user_id: userId,
         title,
         reflection,
         date,
@@ -745,6 +758,15 @@
       // Save to local storage immediately
       localStorage.setItem('reflections', JSON.stringify(reflections));
       console.log('Saved to local storage:', reflections.length, 'reflections');
+      
+      // If no user is logged in, just save locally and return
+      if (!user && userId === 'anonymous') {
+        currentImage = "";
+        editingIndex = null;
+        goBack();
+        alert("✅ Journal saved locally! Sign up to sync across devices.");
+        return;
+      }
 
       // Try to save to cloud database (optional)
       try {
@@ -1460,12 +1482,23 @@
         return;
       }
       
-      // Check if user has a local account
+      // Check if user has a local or cloud account
       const localUser = localStorage.getItem('localUser');
+      const cloudUser = localStorage.getItem('cloudUser');
+      
       if (localUser) {
         const userData = JSON.parse(localUser);
         if (userData.email === email) {
           // Show simple password reset for local accounts
+          showSimplePasswordReset(email);
+          return;
+        }
+      }
+      
+      if (cloudUser) {
+        const userData = JSON.parse(cloudUser);
+        if (userData.email === email) {
+          // Show simple password reset for cloud accounts
           showSimplePasswordReset(email);
           return;
         }
@@ -1595,24 +1628,42 @@
       }
       
       try {
-        // Update password in localStorage
+        // Check both local and cloud users
         const localUser = localStorage.getItem('localUser');
+        const cloudUser = localStorage.getItem('cloudUser');
+        
+        let userFound = false;
+        
+        // Try local user first
         if (localUser) {
           const userData = JSON.parse(localUser);
           if (userData.email === email) {
             userData.password = newPassword;
             localStorage.setItem('localUser', JSON.stringify(userData));
             localStorage.setItem('userPassword', newPassword);
-            
-            messageEl.textContent = '✅ Password reset successfully! You can now log in.';
-            setTimeout(() => {
-              closeResetModal();
-            }, 2000);
-            return;
+            userFound = true;
           }
         }
         
-        messageEl.textContent = 'Account not found. Please sign up first.';
+        // Try cloud user
+        if (!userFound && cloudUser) {
+          const userData = JSON.parse(cloudUser);
+          if (userData.email === email) {
+            userData.password = newPassword;
+            localStorage.setItem('cloudUser', JSON.stringify(userData));
+            localStorage.setItem('cloudPassword', newPassword);
+            userFound = true;
+          }
+        }
+        
+        if (userFound) {
+          messageEl.textContent = '✅ Password reset successfully! You can now log in.';
+          setTimeout(() => {
+            closeResetModal();
+          }, 2000);
+        } else {
+          messageEl.textContent = 'Account not found. Please sign up first.';
+        }
         
       } catch (err) {
         console.error('Error resetting password:', err);
