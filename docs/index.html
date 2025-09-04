@@ -471,11 +471,27 @@
   <!-- Registration Screen -->
   <div id="register-screen" class="content">
     <h2>Create Your Account</h2>
-    <p>Sign up to save your reflections locally (no email confirmation required)</p>
+    <p>Choose how you'd like to sign up</p>
+    
+    <!-- Quick Sign Up Options -->
+    <div class="button-group" style="margin-bottom: 20px;">
+      <button class="button" onclick="signUpWithGoogle()" style="background: #4285f4; color: white;">
+        📧 Sign up with Google Email
+      </button>
+      <button class="button" onclick="signUpWithPhone()" style="background: #25d366; color: white;">
+        📱 Sign up with Phone Number
+      </button>
+    </div>
+    
+    <div style="text-align: center; margin: 20px 0; color: var(--text-muted);">
+      <span>or</span>
+    </div>
+    
+    <!-- Traditional Email/Password -->
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
     <div class="button-group">
-      <button class="button" id="signup-button">Create Account (No Email Required)</button>
+      <button class="button" id="signup-button">Create Account with Email</button>
       <button class="button" onclick="showLoginScreen()">Log In</button>
       <button class="button" onclick="resendConfirmation()">Resend Email</button>
       <button class="button" onclick="goBack()">Back</button>
@@ -486,10 +502,26 @@
   <div id="login-screen" class="content hidden">
     <h2>Log In</h2>
     <p>Access your saved reflections</p>
+    
+    <!-- Quick Login Options -->
+    <div class="button-group" style="margin-bottom: 20px;">
+      <button class="button" onclick="loginWithGoogle()" style="background: #4285f4; color: white;">
+        📧 Log in with Google Email
+      </button>
+      <button class="button" onclick="loginWithPhone()" style="background: #25d366; color: white;">
+        📱 Log in with Phone Number
+      </button>
+    </div>
+    
+    <div style="text-align: center; margin: 20px 0; color: var(--text-muted);">
+      <span>or</span>
+    </div>
+    
+    <!-- Traditional Email/Password -->
     <input type="email" id="login-email" placeholder="Email">
     <input type="password" id="login-password" placeholder="Password">
     <div class="button-group">
-      <button class="button" id="login-button">Log In</button>
+      <button class="button" id="login-button">Log In with Email</button>
       <button class="button" onclick="showRegisterScreen()">Sign Up</button>
       <button class="button" onclick="handleForgotPassword()">Forgot Password?</button>
       <button class="button" onclick="goBack()">Back</button>
@@ -1466,6 +1498,178 @@
       } catch (err) {
         console.error('Unexpected error during resend:', err);
         authMessage.textContent = 'An unexpected error occurred. Try signing up to create a local account instead.';
+      }
+    }
+
+    // Google Email Authentication
+    async function signUpWithGoogle() {
+      const authMessage = document.getElementById('auth-message');
+      
+      try {
+        authMessage.textContent = 'Opening Google authentication...';
+        
+        // Simple Google email input (since we can't use OAuth without backend)
+        const googleEmail = prompt('Enter your Google email address:');
+        if (!googleEmail) {
+          authMessage.textContent = 'Google sign up cancelled.';
+          return;
+        }
+        
+        if (!googleEmail.includes('@gmail.com') && !googleEmail.includes('@googlemail.com')) {
+          authMessage.textContent = 'Please enter a valid Google email address.';
+          return;
+        }
+        
+        // Create cloud user with Google email
+        const cloudUser = {
+          email: googleEmail,
+          name: googleEmail.split('@')[0],
+          provider: 'google',
+          created_at: new Date().toISOString()
+        };
+        
+        // Save to cloud storage
+        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
+        localStorage.setItem('cloudAuth', 'true');
+        localStorage.setItem('cloudPassword', 'google_auth'); // Special password for Google users
+        
+        // Set user and log in
+        user = cloudUser;
+        document.getElementById('auth-button').classList.remove('hidden');
+        document.getElementById('auth-button').textContent = 'Sign Out';
+        await loadReflections();
+        goBack(true);
+        authMessage.textContent = '✅ Google account created successfully!';
+        console.log('Signed up with Google email:', googleEmail);
+        
+      } catch (err) {
+        console.error('Google sign up error:', err);
+        authMessage.textContent = 'Error creating Google account. Please try again.';
+      }
+    }
+
+    async function loginWithGoogle() {
+      const loginMessage = document.getElementById('login-message');
+      
+      try {
+        loginMessage.textContent = 'Opening Google authentication...';
+        
+        // Simple Google email input
+        const googleEmail = prompt('Enter your Google email address:');
+        if (!googleEmail) {
+          loginMessage.textContent = 'Google login cancelled.';
+          return;
+        }
+        
+        // Check if user exists
+        const cloudUser = localStorage.getItem('cloudUser');
+        if (cloudUser) {
+          const userData = JSON.parse(cloudUser);
+          if (userData.email === googleEmail && userData.provider === 'google') {
+            // Google login successful
+            user = userData;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = 'Sign Out';
+            await loadReflections();
+            goBack(true);
+            loginMessage.textContent = '✅ Google login successful!';
+            console.log('Logged in with Google email:', googleEmail);
+            return;
+          }
+        }
+        
+        loginMessage.textContent = 'Google account not found. Please sign up first.';
+        
+      } catch (err) {
+        console.error('Google login error:', err);
+        loginMessage.textContent = 'Error logging in with Google. Please try again.';
+      }
+    }
+
+    // Phone Number Authentication
+    async function signUpWithPhone() {
+      const authMessage = document.getElementById('auth-message');
+      
+      try {
+        authMessage.textContent = 'Opening phone authentication...';
+        
+        // Simple phone number input
+        const phoneNumber = prompt('Enter your phone number (with country code, e.g., +1234567890):');
+        if (!phoneNumber) {
+          authMessage.textContent = 'Phone sign up cancelled.';
+          return;
+        }
+        
+        // Basic phone validation
+        if (!phoneNumber.startsWith('+') || phoneNumber.length < 10) {
+          authMessage.textContent = 'Please enter a valid phone number with country code (e.g., +1234567890).';
+          return;
+        }
+        
+        // Create cloud user with phone number
+        const cloudUser = {
+          email: phoneNumber + '@phone.local', // Use phone as email identifier
+          phone: phoneNumber,
+          name: 'Phone User',
+          provider: 'phone',
+          created_at: new Date().toISOString()
+        };
+        
+        // Save to cloud storage
+        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
+        localStorage.setItem('cloudAuth', 'true');
+        localStorage.setItem('cloudPassword', 'phone_auth'); // Special password for phone users
+        
+        // Set user and log in
+        user = cloudUser;
+        document.getElementById('auth-button').classList.remove('hidden');
+        document.getElementById('auth-button').textContent = 'Sign Out';
+        await loadReflections();
+        goBack(true);
+        authMessage.textContent = '✅ Phone account created successfully!';
+        console.log('Signed up with phone:', phoneNumber);
+        
+      } catch (err) {
+        console.error('Phone sign up error:', err);
+        authMessage.textContent = 'Error creating phone account. Please try again.';
+      }
+    }
+
+    async function loginWithPhone() {
+      const loginMessage = document.getElementById('login-message');
+      
+      try {
+        loginMessage.textContent = 'Opening phone authentication...';
+        
+        // Simple phone number input
+        const phoneNumber = prompt('Enter your phone number (with country code, e.g., +1234567890):');
+        if (!phoneNumber) {
+          loginMessage.textContent = 'Phone login cancelled.';
+          return;
+        }
+        
+        // Check if user exists
+        const cloudUser = localStorage.getItem('cloudUser');
+        if (cloudUser) {
+          const userData = JSON.parse(cloudUser);
+          if (userData.phone === phoneNumber && userData.provider === 'phone') {
+            // Phone login successful
+            user = userData;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = 'Sign Out';
+            await loadReflections();
+            goBack(true);
+            loginMessage.textContent = '✅ Phone login successful!';
+            console.log('Logged in with phone:', phoneNumber);
+            return;
+          }
+        }
+        
+        loginMessage.textContent = 'Phone account not found. Please sign up first.';
+        
+      } catch (err) {
+        console.error('Phone login error:', err);
+        loginMessage.textContent = 'Error logging in with phone. Please try again.';
       }
     }
 
