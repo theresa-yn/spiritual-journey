@@ -810,7 +810,7 @@
         try {
           console.log('Testing database connection...');
           const { data, error } = await supabase
-            .from('reflections')
+            .from('journals')
             .select('*')
             .eq('username', currentUser.username)
             .limit(1);
@@ -853,7 +853,7 @@
         
         // Load reflections from database using username instead of user_id
         const { data, error } = await supabase
-          .from('reflections')
+          .from('journals')
           .select('*')
           .eq('username', currentUser.username)
           .order('created_at', { ascending: false });
@@ -995,7 +995,7 @@
           console.log('Cloud user ID:', userId);
           
           const { data, error } = await supabase
-            .from('reflections')
+            .from('journals')
             .select('*')
             .eq('username', currentUser.username)
             .order('created_at', { ascending: false });
@@ -1104,7 +1104,7 @@
         if (editingIndex !== null && reflections[editingIndex]) {
           // Update in cloud
           const { error } = await supabase
-            .from('reflections')
+            .from('journals')
             .update(reflectionData)
             .eq('id', reflections[editingIndex].id);
           if (error) {
@@ -1115,7 +1115,7 @@
         } else {
           // Insert in cloud
           const { data, error } = await supabase
-            .from('reflections')
+            .from('journals')
             .insert([reflectionData])
             .select();
           if (error) {
