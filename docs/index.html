@@ -996,15 +996,24 @@
 
     function refreshHistoryDisplay() {
       console.log('Refreshing history display with', reflections.length, 'reflections');
+      console.log('Reflections array:', reflections);
       const list = document.getElementById('history-list');
+      
+      if (!list) {
+        console.error('History list element not found!');
+        return;
+      }
+      
       list.innerHTML = '';
       
-      if (reflections.length === 0) {
+      if (!reflections || reflections.length === 0) {
         list.innerHTML = '<p>No reflections yet. Start journaling to see them here!</p>';
+        console.log('No reflections to display');
         return;
       }
       
       reflections.forEach((item, index) => {
+        console.log('Creating display for reflection', index, ':', item.title);
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
@@ -1020,13 +1029,28 @@
         `;
         list.appendChild(div);
       });
+      
+      console.log('History display refreshed with', reflections.length, 'items');
     }
 
     async function deleteReflection(index) {
       console.log('Delete function called with index:', index);
+      console.log('Current reflections array length:', reflections.length);
       console.log('Current reflections array:', reflections);
       
-      if (!reflections || !reflections[index]) {
+      if (!reflections || reflections.length === 0) {
+        console.error('No reflections found');
+        alert('No reflections found. Please refresh the page and try again.');
+        return;
+      }
+      
+      if (index < 0 || index >= reflections.length) {
+        console.error('Invalid index:', index, 'for array length:', reflections.length);
+        alert('Invalid reflection index. Please refresh the page and try again.');
+        return;
+      }
+      
+      if (!reflections[index]) {
         console.error('Reflection not found at index:', index);
         alert('Reflection not found. Please refresh the page and try again.');
         return;
@@ -1037,6 +1061,7 @@
           // Always perform local deletion first
           const deletedReflection = reflections.splice(index, 1)[0];
           console.log('Deleted reflection:', deletedReflection);
+          console.log('Remaining reflections:', reflections.length);
           
           // Update localStorage immediately
           localStorage.setItem('reflections', JSON.stringify(reflections));
@@ -1061,6 +1086,7 @@
           }
           
           // Refresh the history display without reloading from storage
+          console.log('Calling refreshHistoryDisplay with', reflections.length, 'reflections');
           refreshHistoryDisplay();
           alert('Reflection deleted successfully!');
           
