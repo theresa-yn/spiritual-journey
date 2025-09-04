@@ -484,6 +484,7 @@
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
+    <button class="button" onclick="copyShareLink()" style="background: var(--accent-color); margin-top: 10px;">📱 Sync to Other Devices</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
   </div>
@@ -625,16 +626,32 @@
     }
 
     async function loadReflections() {
-      // Get or create device ID
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2);
-        localStorage.setItem('deviceId', deviceId);
-        console.log('Generated new device ID:', deviceId);
+      // Get or create shared user ID for cross-device sync
+      let userId = localStorage.getItem('sharedUserId');
+      if (!userId) {
+        // Check if there's a user ID in the URL (for sharing between devices)
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedId = urlParams.get('user');
+        
+        if (sharedId) {
+          userId = sharedId;
+          localStorage.setItem('sharedUserId', userId);
+          console.log('Using shared user ID from URL:', userId);
+        } else {
+          // Generate a new shared user ID
+          userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+          localStorage.setItem('sharedUserId', userId);
+          console.log('Generated new shared user ID:', userId);
+          
+          // Update URL to include the user ID for sharing
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('user', userId);
+          window.history.replaceState({}, '', newUrl);
+        }
       }
       
       try {
-        console.log('Loading reflections for device:', deviceId);
+        console.log('Loading reflections for user:', userId);
         
         // Always load from local storage first (guaranteed to work)
         const localReflections = localStorage.getItem('reflections');
@@ -648,12 +665,12 @@
         
         // Try to load from cloud database (optional)
         try {
-          console.log('Cloud device ID:', deviceId);
+          console.log('Cloud user ID:', userId);
           
           const { data, error } = await supabase
             .from('reflections')
             .select('*')
-            .eq('user_id', deviceId)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false });
           
           if (error) {
@@ -714,17 +731,32 @@
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Create a unique device ID for automatic sync
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        // Generate a unique device ID based on browser fingerprint
-        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2);
-        localStorage.setItem('deviceId', deviceId);
-        console.log('Generated new device ID:', deviceId);
+      // Get or create shared user ID for cross-device sync
+      let userId = localStorage.getItem('sharedUserId');
+      if (!userId) {
+        // Check if there's a user ID in the URL (for sharing between devices)
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedId = urlParams.get('user');
+        
+        if (sharedId) {
+          userId = sharedId;
+          localStorage.setItem('sharedUserId', sharedId);
+          console.log('Using shared user ID from URL:', userId);
+        } else {
+          // Generate a new shared user ID
+          userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+          localStorage.setItem('sharedUserId', userId);
+          console.log('Generated new shared user ID:', userId);
+          
+          // Update URL to include the user ID for sharing
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('user', userId);
+          window.history.replaceState({}, '', newUrl);
+        }
       }
       
       const reflectionData = {
-        user_id: deviceId,
+        user_id: userId,
         title,
         reflection,
         date,
@@ -1338,6 +1370,30 @@
         return;
       }
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function copyShareLink() {
+      let userId = localStorage.getItem('sharedUserId');
+      if (!userId) {
+        // Generate a new user ID if none exists
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        localStorage.setItem('sharedUserId', userId);
+      }
+      
+      const shareUrl = `${window.location.origin}${window.location.pathname}?user=${userId}`;
+      
+      // Try to copy to clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          alert('📱 Share link copied! Open this link on your other devices to sync your journals.\n\n' + shareUrl);
+        }).catch(() => {
+          // Fallback if clipboard fails
+          prompt('Copy this link to share with your other devices:', shareUrl);
+        });
+      } else {
+        // Fallback for older browsers
+        prompt('Copy this link to share with your other devices:', shareUrl);
+      }
     }
 
     async function handleSignUp() {
