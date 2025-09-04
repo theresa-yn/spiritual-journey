@@ -680,6 +680,44 @@
       
       return uuid;
     }
+    
+    // Migrate old user format to new UUID format
+    function migrateUserToUUID(user) {
+      if (!user || !user.userId) return user;
+      
+      // Check if userId is in old format (starts with 'user_')
+      if (user.userId.startsWith('user_') && !user.userId.includes('-')) {
+        console.log('Migrating old user format to UUID:', user.userId);
+        
+        // Generate new UUID based on username
+        const newUserId = generateConsistentUUID(user.username);
+        
+        // Create new user object with UUID
+        const migratedUser = {
+          username: user.username,
+          userId: newUserId
+        };
+        
+        console.log('Migrated user:', migratedUser);
+        
+        // Save migrated user
+        localStorage.setItem('currentUser', JSON.stringify(migratedUser));
+        
+        // Also migrate any existing reflections data
+        const oldKey = 'reflections_' + user.userId;
+        const newKey = 'reflections_' + newUserId;
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          localStorage.setItem(newKey, oldData);
+          localStorage.removeItem(oldKey);
+          console.log('Migrated reflections data from', oldKey, 'to', newKey);
+        }
+        
+        return migratedUser;
+      }
+      
+      return user;
+    }
 
     function setUsername() {
       console.log('=== SET USERNAME CALLED ===');
@@ -1607,8 +1645,8 @@
     function copyShareLink() {
       let userId = localStorage.getItem('sharedUserId');
       if (!userId) {
-        // Generate a new user ID if none exists
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        // Generate a new UUID if none exists
+        userId = generateConsistentUUID('shared_' + Date.now());
         localStorage.setItem('sharedUserId', userId);
       }
       
@@ -2405,9 +2443,14 @@
         
         if (savedUser) {
           try {
-            currentUser = JSON.parse(savedUser);
-            console.log('Parsed user object:', currentUser);
-            console.log('User ID:', currentUser.userId);
+            const parsedUser = JSON.parse(savedUser);
+            console.log('Parsed user object:', parsedUser);
+            console.log('User ID:', parsedUser.userId);
+            
+            // Migrate old format to UUID if needed
+            currentUser = migrateUserToUUID(parsedUser);
+            console.log('Final user object after migration:', currentUser);
+            
             showMainScreen();
             await loadReflections();
             return;
