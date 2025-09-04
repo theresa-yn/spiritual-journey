@@ -1372,13 +1372,13 @@
       try {
         loginMessage.textContent = 'Logging in...';
         
-        // Only try cloud authentication
+        // First try cloud authentication
         const cloudUser = localStorage.getItem('cloudUser');
-        const storedPassword = localStorage.getItem('cloudPassword');
+        const cloudPassword = localStorage.getItem('cloudPassword');
         
-        if (cloudUser && storedPassword) {
+        if (cloudUser && cloudPassword) {
           const userData = JSON.parse(cloudUser);
-          if (userData.email === email && storedPassword === password) {
+          if (userData.email === email && cloudPassword === password) {
             // Cloud login successful
             user = userData;
             document.getElementById('auth-button').classList.remove('hidden');
@@ -1387,6 +1387,36 @@
             goBack(true);
             loginMessage.textContent = '✅ Login successful! Your journals are synced to the cloud.';
             console.log('Logged in with cloud authentication');
+            return;
+          }
+        }
+        
+        // Check for existing local user and migrate to cloud
+        const localUser = localStorage.getItem('localUser');
+        const localPassword = localStorage.getItem('userPassword');
+        
+        if (localUser && localPassword) {
+          const userData = JSON.parse(localUser);
+          if (userData.email === email && localPassword === password) {
+            // Migrate local user to cloud user
+            console.log('Migrating local user to cloud user');
+            localStorage.setItem('cloudUser', JSON.stringify(userData));
+            localStorage.setItem('cloudAuth', 'true');
+            localStorage.setItem('cloudPassword', password);
+            
+            // Clean up old local data
+            localStorage.removeItem('localUser');
+            localStorage.removeItem('localAuth');
+            localStorage.removeItem('userPassword');
+            
+            // Login with migrated cloud user
+            user = userData;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = 'Sign Out';
+            await loadReflections();
+            goBack(true);
+            loginMessage.textContent = '✅ Login successful! Your account has been migrated to cloud sync.';
+            console.log('Successfully migrated and logged in with cloud authentication');
             return;
           }
         }
@@ -1455,6 +1485,29 @@
         const userData = JSON.parse(cloudUser);
         if (userData.email === email) {
           // Show simple password reset for cloud accounts
+          showSimplePasswordReset(email);
+          return;
+        }
+      }
+      
+      // Check for local user and migrate
+      const localUser = localStorage.getItem('localUser');
+      if (localUser) {
+        const userData = JSON.parse(localUser);
+        if (userData.email === email) {
+          // Migrate local user to cloud first
+          console.log('Migrating local user to cloud for password reset');
+          const password = localStorage.getItem('userPassword');
+          localStorage.setItem('cloudUser', JSON.stringify(userData));
+          localStorage.setItem('cloudAuth', 'true');
+          localStorage.setItem('cloudPassword', password || '');
+          
+          // Clean up old local data
+          localStorage.removeItem('localUser');
+          localStorage.removeItem('localAuth');
+          localStorage.removeItem('userPassword');
+          
+          // Show password reset for migrated cloud account
           showSimplePasswordReset(email);
           return;
         }
@@ -1756,7 +1809,7 @@
     // Initialize auth state
     async function initAuth() {
       try {
-        // Only check for cloud authentication
+        // Check for cloud authentication first
         const cloudAuth = localStorage.getItem('cloudAuth');
         const cloudUser = localStorage.getItem('cloudUser');
         
@@ -1769,6 +1822,37 @@
           document.getElementById('register-screen').classList.add('hidden');
           document.getElementById('login-screen').classList.add('hidden');
           console.log('Logged in with cloud authentication');
+          return;
+        }
+        
+        // Check for local user and migrate to cloud
+        const localAuth = localStorage.getItem('localAuth');
+        const localUser = localStorage.getItem('localUser');
+        
+        if (localAuth === 'true' && localUser) {
+          console.log('Migrating local user to cloud user on startup');
+          const userData = JSON.parse(localUser);
+          const password = localStorage.getItem('userPassword');
+          
+          // Migrate to cloud
+          localStorage.setItem('cloudUser', JSON.stringify(userData));
+          localStorage.setItem('cloudAuth', 'true');
+          localStorage.setItem('cloudPassword', password || '');
+          
+          // Clean up old local data
+          localStorage.removeItem('localUser');
+          localStorage.removeItem('localAuth');
+          localStorage.removeItem('userPassword');
+          
+          // Login with migrated cloud user
+          user = userData;
+          document.getElementById('auth-button').classList.remove('hidden');
+          document.getElementById('auth-button').textContent = 'Sign Out';
+          await loadReflections();
+          document.getElementById('main-screen').classList.remove('hidden');
+          document.getElementById('register-screen').classList.add('hidden');
+          document.getElementById('login-screen').classList.add('hidden');
+          console.log('Successfully migrated and logged in with cloud authentication');
           return;
         }
         
