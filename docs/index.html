@@ -484,9 +484,9 @@
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <button class="button" onclick="copyShareLink()" style="background: var(--accent-color); margin-top: 10px;">📱 Sync to Other Devices</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Automatically syncs across all your devices</p>
   </div>
   <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
@@ -625,29 +625,42 @@
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
 
+    // Generate a consistent user ID based on browser characteristics
+    function generateConsistentUserId() {
+      // Create a fingerprint based on browser characteristics
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('Browser fingerprint', 2, 2);
+      
+      const fingerprint = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        new Date().getTimezoneOffset(),
+        canvas.toDataURL()
+      ].join('|');
+      
+      // Create a hash-like ID from the fingerprint
+      let hash = 0;
+      for (let i = 0; i < fingerprint.length; i++) {
+        const char = fingerprint.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      
+      return 'auto_user_' + Math.abs(hash).toString(36);
+    }
+
     async function loadReflections() {
-      // Get or create shared user ID for cross-device sync
-      let userId = localStorage.getItem('sharedUserId');
+      // Get or create automatic user ID for seamless cross-device sync
+      let userId = localStorage.getItem('autoUserId');
       if (!userId) {
-        // Check if there's a user ID in the URL (for sharing between devices)
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedId = urlParams.get('user');
-        
-        if (sharedId) {
-          userId = sharedId;
-          localStorage.setItem('sharedUserId', userId);
-          console.log('Using shared user ID from URL:', userId);
-        } else {
-          // Generate a new shared user ID
-          userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
-          localStorage.setItem('sharedUserId', userId);
-          console.log('Generated new shared user ID:', userId);
-          
-          // Update URL to include the user ID for sharing
-          const newUrl = new URL(window.location);
-          newUrl.searchParams.set('user', userId);
-          window.history.replaceState({}, '', newUrl);
-        }
+        // Generate a consistent user ID that will be the same across devices
+        userId = generateConsistentUserId();
+        localStorage.setItem('autoUserId', userId);
+        console.log('Generated automatic user ID:', userId);
       }
       
       try {
@@ -731,28 +744,13 @@
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Get or create shared user ID for cross-device sync
-      let userId = localStorage.getItem('sharedUserId');
+      // Get or create automatic user ID for seamless cross-device sync
+      let userId = localStorage.getItem('autoUserId');
       if (!userId) {
-        // Check if there's a user ID in the URL (for sharing between devices)
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedId = urlParams.get('user');
-        
-        if (sharedId) {
-          userId = sharedId;
-          localStorage.setItem('sharedUserId', sharedId);
-          console.log('Using shared user ID from URL:', userId);
-        } else {
-          // Generate a new shared user ID
-          userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
-          localStorage.setItem('sharedUserId', userId);
-          console.log('Generated new shared user ID:', userId);
-          
-          // Update URL to include the user ID for sharing
-          const newUrl = new URL(window.location);
-          newUrl.searchParams.set('user', userId);
-          window.history.replaceState({}, '', newUrl);
-        }
+        // Generate a consistent user ID that will be the same across devices
+        userId = generateConsistentUserId();
+        localStorage.setItem('autoUserId', userId);
+        console.log('Generated automatic user ID:', userId);
       }
       
       const reflectionData = {
