@@ -45,6 +45,7 @@
       --input-bg: rgba(15, 15, 35, 0.8);
       --card-bg: rgba(15, 15, 35, 0.8);
       --star-color: #ffffff;
+      --success-color: #10b981;
       --button-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       --button-hover: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
     }
@@ -479,14 +480,30 @@
   </div>
   
 
+  <!-- Account Setup Screen -->
+  <div id="account-screen" class="content">
+    <h2>Welcome to Your Spiritual Journey</h2>
+    <p>Create a simple account to sync your journals across all devices</p>
+    
+    <div id="account-form">
+      <input type="text" id="username" placeholder="Choose a username" maxlength="20">
+      <input type="password" id="password" placeholder="Password (optional)" maxlength="50">
+      <button class="button" onclick="createAccount()">Create Account</button>
+      <button class="button" onclick="loginAccount()" style="background: var(--accent-color); margin-top: 10px;">Login to Existing Account</button>
+    </div>
+    
+    <div id="account-message" class="prompt" style="display: none; margin-top: 15px;"></div>
+  </div>
+
   <!-- Main Screen -->
-  <div id="main-screen" class="content">
+  <div id="main-screen" class="content hidden">
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
+    <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Automatically syncs across all your devices</p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Syncs across all your devices</p>
   </div>
   <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
@@ -625,43 +642,112 @@
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
 
-    // Generate a consistent user ID based on browser characteristics
-    function generateConsistentUserId() {
-      // Create a fingerprint based on browser characteristics
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.textBaseline = 'top';
-      ctx.font = '14px Arial';
-      ctx.fillText('Browser fingerprint', 2, 2);
+    // Simple account management
+    let currentUser = null;
+
+    function createAccount() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const message = document.getElementById('account-message');
       
-      const fingerprint = [
-        navigator.userAgent,
-        navigator.language,
-        screen.width + 'x' + screen.height,
-        new Date().getTimezoneOffset(),
-        canvas.toDataURL()
-      ].join('|');
-      
-      // Create a hash-like ID from the fingerprint
-      let hash = 0;
-      for (let i = 0; i < fingerprint.length; i++) {
-        const char = fingerprint.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
+      if (!username) {
+        message.textContent = 'Please enter a username';
+        message.style.display = 'block';
+        return;
       }
       
-      return 'auto_user_' + Math.abs(hash).toString(36);
+      if (username.length < 3) {
+        message.textContent = 'Username must be at least 3 characters';
+        message.style.display = 'block';
+        return;
+      }
+      
+      // Create user account
+      currentUser = {
+        username: username,
+        password: password,
+        userId: 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now()
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      
+      message.textContent = 'Account created successfully!';
+      message.style.display = 'block';
+      message.style.color = 'var(--success-color)';
+      
+      // Show main screen after a short delay
+      setTimeout(() => {
+        showMainScreen();
+      }, 1500);
+    }
+
+    function loginAccount() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const message = document.getElementById('account-message');
+      
+      if (!username) {
+        message.textContent = 'Please enter your username';
+        message.style.display = 'block';
+        return;
+      }
+      
+      // For simplicity, we'll create the same user ID format
+      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now();
+      
+      currentUser = {
+        username: username,
+        password: password,
+        userId: userId
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      
+      message.textContent = 'Logged in successfully!';
+      message.style.display = 'block';
+      message.style.color = 'var(--success-color)';
+      
+      // Show main screen after a short delay
+      setTimeout(() => {
+        showMainScreen();
+      }, 1500);
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      currentUser = null;
+      showAccountScreen();
+    }
+
+    function showAccountScreen() {
+      document.getElementById('account-screen').classList.remove('hidden');
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
+    }
+
+    function showMainScreen() {
+      document.getElementById('account-screen').classList.add('hidden');
+      document.getElementById('main-screen').classList.remove('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
     }
 
     async function loadReflections() {
-      // Get or create automatic user ID for seamless cross-device sync
-      let userId = localStorage.getItem('autoUserId');
-      if (!userId) {
-        // Generate a consistent user ID that will be the same across devices
-        userId = generateConsistentUserId();
-        localStorage.setItem('autoUserId', userId);
-        console.log('Generated automatic user ID:', userId);
+      // Get current user
+      if (!currentUser) {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          currentUser = JSON.parse(savedUser);
+        } else {
+          console.log('No user logged in');
+          return;
+        }
       }
+      
+      const userId = currentUser.userId;
       
       try {
         console.log('Loading reflections for user:', userId);
@@ -744,14 +830,18 @@
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
       
-      // Get or create automatic user ID for seamless cross-device sync
-      let userId = localStorage.getItem('autoUserId');
-      if (!userId) {
-        // Generate a consistent user ID that will be the same across devices
-        userId = generateConsistentUserId();
-        localStorage.setItem('autoUserId', userId);
-        console.log('Generated automatic user ID:', userId);
+      // Get current user
+      if (!currentUser) {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          currentUser = JSON.parse(savedUser);
+        } else {
+          console.log('No user logged in');
+          return;
+        }
       }
+      
+      const userId = currentUser.userId;
       
       const reflectionData = {
         user_id: userId,
@@ -2162,105 +2252,22 @@
     // Initialize auth state
     async function initAuth() {
       try {
-        // Check for verification token first
-        if (checkVerificationToken()) {
-          // If verification was successful, show verification screen
-          const pendingUserData = localStorage.getItem('pendingUser');
-          if (pendingUserData) {
-            const pendingUser = JSON.parse(pendingUserData);
-            showVerificationScreen(pendingUser.email, pendingUser.verificationToken);
-            return;
-          }
-        }
-        
-        // Check for cloud authentication first
-        const cloudAuth = localStorage.getItem('cloudAuth');
-        const cloudUser = localStorage.getItem('cloudUser');
-        
-        if (cloudAuth === 'true' && cloudUser) {
-          user = JSON.parse(cloudUser);
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
+        // Check if user is already logged in
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          currentUser = JSON.parse(savedUser);
+          showMainScreen();
           await loadReflections();
-          document.getElementById('main-screen').classList.remove('hidden');
-          console.log('Logged in with cloud authentication');
           return;
         }
         
-        // Check for local user and migrate to cloud
-        const localAuth = localStorage.getItem('localAuth');
-        const localUser = localStorage.getItem('localUser');
-        
-        if (localAuth === 'true' && localUser) {
-          console.log('Migrating local user to cloud user on startup');
-          const userData = JSON.parse(localUser);
-          const password = localStorage.getItem('userPassword');
-          
-          // Migrate to cloud
-          localStorage.setItem('cloudUser', JSON.stringify(userData));
-          localStorage.setItem('cloudAuth', 'true');
-          localStorage.setItem('cloudPassword', password || '');
-          
-          // Clean up old local data
-          localStorage.removeItem('localUser');
-          localStorage.removeItem('localAuth');
-          localStorage.removeItem('userPassword');
-          
-          // Login with migrated cloud user
-          user = userData;
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          document.getElementById('main-screen').classList.remove('hidden');
-          console.log('Successfully migrated and logged in with cloud authentication');
-          return;
-        }
-        
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        
-        if (session && session.user) {
-          user = session.user;
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          document.getElementById('main-screen').classList.remove('hidden');
-        } else {
-          // No authentication required - show main screen directly
-          document.getElementById('main-screen').classList.remove('hidden');
-          await loadReflections();
-        }
+        // No user logged in, show account screen
+        showAccountScreen();
 
-        supabase.auth.onAuthStateChange((event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          
-          if (event === 'SIGNED_IN' && session) {
-            user = session.user;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = 'Sign Out';
-            loadReflections();
-            goBack();
-          } else if (event === 'SIGNED_OUT') {
-            user = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            localStorage.removeItem('cloudUser');
-            localStorage.removeItem('cloudAuth');
-            localStorage.removeItem('cloudPassword');
-            document.getElementById('auth-button').classList.add('hidden');
-            showRegisterScreen();
-          } else if (event === 'TOKEN_REFRESHED' && session) {
-            user = session.user;
-          }
-        });
       } catch (err) {
         console.error('Error initializing auth:', err);
-        // No authentication required - show main screen directly
-        document.getElementById('main-screen').classList.remove('hidden');
-        await loadReflections();
+        // Show account screen on error
+        showAccountScreen();
       }
     }
 
