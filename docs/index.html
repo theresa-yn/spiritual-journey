@@ -483,13 +483,11 @@
   <!-- Account Setup Screen -->
   <div id="account-screen" class="content">
     <h2>Welcome to Your Spiritual Journey</h2>
-    <p>Create a simple account to sync your journals across all devices</p>
+    <p>Enter your username to sync your journals across all devices</p>
     
     <div id="account-form">
-      <input type="text" id="username" placeholder="Choose a username" maxlength="20">
-      <input type="password" id="password" placeholder="Password (optional)" maxlength="50">
-      <button class="button" onclick="createAccount()">Create Account</button>
-      <button class="button" onclick="loginAccount()" style="background: var(--accent-color); margin-top: 10px;">Login to Existing Account</button>
+      <input type="text" id="username" placeholder="Enter your username" maxlength="20">
+      <button class="button" onclick="setUsername()">Continue</button>
     </div>
     
     <div id="account-message" class="prompt" style="display: none; margin-top: 15px;"></div>
@@ -501,6 +499,7 @@
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
+    <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
       <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Syncs across all your devices</p>
@@ -642,16 +641,15 @@
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
     }
 
-    // Simple account management
+    // Simple username system
     let currentUser = null;
 
-    function createAccount() {
-      console.log('Create account function called');
+    function setUsername() {
+      console.log('Set username function called');
       const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
       const message = document.getElementById('account-message');
       
-      console.log('Username:', username, 'Password length:', password.length);
+      console.log('Username entered:', username);
       
       if (!username) {
         message.textContent = 'Please enter a username';
@@ -659,71 +657,49 @@
         return;
       }
       
-      if (username.length < 3) {
-        message.textContent = 'Username must be at least 3 characters';
+      if (username.length < 2) {
+        message.textContent = 'Username must be at least 2 characters';
         message.style.display = 'block';
         return;
       }
       
-      // Create user account with consistent ID
+      // Create simple user with consistent ID
       currentUser = {
         username: username,
-        password: password,
         userId: 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '')
       };
       
       // Save to localStorage
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      console.log('Account created and saved:', currentUser);
+      console.log('Username set and saved:', currentUser);
       
-      message.textContent = 'Account created successfully!';
+      message.textContent = 'Welcome, ' + username + '!';
       message.style.display = 'block';
       message.style.color = 'var(--success-color)';
       
-      // Show main screen after a short delay
+      // Show main screen immediately
       setTimeout(() => {
         console.log('Switching to main screen');
         showMainScreen();
-      }, 1500);
-    }
-
-    function loginAccount() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const message = document.getElementById('account-message');
-      
-      if (!username) {
-        message.textContent = 'Please enter your username';
-        message.style.display = 'block';
-        return;
-      }
-      
-      // Use consistent user ID format (same as createAccount)
-      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
-      
-      currentUser = {
-        username: username,
-        password: password,
-        userId: userId
-      };
-      
-      // Save to localStorage
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      
-      message.textContent = 'Logged in successfully!';
-      message.style.display = 'block';
-      message.style.color = 'var(--success-color)';
-      
-      // Show main screen after a short delay
-      setTimeout(() => {
-        showMainScreen();
-      }, 1500);
+      }, 1000);
     }
 
     function logout() {
       localStorage.removeItem('currentUser');
       currentUser = null;
       showAccountScreen();
+    }
+
+    function testSync() {
+      console.log('=== SYNC TEST ===');
+      console.log('Current user:', currentUser);
+      console.log('LocalStorage currentUser:', localStorage.getItem('currentUser'));
+      
+      if (currentUser) {
+        alert('✅ Sync Test\n\nUsername: ' + currentUser.username + '\nUser ID: ' + currentUser.userId + '\n\nThis ID will be the same on all devices!');
+      } else {
+        alert('❌ No user found. Please set a username first.');
+      }
     }
 
     function showAccountScreen() {
