@@ -501,6 +501,7 @@
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
     <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
     <button class="button" onclick="manualSync()" style="background: #f59e0b; margin-top: 10px;">Manual Sync</button>
+    <button class="button" onclick="forceUUIDUpdate()" style="background: #8b5cf6; margin-top: 10px;">Force UUID Update</button>
     <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
@@ -883,6 +884,50 @@
         console.error('Manual sync error:', err);
         alert('❌ Sync Error\n\nError: ' + err.message);
       }
+    }
+
+    function forceUUIDUpdate() {
+      console.log('=== FORCE UUID UPDATE ===');
+      
+      if (!currentUser) {
+        alert('❌ No user found. Please set a username first.');
+        return;
+      }
+      
+      const oldUserId = currentUser.userId;
+      const username = currentUser.username;
+      
+      console.log('Current user ID:', oldUserId);
+      console.log('Username:', username);
+      
+      // Generate new UUID
+      const newUserId = generateConsistentUUID(username);
+      console.log('New UUID:', newUserId);
+      
+      // Create new user object
+      const newUser = {
+        username: username,
+        userId: newUserId
+      };
+      
+      // Save new user
+      localStorage.setItem('currentUser', JSON.stringify(newUser));
+      currentUser = newUser;
+      
+      // Migrate reflections data if it exists
+      const oldKey = 'reflections_' + oldUserId;
+      const newKey = 'reflections_' + newUserId;
+      const oldData = localStorage.getItem(oldKey);
+      
+      if (oldData) {
+        localStorage.setItem(newKey, oldData);
+        localStorage.removeItem(oldKey);
+        console.log('Migrated reflections from', oldKey, 'to', newKey);
+      }
+      
+      alert('✅ UUID Updated!\n\nOld ID: ' + oldUserId + '\nNew ID: ' + newUserId + '\n\nYour data has been migrated to the new format.');
+      
+      console.log('UUID update complete. New user:', currentUser);
     }
 
     function clearAllData() {
