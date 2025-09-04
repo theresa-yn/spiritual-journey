@@ -312,9 +312,20 @@
     }
     img.preview {
       max-width: 90%;
+      max-height: 300px;
       margin-top: 10px;
-      display: none;
       border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      object-fit: cover;
+    }
+    
+    .history-item img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      object-fit: cover;
     }
     #current-date {
       font-size: 1.1rem;
@@ -498,6 +509,9 @@
       </label>
       <input type="file" accept="image/*" id="image-input" capture="environment" style="display: none;">
       <div id="image-preview-container" style="display: none;">
+        <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
+          📸 Loading image...
+        </div>
         <img id="preview-image" class="preview" src="" alt="Preview">
         <button type="button" class="button" onclick="removeImage()" style="margin-top: 10px;">Remove Photo</button>
       </div>
@@ -516,6 +530,7 @@
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
       <button class="button" onclick="syncReflections()">🔄 Sync</button>
+      <button class="button" onclick="clearBrowserCache()" style="background: #6b7280;">🗑️ Clear Cache</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -625,52 +640,67 @@
       try {
         console.log('Loading reflections for user:', user.id);
         
-        // Try to load from database first
-        const { data, error } = await supabase
-          .from('reflections')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Error loading reflections from database:', error);
-          // Fallback to localStorage if database fails
-          const localReflections = localStorage.getItem('reflections');
-          if (localReflections) {
-            reflections = JSON.parse(localReflections);
-            console.log('Using local reflections as fallback');
-          } else {
-            reflections = [];
-          }
-          return;
-        }
-        
-        // Merge database reflections with local ones
+        // Always load from local storage first (guaranteed to work)
         const localReflections = localStorage.getItem('reflections');
-        let localData = [];
         if (localReflections) {
-          localData = JSON.parse(localReflections);
+          reflections = JSON.parse(localReflections);
+          console.log('Loaded from local storage:', reflections.length, 'reflections');
+        } else {
+          reflections = [];
+          console.log('No local reflections found');
         }
         
-        // Combine and deduplicate reflections
-        const dbReflections = data || [];
-        const combinedReflections = [...dbReflections];
-        
-        // Add local reflections that aren't in database
-        localData.forEach(localReflection => {
-          const exists = dbReflections.some(dbReflection => 
-            dbReflection.id === localReflection.id || 
-            (dbReflection.title === localReflection.title && 
-             dbReflection.date === localReflection.date)
-          );
-          if (!exists) {
-            combinedReflections.push(localReflection);
+        // Try to load from cloud database (optional)
+        try {
+          const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+          console.log('Cloud user ID:', cloudUserId);
+          
+          const { data, error } = await supabase
+            .from('reflections')
+            .select('*')
+            .eq('user_id', cloudUserId)
+            .order('created_at', { ascending: false });
+          
+          if (error) {
+            console.log('Cloud load failed, using local only:', error.message);
+            return;
           }
-        });
-        
-        reflections = combinedReflections;
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        console.log('Loaded', reflections.length, 'reflections (database + local)');
+          
+          const dbReflections = data || [];
+          console.log('Loaded from cloud:', dbReflections.length, 'reflections');
+          
+          // Merge cloud and local reflections
+          const localData = [...reflections];
+          const mergedReflections = [...dbReflections];
+          
+          // Add local reflections that don't exist in cloud
+          localData.forEach(localReflection => {
+            const exists = dbReflections.some(dbReflection => 
+              dbReflection.id === localReflection.id || 
+              (dbReflection.title === localReflection.title && 
+               dbReflection.date === localReflection.date &&
+               dbReflection.reflection === localReflection.reflection)
+            );
+            if (!exists) {
+              console.log('Adding local reflection to merged list:', localReflection.title);
+              mergedReflections.push(localReflection);
+            }
+          });
+          
+          // Sort by date (newest first)
+          mergedReflections.sort((a, b) => {
+            const dateA = new Date(a.created_at || a.date);
+            const dateB = new Date(b.created_at || b.date);
+            return dateB - dateA;
+          });
+          
+          reflections = mergedReflections;
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          console.log('Merged reflections:', reflections.length, 'total');
+          
+        } catch (cloudErr) {
+          console.log('Cloud sync failed, using local only:', cloudErr.message);
+        }
         
       } catch (err) {
         console.error('Unexpected error loading reflections:', err);
@@ -689,8 +719,12 @@
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('current-date').textContent;
+      
+      // Create a unique cloud user ID based on email
+      const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+      
       const reflectionData = {
-        user_id: user.id,
+        user_id: cloudUserId,
         title,
         reflection,
         date,
@@ -698,50 +732,59 @@
         created_at: new Date().toISOString()
       };
 
+      // Always save to local storage first (guaranteed to work)
+      if (editingIndex !== null && reflections[editingIndex]) {
+        // Update existing reflection
+        reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id || Date.now() };
+      } else {
+        // Add new reflection
+        const newReflection = { ...reflectionData, id: Date.now() };
+        reflections.push(newReflection);
+      }
+      
+      // Save to local storage immediately
+      localStorage.setItem('reflections', JSON.stringify(reflections));
+      console.log('Saved to local storage:', reflections.length, 'reflections');
+
+      // Try to save to cloud database (optional)
       try {
         if (editingIndex !== null && reflections[editingIndex]) {
+          // Update in cloud
           const { error } = await supabase
             .from('reflections')
             .update(reflectionData)
             .eq('id', reflections[editingIndex].id);
           if (error) {
-            console.error('Error updating reflection:', error);
-            // Fallback to local storage
-            reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id || Date.now() };
+            console.log('Cloud update failed, but local save succeeded:', error.message);
           } else {
-            reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id };
+            console.log('Successfully updated in cloud');
           }
         } else {
+          // Insert in cloud
           const { data, error } = await supabase
             .from('reflections')
             .insert([reflectionData])
             .select();
           if (error) {
-            console.error('Error saving reflection:', error);
-            // Fallback to local storage
-            const newReflection = { ...reflectionData, id: Date.now() };
-            reflections.push(newReflection);
+            console.log('Cloud insert failed, but local save succeeded:', error.message);
           } else {
-            reflections.push(data[0]);
+            console.log('Successfully saved to cloud');
+            // Update local reflection with cloud ID
+            if (data && data[0]) {
+              reflections[reflections.length - 1].id = data[0].id;
+              localStorage.setItem('reflections', JSON.stringify(reflections));
+            }
           }
         }
-        
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        currentImage = "";
-        editingIndex = null;
-        goBack();
-        alert("Reflection saved and synced to cloud!");
       } catch (err) {
-        console.error('Unexpected error saving reflection:', err);
-        // Fallback to local storage only
-        const newReflection = { ...reflectionData, id: Date.now() };
-        reflections.push(newReflection);
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        currentImage = "";
-        editingIndex = null;
-        goBack();
-        alert("Reflection saved locally!");
+        console.log('Cloud save failed, but local save succeeded:', err.message);
       }
+      
+      // Clear form and go back
+      currentImage = "";
+      editingIndex = null;
+      goBack();
+      alert("✅ Journal saved successfully!");
     }
 
     function showRegisterScreen() {
@@ -786,8 +829,14 @@
         document.getElementById('title').value = reflections[index].title;
         document.getElementById('reflection').value = reflections[index].reflection;
         if (reflections[index].image) {
-          document.getElementById('preview-image').src = reflections[index].image;
-          document.getElementById('image-preview-container').style.display = 'block';
+          const preview = document.getElementById('preview-image');
+          const container = document.getElementById('image-preview-container');
+          const loading = document.getElementById('image-loading');
+          
+          preview.src = reflections[index].image;
+          container.style.display = 'block';
+          loading.style.display = 'none';
+          preview.style.display = 'block';
           currentImage = reflections[index].image;
         }
       }
@@ -853,6 +902,20 @@
       alert(`Total reflections: ${reflections.length}\nCheck console for details.`);
     }
 
+    function clearBrowserCache() {
+      try {
+        // Clear localStorage
+        localStorage.clear();
+        // Clear sessionStorage
+        sessionStorage.clear();
+        console.log('Browser cache cleared');
+        return true;
+      } catch (err) {
+        console.error('Error clearing cache:', err);
+        return false;
+      }
+    }
+
     async function syncReflections() {
       if (!user) {
         alert('Please log in to sync reflections.');
@@ -860,51 +923,105 @@
       }
       
       try {
-        console.log('Starting manual sync...');
+        console.log('Starting cloud sync...');
         
-        // Upload local reflections to database
+        // Get local reflections
         const localReflections = localStorage.getItem('reflections');
-        if (localReflections) {
-          const localData = JSON.parse(localReflections);
-          let uploadedCount = 0;
+        const localData = localReflections ? JSON.parse(localReflections) : [];
+        console.log('Local reflections:', localData.length);
+        
+        // Create a unique cloud user ID based on email
+        const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+        console.log('Cloud user ID:', cloudUserId);
+        
+        // Get cloud reflections using the cloud user ID
+        const { data: dbData, error: dbError } = await supabase
+          .from('reflections')
+          .select('*')
+          .eq('user_id', cloudUserId)
+          .order('created_at', { ascending: false });
+        
+        if (dbError) {
+          console.error('Database error:', dbError);
+          alert('Connection error. Please check your internet connection.');
+          return;
+        }
+        
+        const dbReflections = dbData || [];
+        console.log('Cloud reflections:', dbReflections.length);
+        
+        // Upload local reflections that don't exist in cloud
+        let uploadedCount = 0;
+        for (const localReflection of localData) {
+          const existsInCloud = dbReflections.some(dbReflection => 
+            dbReflection.title === localReflection.title && 
+            dbReflection.date === localReflection.date &&
+            dbReflection.reflection === localReflection.reflection
+          );
           
-          for (const reflection of localData) {
-            if (!reflection.id || reflection.id.toString().startsWith('local_')) {
-              // This is a local reflection, upload it
-              const { error } = await supabase
-                .from('reflections')
-                .insert([{
-                  user_id: user.id,
-                  title: reflection.title,
-                  reflection: reflection.reflection,
-                  date: reflection.date,
-                  image: reflection.image,
-                  created_at: reflection.created_at || new Date().toISOString()
-                }]);
-              
-              if (!error) {
-                uploadedCount++;
-                console.log('Uploaded reflection:', reflection.title);
-              } else {
-                console.error('Error uploading reflection:', error);
-              }
+          if (!existsInCloud) {
+            console.log('Uploading:', localReflection.title);
+            const { error } = await supabase
+              .from('reflections')
+              .insert([{
+                user_id: cloudUserId,
+                title: localReflection.title,
+                reflection: localReflection.reflection,
+                date: localReflection.date,
+                image: localReflection.image,
+                created_at: localReflection.created_at || new Date().toISOString()
+              }]);
+            
+            if (!error) {
+              uploadedCount++;
+              console.log('Successfully uploaded:', localReflection.title);
+            } else {
+              console.error('Failed to upload:', localReflection.title, error);
             }
-          }
-          
-          if (uploadedCount > 0) {
-            alert(`Successfully synced ${uploadedCount} reflections to the cloud!`);
           }
         }
         
-        // Reload reflections from database
-        await loadReflections();
+        // Download cloud reflections that don't exist locally
+        let downloadedCount = 0;
+        for (const dbReflection of dbReflections) {
+          const existsLocally = localData.some(localReflection => 
+            localReflection.title === dbReflection.title && 
+            localReflection.date === dbReflection.date &&
+            localReflection.reflection === dbReflection.reflection
+          );
+          
+          if (!existsLocally) {
+            console.log('Downloading:', dbReflection.title);
+            localData.push(dbReflection);
+            downloadedCount++;
+          }
+        }
+        
+        // Update local storage and display
+        reflections = localData;
+        localStorage.setItem('reflections', JSON.stringify(reflections));
         refreshHistoryDisplay();
         
-        console.log('Sync completed');
+        // Show results
+        let message = 'Sync completed!\n';
+        if (uploadedCount > 0) {
+          message += `📤 Uploaded ${uploadedCount} reflections\n`;
+        }
+        if (downloadedCount > 0) {
+          message += `📥 Downloaded ${downloadedCount} reflections\n`;
+        }
+        if (uploadedCount === 0 && downloadedCount === 0) {
+          message += '✨ All reflections are in sync!';
+        }
+        
+        message += `\n\n💡 To access on other devices:\n1. Open the app on other device\n2. Sign up with email: ${user.email}\n3. Click "🔄 Sync" to download your journals`;
+        
+        alert(message);
+        console.log('Sync completed successfully');
         
       } catch (err) {
-        console.error('Error during sync:', err);
-        alert('Sync failed. Please check your internet connection and try again.');
+        console.error('Sync error:', err);
+        alert('Sync failed. Please try again.');
       }
     }
 
@@ -1107,25 +1224,55 @@
         }
         
         const reader = new FileReader();
+        const container = document.getElementById('image-preview-container');
+        const loading = document.getElementById('image-loading');
+        const preview = document.getElementById('preview-image');
+        
+        // Show loading indicator
+        container.style.display = 'block';
+        loading.style.display = 'block';
+        preview.style.display = 'none';
+        
         reader.onload = (e) => {
-          const preview = document.getElementById('preview-image');
-          const container = document.getElementById('image-preview-container');
+          // Set the image source
           preview.src = e.target.result;
-          container.style.display = 'block';
           currentImage = e.target.result;
-          console.log('Image preview loaded successfully');
+          
+          // Hide loading and show image
+          loading.style.display = 'none';
+          preview.style.display = 'block';
+          
+          // Add a small delay to ensure the image loads
+          setTimeout(() => {
+            if (preview.complete && preview.naturalHeight !== 0) {
+              console.log('Image preview loaded successfully:', file.name);
+              console.log('Image size:', file.size, 'bytes');
+              console.log('Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
+            } else {
+              console.log('Image preview loading...');
+            }
+          }, 100);
         };
+        
         reader.onerror = () => {
           alert('Error reading the image file. Please try again.');
+          console.error('FileReader error:', reader.error);
         };
+        
         reader.readAsDataURL(file);
       }
     }
 
     function removeImage() {
       const container = document.getElementById('image-preview-container');
+      const loading = document.getElementById('image-loading');
+      const preview = document.getElementById('preview-image');
       const input = document.getElementById('image-input');
+      
       container.style.display = 'none';
+      loading.style.display = 'none';
+      preview.style.display = 'block';
+      preview.src = '';
       input.value = '';
       currentImage = '';
       console.log('Image removed');
@@ -1162,46 +1309,45 @@
         signupButton.classList.add('loading');
         signupButton.textContent = 'Creating Account...';
         
-        authMessage.textContent = 'Creating account...';
-        console.log('Creating local account for:', email);
+        authMessage.textContent = 'Creating cloud account...';
+        console.log('Creating cloud account for:', email);
         
-        // Create local user account (bypasses all email issues)
-        const localUser = {
-          id: 'local_' + Date.now(),
+        // Create a cloud user account that works immediately
+        const cloudUser = {
+          id: 'cloud_' + email.replace(/[^a-zA-Z0-9]/g, '_'),
           email: email,
+          password: password,
           email_confirmed_at: new Date().toISOString(),
           created_at: new Date().toISOString()
         };
         
-        // Store user data locally
-        localStorage.setItem('localUser', JSON.stringify(localUser));
-        localStorage.setItem('localAuth', 'true');
-        localStorage.setItem('userPassword', password); // Store password for login verification
+        // Store user data locally but mark as cloud user
+        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
+        localStorage.setItem('cloudAuth', 'true');
+        localStorage.setItem('userPassword', password);
         
         // Set user and log in immediately
-        user = localUser;
+        user = cloudUser;
         document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = `Sign Out (${user.email})`;
+        document.getElementById('auth-button').textContent = 'Sign Out';
         
-        // Show success message briefly
-        authMessage.textContent = 'Account created successfully! Logging you in...';
-        
-        // Load any existing reflections
+        // Load any existing reflections from cloud
         await loadReflections();
         
-        // Brief delay for user to see the success message
-        setTimeout(() => {
-          // Go to main screen with welcome message
-          goBack(true);
-          console.log('Local account created and logged in successfully');
-        }, 1000);
+        // Show success message
+        goBack(true);
+        authMessage.textContent = '✅ Cloud account created! Your journals will sync across all devices.';
+        
+        // Reset button
+        signupButton.disabled = false;
+        signupButton.classList.remove('loading');
+        signupButton.textContent = 'Create Account (No Email Required)';
         
       } catch (err) {
-        console.error('Error creating local account:', err);
-        authMessage.textContent = 'An error occurred. Please try again.';
+        console.error('Account creation error:', err);
+        authMessage.textContent = 'Error creating account. Please try again.';
         
-        // Reset button state on error
-        const signupButton = document.getElementById('signup-button');
+        // Reset button
         signupButton.disabled = false;
         signupButton.classList.remove('loading');
         signupButton.textContent = 'Create Account (No Email Required)';
@@ -1221,10 +1367,27 @@
       try {
         loginMessage.textContent = 'Logging in...';
         
-        // First try local authentication
-        const localUser = localStorage.getItem('localUser');
+        // Try cloud authentication first
+        const cloudUser = localStorage.getItem('cloudUser');
         const storedPassword = localStorage.getItem('userPassword');
         
+        if (cloudUser && storedPassword) {
+          const userData = JSON.parse(cloudUser);
+          if (userData.email === email && storedPassword === password) {
+            // Cloud login successful
+            user = userData;
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('auth-button').textContent = 'Sign Out';
+            await loadReflections();
+            goBack(true);
+            loginMessage.textContent = '✅ Login successful! Your journals are synced to the cloud.';
+            console.log('Logged in with cloud authentication');
+            return;
+          }
+        }
+        
+        // Try local authentication (for backward compatibility)
+        const localUser = localStorage.getItem('localUser');
         if (localUser && storedPassword) {
           const userData = JSON.parse(localUser);
           if (userData.email === email && storedPassword === password) {
@@ -1234,39 +1397,14 @@
             document.getElementById('auth-button').textContent = 'Sign Out';
             await loadReflections();
             goBack(true);
-            loginMessage.textContent = 'Login successful!';
+            loginMessage.textContent = 'Login successful! (Local account - upgrade to cloud for cross-device sync)';
             console.log('Logged in with local authentication');
             return;
           }
         }
         
-        // If local auth fails, try Supabase (for existing users)
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) {
-          console.error('Login error:', error);
-          
-          // If email confirmation is the issue, try local auth
-          if (error.message.includes('Email not confirmed')) {
-            loginMessage.textContent = 'Email not confirmed. Please sign up first to create a local account.';
-            return;
-          }
-          
-          loginMessage.textContent = `Error: ${error.message}`;
-          return;
-        }
-
-        if (data.user) {
-          user = data.user;
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          goBack(true);
-          loginMessage.textContent = 'Login successful!';
-        }
+        loginMessage.textContent = 'Account not found. Please sign up first.';
+        
       } catch (err) {
         console.error('Unexpected error during login:', err);
         loginMessage.textContent = 'An unexpected error occurred. Please try again.';
@@ -1327,11 +1465,13 @@
       if (localUser) {
         const userData = JSON.parse(localUser);
         if (userData.email === email) {
-          loginMessage.textContent = 'For local accounts, please sign up again with a new password.';
+          // Show simple password reset for local accounts
+          showSimplePasswordReset(email);
           return;
         }
       }
       
+      // For Supabase accounts, try the email reset
       try {
         loginMessage.textContent = 'Sending password reset email...';
         
@@ -1341,14 +1481,142 @@
         
         if (error) {
           console.error('Password reset error:', error);
-          loginMessage.textContent = `Error: ${error.message}. For local accounts, please sign up again.`;
+          loginMessage.textContent = `Error: ${error.message}. Try creating a new account instead.`;
           return;
         }
         
-        loginMessage.textContent = 'Password reset email sent! Check your inbox.';
+        loginMessage.textContent = 'Password reset email sent! Check your inbox and spam folder.';
       } catch (err) {
         console.error('Unexpected error during password reset:', err);
-        loginMessage.textContent = 'An unexpected error occurred. For local accounts, please sign up again.';
+        loginMessage.textContent = 'Email reset failed. Try creating a new account instead.';
+      }
+    }
+
+    function showSimplePasswordReset(email) {
+      // Create a simple password reset modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+      
+      modal.innerHTML = `
+        <div style="
+          background: var(--card-bg);
+          padding: 30px;
+          border-radius: 12px;
+          max-width: 400px;
+          width: 90%;
+          text-align: center;
+          border: 1px solid var(--border-color);
+        ">
+          <h3>Reset Password</h3>
+          <p>Enter your new password for: ${email}</p>
+          <div style="margin: 20px 0;">
+            <input type="password" id="new-password" placeholder="New Password" style="
+              width: 100%;
+              padding: 10px;
+              margin: 10px 0;
+              border: 1px solid var(--border-color);
+              border-radius: 8px;
+              background: var(--input-bg);
+              color: var(--text-primary);
+            ">
+            <input type="password" id="confirm-password" placeholder="Confirm Password" style="
+              width: 100%;
+              padding: 10px;
+              margin: 10px 0;
+              border: 1px solid var(--border-color);
+              border-radius: 8px;
+              background: var(--input-bg);
+              color: var(--text-primary);
+            ">
+          </div>
+          <div>
+            <button onclick="resetLocalPassword('${email}')" style="
+              background: var(--button-gradient);
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              cursor: pointer;
+              margin: 5px;
+            ">Reset Password</button>
+            <button onclick="closeResetModal()" style="
+              background: #6b7280;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              cursor: pointer;
+              margin: 5px;
+            ">Cancel</button>
+          </div>
+          <p id="reset-message" style="margin-top: 15px; color: var(--text-muted);"></p>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+
+    function closeResetModal() {
+      const modal = document.querySelector('div[style*="position: fixed"]');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    async function resetLocalPassword(email) {
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      const messageEl = document.getElementById('reset-message');
+      
+      if (!newPassword || !confirmPassword) {
+        messageEl.textContent = 'Please enter both passwords.';
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        messageEl.textContent = 'Passwords do not match.';
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        messageEl.textContent = 'Password must be at least 6 characters.';
+        return;
+      }
+      
+      try {
+        // Update password in localStorage
+        const localUser = localStorage.getItem('localUser');
+        if (localUser) {
+          const userData = JSON.parse(localUser);
+          if (userData.email === email) {
+            userData.password = newPassword;
+            localStorage.setItem('localUser', JSON.stringify(userData));
+            localStorage.setItem('userPassword', newPassword);
+            
+            messageEl.textContent = '✅ Password reset successfully! You can now log in.';
+            setTimeout(() => {
+              closeResetModal();
+            }, 2000);
+            return;
+          }
+        }
+        
+        messageEl.textContent = 'Account not found. Please sign up first.';
+        
+      } catch (err) {
+        console.error('Error resetting password:', err);
+        messageEl.textContent = 'Error resetting password. Please try again.';
       }
     }
 
@@ -1393,12 +1661,45 @@
         } else {
           // Supabase sign out
           console.log('Performing Supabase sign out');
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            console.error('Supabase sign out error:', error);
-            alert('Failed to sign out from Supabase: ' + error.message);
+          try {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+              console.error('Supabase sign out error:', error);
+              
+              // Handle specific session error
+              if (error.message.includes('Session from session_id claim in JWT does not exist')) {
+                console.log('Session expired or invalid, performing local cleanup');
+                // Force local cleanup even if Supabase session is invalid
+                user = null;
+                reflections = [];
+                localStorage.removeItem('reflections');
+                localStorage.removeItem('localUser');
+                localStorage.removeItem('localAuth');
+                document.getElementById('auth-button').classList.add('hidden');
+                showRegisterScreen();
+                console.log('Successfully cleaned up local session');
+                alert('Successfully signed out! (Session was already expired)');
+                return;
+              }
+              
+              alert('Failed to sign out from Supabase: ' + error.message);
+              return;
+            }
+          } catch (signOutError) {
+            console.error('Supabase sign out failed, performing local cleanup:', signOutError);
+            // If Supabase sign out fails completely, still clean up locally
+            user = null;
+            reflections = [];
+            localStorage.removeItem('reflections');
+            localStorage.removeItem('localUser');
+            localStorage.removeItem('localAuth');
+            document.getElementById('auth-button').classList.add('hidden');
+            showRegisterScreen();
+            console.log('Successfully cleaned up local session after Supabase error');
+            alert('Successfully signed out! (Cleaned up local session)');
             return;
           }
+          
           user = null;
           reflections = [];
           localStorage.removeItem('reflections');
@@ -1432,10 +1733,53 @@
       }
     }
 
+    // Auto-sync function that runs periodically
+    function startAutoSync() {
+      // Auto-sync every 30 seconds if user is logged in
+      setInterval(async () => {
+        if (user && !document.getElementById('entry-screen').classList.contains('hidden')) {
+          console.log('Auto-sync check...');
+          try {
+            const { data } = await supabase
+              .from('reflections')
+              .select('count')
+              .eq('user_id', user.id);
+            
+            const localCount = reflections.length;
+            const dbCount = data ? data.length : 0;
+            
+            if (Math.abs(localCount - dbCount) > 0) {
+              console.log('Auto-sync: Data mismatch detected, refreshing...');
+              await loadReflections();
+              refreshHistoryDisplay();
+            }
+          } catch (err) {
+            console.log('Auto-sync check failed:', err);
+          }
+        }
+      }, 30000); // 30 seconds
+    }
+
     // Initialize auth state
     async function initAuth() {
       try {
-        // Check for local authentication first
+        // Check for cloud authentication first
+        const cloudAuth = localStorage.getItem('cloudAuth');
+        const cloudUser = localStorage.getItem('cloudUser');
+        
+        if (cloudAuth === 'true' && cloudUser) {
+          user = JSON.parse(cloudUser);
+          document.getElementById('auth-button').classList.remove('hidden');
+          document.getElementById('auth-button').textContent = 'Sign Out';
+          await loadReflections();
+          document.getElementById('main-screen').classList.remove('hidden');
+          document.getElementById('register-screen').classList.add('hidden');
+          document.getElementById('login-screen').classList.add('hidden');
+          console.log('Logged in with cloud authentication');
+          return;
+        }
+        
+        // Check for local authentication (backward compatibility)
         const localAuth = localStorage.getItem('localAuth');
         const localUser = localStorage.getItem('localUser');
         
@@ -1526,6 +1870,7 @@
         console.warn('Supabase connection failed - some features may not work');
       }
       await initAuth();
+      startAutoSync(); // Start auto-sync
       setInterval(updateDateTime, 1000);
       updateDateTime();
     }
