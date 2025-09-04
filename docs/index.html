@@ -729,18 +729,21 @@
       }
       
       const userId = currentUser.userId;
+      console.log('Loading reflections for user ID:', userId);
+      console.log('Current user object:', currentUser);
       
       try {
         console.log('Loading reflections for user:', userId);
         
-        // Always load from local storage first (guaranteed to work)
-        const localReflections = localStorage.getItem('reflections');
+        // Always load from user-specific local storage first (guaranteed to work)
+        const userReflectionsKey = 'reflections_' + userId;
+        const localReflections = localStorage.getItem(userReflectionsKey);
         if (localReflections) {
           reflections = JSON.parse(localReflections);
-          console.log('Loaded from local storage:', reflections.length, 'reflections');
+          console.log('Loaded from user-specific local storage:', reflections.length, 'reflections');
         } else {
           reflections = [];
-          console.log('No local reflections found');
+          console.log('No local reflections found for user:', userId);
         }
         
         // Try to load from cloud database (optional)
@@ -787,7 +790,8 @@
           });
           
           reflections = mergedReflections;
-          localStorage.setItem('reflections', JSON.stringify(reflections));
+          const userReflectionsKey = 'reflections_' + userId;
+          localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
           console.log('Merged reflections:', reflections.length, 'total');
           
         } catch (cloudErr) {
@@ -796,8 +800,9 @@
         
       } catch (err) {
         console.error('Unexpected error loading reflections:', err);
-        // Fallback to localStorage
-        const localReflections = localStorage.getItem('reflections');
+        // Fallback to user-specific localStorage
+        const userReflectionsKey = 'reflections_' + userId;
+        const localReflections = localStorage.getItem(userReflectionsKey);
         if (localReflections) {
           reflections = JSON.parse(localReflections);
         } else {
@@ -823,6 +828,8 @@
       }
       
       const userId = currentUser.userId;
+      console.log('Saving reflection for user ID:', userId);
+      console.log('Current user object:', currentUser);
       
       const reflectionData = {
         user_id: userId,
@@ -843,9 +850,10 @@
         reflections.push(newReflection);
       }
       
-      // Save to local storage immediately
-      localStorage.setItem('reflections', JSON.stringify(reflections));
-      console.log('Saved to local storage:', reflections.length, 'reflections');
+      // Save to user-specific local storage immediately
+      const userReflectionsKey = 'reflections_' + userId;
+      localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
+      console.log('Saved to user-specific local storage:', reflections.length, 'reflections');
 
       // Try to save to cloud database (optional)
       try {
@@ -873,7 +881,8 @@
             // Update local reflection with cloud ID
             if (data && data[0]) {
               reflections[reflections.length - 1].id = data[0].id;
-              localStorage.setItem('reflections', JSON.stringify(reflections));
+              const userReflectionsKey = 'reflections_' + userId;
+              localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
             }
           }
         }
@@ -1083,9 +1092,10 @@
           }
         }
         
-        // Update local storage and display
+        // Update user-specific local storage and display
         reflections = localData;
-        localStorage.setItem('reflections', JSON.stringify(reflections));
+        const userReflectionsKey = 'reflections_' + userId;
+        localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
         refreshHistoryDisplay();
         
         // Show results
@@ -1203,10 +1213,11 @@
           console.log('Deleted reflection:', deletedReflection);
           console.log('Remaining reflections:', reflections.length);
           
-          // Update localStorage immediately
+          // Update user-specific localStorage immediately
           try {
-            localStorage.setItem('reflections', JSON.stringify(reflections));
-            console.log('Updated reflections in localStorage');
+            const userReflectionsKey = 'reflections_' + currentUser.userId;
+            localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
+            console.log('Updated reflections in user-specific localStorage');
           } catch (localErr) {
             console.error('Error updating localStorage:', localErr);
             throw new Error('Failed to save changes locally: ' + localErr.message);
