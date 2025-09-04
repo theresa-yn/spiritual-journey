@@ -500,6 +500,7 @@
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
     <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
+    <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
       <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Syncs across all your devices</p>
@@ -645,33 +646,46 @@
     let currentUser = null;
 
     function setUsername() {
-      console.log('Set username function called');
+      console.log('=== SET USERNAME CALLED ===');
       const username = document.getElementById('username').value.trim();
       const message = document.getElementById('account-message');
       
       console.log('Username entered:', username);
+      console.log('Username length:', username.length);
       
       if (!username) {
+        console.log('No username entered');
         message.textContent = 'Please enter a username';
         message.style.display = 'block';
         return;
       }
       
       if (username.length < 2) {
+        console.log('Username too short');
         message.textContent = 'Username must be at least 2 characters';
         message.style.display = 'block';
         return;
       }
       
       // Create simple user with consistent ID
+      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
+      console.log('Generated user ID:', userId);
+      
       currentUser = {
         username: username,
-        userId: 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '')
+        userId: userId
       };
       
+      console.log('Created user object:', currentUser);
+      
       // Save to localStorage
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      console.log('Username set and saved:', currentUser);
+      const userJson = JSON.stringify(currentUser);
+      console.log('Saving to localStorage:', userJson);
+      localStorage.setItem('currentUser', userJson);
+      
+      // Verify save
+      const saved = localStorage.getItem('currentUser');
+      console.log('Verified save:', saved);
       
       message.textContent = 'Welcome, ' + username + '!';
       message.style.display = 'block';
@@ -694,12 +708,31 @@
       console.log('=== SYNC TEST ===');
       console.log('Current user:', currentUser);
       console.log('LocalStorage currentUser:', localStorage.getItem('currentUser'));
+      console.log('All localStorage keys:', Object.keys(localStorage));
       
       if (currentUser) {
         alert('✅ Sync Test\n\nUsername: ' + currentUser.username + '\nUser ID: ' + currentUser.userId + '\n\nThis ID will be the same on all devices!');
       } else {
         alert('❌ No user found. Please set a username first.');
       }
+    }
+
+    function clearAllData() {
+      console.log('=== CLEARING ALL DATA ===');
+      console.log('Before clear - localStorage keys:', Object.keys(localStorage));
+      
+      // Clear all localStorage
+      localStorage.clear();
+      
+      console.log('After clear - localStorage keys:', Object.keys(localStorage));
+      
+      // Reset current user
+      currentUser = null;
+      
+      alert('✅ All data cleared!\n\nLocalStorage has been completely cleared.\nYou can now test with a fresh start.');
+      
+      // Show account screen
+      showAccountScreen();
     }
 
     function showAccountScreen() {
@@ -2241,28 +2274,37 @@
       return false;
     }
 
-    // Initialize auth state
+        // Initialize auth state
     async function initAuth() {
       try {
-        console.log('Initializing auth...');
+        console.log('=== INITIALIZING APP ===');
+        console.log('LocalStorage contents:', Object.keys(localStorage));
+        
         // Check if user is already logged in
         const savedUser = localStorage.getItem('currentUser');
-        console.log('Saved user:', savedUser);
+        console.log('Saved user from localStorage:', savedUser);
         
         if (savedUser) {
-          currentUser = JSON.parse(savedUser);
-          console.log('User found, showing main screen:', currentUser);
-          showMainScreen();
-          await loadReflections();
-          return;
+          try {
+            currentUser = JSON.parse(savedUser);
+            console.log('Parsed user object:', currentUser);
+            console.log('User ID:', currentUser.userId);
+            showMainScreen();
+            await loadReflections();
+            return;
+          } catch (parseErr) {
+            console.error('Error parsing saved user:', parseErr);
+            localStorage.removeItem('currentUser');
+          }
         }
         
         // No user logged in, show account screen
-        console.log('No user found, showing account screen');
+        console.log('No valid user found, showing account screen');
         showAccountScreen();
-
+        
       } catch (err) {
         console.error('Error initializing auth:', err);
+        console.error('Error stack:', err.stack);
         // Show account screen on error
         showAccountScreen();
       }
