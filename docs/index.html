@@ -552,8 +552,13 @@
     let supabase;
     
     function initializeSupabase() {
+      console.log('=== INITIALIZING SUPABASE ===');
+      console.log('Window supabase available:', typeof window.supabase !== 'undefined');
+      console.log('Window supabase:', window.supabase);
+      
       if (typeof window.supabase === 'undefined') {
         console.error('Supabase library not loaded');
+        console.log('Available window properties:', Object.keys(window).filter(k => k.includes('supabase')));
         return false;
       }
       
@@ -561,6 +566,7 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
       
       try {
+        console.log('Creating Supabase client...');
         supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
           auth: {
             autoRefreshToken: true,
@@ -568,10 +574,12 @@
             detectSessionInUrl: true
           }
         });
+        console.log('Supabase client created:', supabase);
         console.log('Supabase client initialized successfully');
         return true;
       } catch (error) {
         console.error('Failed to initialize Supabase client:', error);
+        console.error('Error details:', error.message, error.stack);
         return false;
       }
     }
@@ -710,8 +718,19 @@
       console.log('Current user:', currentUser);
       console.log('LocalStorage currentUser:', localStorage.getItem('currentUser'));
       console.log('All localStorage keys:', Object.keys(localStorage));
+      console.log('Supabase variable:', supabase);
+      console.log('Window supabase:', window.supabase);
       
       if (currentUser) {
+        // Check if supabase is initialized
+        if (!supabase) {
+          console.log('Supabase not initialized, trying to initialize...');
+          if (!initializeSupabase()) {
+            alert('❌ Supabase Initialization Failed\n\nCannot connect to database.\nPlease refresh the page and try again.');
+            return;
+          }
+        }
+        
         // Test database connection
         try {
           console.log('Testing database connection...');
@@ -743,6 +762,15 @@
       if (!currentUser) {
         alert('❌ No user found. Please set a username first.');
         return;
+      }
+      
+      // Check if supabase is initialized
+      if (!supabase) {
+        console.log('Supabase not initialized, trying to initialize...');
+        if (!initializeSupabase()) {
+          alert('❌ Supabase Initialization Failed\n\nCannot connect to database.\nPlease refresh the page and try again.');
+          return;
+        }
       }
       
       try {
