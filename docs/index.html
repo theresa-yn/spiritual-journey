@@ -655,9 +655,9 @@
     // Simple username system
     let currentUser = null;
     
-    // Generate consistent UUID for database compatibility based on username
-    function generateConsistentUUID(username) {
-      // Simple deterministic UUID generation based on username
+    // Generate simple user ID for database compatibility
+    function generateSimpleUserId(username) {
+      // Just use a simple hash-based ID that's not trying to be a UUID
       const input = username.toLowerCase();
       
       // Create a simple hash from the username
@@ -668,40 +668,22 @@
         hash = hash & hash; // Convert to 32-bit integer
       }
       
-      // Generate deterministic but valid UUID v4 format
-      // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-      const positiveHash = Math.abs(hash);
-      
-      // Create 32 hex characters from the hash
-      const hexString = positiveHash.toString(16).padStart(8, '0') + 
-                       (positiveHash * 7).toString(16).padStart(8, '0') +
-                       (positiveHash * 13).toString(16).padStart(8, '0') +
-                       (positiveHash * 17).toString(16).padStart(8, '0');
-      
-      // Format as proper UUID: 8-4-4-4-12
-      const uuid = [
-        hexString.substring(0, 8),                    // 8 chars
-        hexString.substring(8, 12),                   // 4 chars
-        '4' + hexString.substring(13, 16),           // 4 chars (version 4)
-        ((parseInt(hexString.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hexString.substring(17, 20), // 4 chars (variant)
-        hexString.substring(20, 32)                   // 12 chars
-      ].join('-');
-      
-      return uuid;
+      // Return a simple numeric ID
+      return Math.abs(hash).toString();
     }
     
-    // Migrate old user format to new UUID format
-    function migrateUserToUUID(user) {
+    // Migrate old user format to new simple ID format
+    function migrateUserToSimpleId(user) {
       if (!user || !user.userId) return user;
       
-      // Check if userId is in old format (starts with 'user_')
-      if (user.userId.startsWith('user_') && !user.userId.includes('-')) {
-        console.log('Migrating old user format to UUID:', user.userId);
+      // Check if userId is in old format (starts with 'user_' or contains '-')
+      if (user.userId.startsWith('user_') || user.userId.includes('-')) {
+        console.log('Migrating old user format to simple ID:', user.userId);
         
-        // Generate new UUID based on username
-        const newUserId = generateConsistentUUID(user.username);
+        // Generate new simple ID based on username
+        const newUserId = generateSimpleUserId(user.username);
         
-        // Create new user object with UUID
+        // Create new user object with simple ID
         const migratedUser = {
           username: user.username,
           userId: newUserId
@@ -750,9 +732,9 @@
         return;
       }
       
-      // Generate a consistent UUID-based user ID for database compatibility
-      const userId = generateConsistentUUID(username);
-      console.log('Generated consistent UUID user ID:', userId);
+      // Generate a simple user ID for database compatibility
+      const userId = generateSimpleUserId(username);
+      console.log('Generated simple user ID:', userId);
       
       currentUser = {
         username: username,
@@ -884,7 +866,7 @@
     }
 
     function forceUUIDUpdate() {
-      console.log('=== FORCE UUID UPDATE ===');
+      console.log('=== FORCE ID UPDATE ===');
       
       if (!currentUser) {
         alert('❌ No user found. Please set a username first.');
@@ -897,9 +879,9 @@
       console.log('Current user ID:', oldUserId);
       console.log('Username:', username);
       
-      // Generate new UUID
-      const newUserId = generateConsistentUUID(username);
-      console.log('New UUID:', newUserId);
+      // Generate new simple ID
+      const newUserId = generateSimpleUserId(username);
+      console.log('New simple ID:', newUserId);
       
       // Create new user object
       const newUser = {
@@ -922,9 +904,9 @@
         console.log('Migrated reflections from', oldKey, 'to', newKey);
       }
       
-      alert('✅ UUID Updated!\n\nOld ID: ' + oldUserId + '\nNew ID: ' + newUserId + '\n\nYour data has been migrated to the new format.');
+      alert('✅ ID Updated!\n\nOld ID: ' + oldUserId + '\nNew ID: ' + newUserId + '\n\nYour data has been migrated to the new format.');
       
-      console.log('UUID update complete. New user:', currentUser);
+      console.log('ID update complete. New user:', currentUser);
     }
 
     function clearAllData() {
@@ -2500,8 +2482,8 @@
             console.log('Parsed user object:', parsedUser);
             console.log('User ID:', parsedUser.userId);
             
-            // Migrate old format to UUID if needed
-            currentUser = migrateUserToUUID(parsedUser);
+            // Migrate old format to simple ID if needed
+            currentUser = migrateUserToSimpleId(parsedUser);
             console.log('Final user object after migration:', currentUser);
             
             showMainScreen();
