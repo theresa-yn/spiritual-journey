@@ -646,9 +646,12 @@
     let currentUser = null;
 
     function createAccount() {
+      console.log('Create account function called');
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
       const message = document.getElementById('account-message');
+      
+      console.log('Username:', username, 'Password length:', password.length);
       
       if (!username) {
         message.textContent = 'Please enter a username';
@@ -662,15 +665,16 @@
         return;
       }
       
-      // Create user account
+      // Create user account with consistent ID
       currentUser = {
         username: username,
         password: password,
-        userId: 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now()
+        userId: 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '')
       };
       
       // Save to localStorage
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      console.log('Account created and saved:', currentUser);
       
       message.textContent = 'Account created successfully!';
       message.style.display = 'block';
@@ -678,6 +682,7 @@
       
       // Show main screen after a short delay
       setTimeout(() => {
+        console.log('Switching to main screen');
         showMainScreen();
       }, 1500);
     }
@@ -693,8 +698,8 @@
         return;
       }
       
-      // For simplicity, we'll create the same user ID format
-      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now();
+      // Use consistent user ID format (same as createAccount)
+      const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
       
       currentUser = {
         username: username,
@@ -2252,16 +2257,21 @@
     // Initialize auth state
     async function initAuth() {
       try {
+        console.log('Initializing auth...');
         // Check if user is already logged in
         const savedUser = localStorage.getItem('currentUser');
+        console.log('Saved user:', savedUser);
+        
         if (savedUser) {
           currentUser = JSON.parse(savedUser);
+          console.log('User found, showing main screen:', currentUser);
           showMainScreen();
           await loadReflections();
           return;
         }
         
         // No user logged in, show account screen
+        console.log('No user found, showing account screen');
         showAccountScreen();
 
       } catch (err) {
