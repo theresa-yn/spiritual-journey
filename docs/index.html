@@ -11,22 +11,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Spiritual Journey</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-  <script>
-    // Fallback if the main CDN fails
-    if (typeof window.supabase === 'undefined') {
-      console.log('Trying fallback CDN...');
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js';
-      script.onload = function() {
-        console.log('Fallback CDN loaded successfully');
-      };
-      script.onerror = function() {
-        console.error('Both CDNs failed to load');
-      };
-      document.head.appendChild(script);
-    }
-  </script>
+  <!-- Notion SDK -->
+  <script src="https://unpkg.com/@notionhq/client@2.2.3/dist/index.umd.js"></script>
   <style>
     /* CSS Variables for theming */
     :root {
@@ -498,10 +484,9 @@
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
+    <button class="button" onclick="notionLogin()" style="background: #000000; margin-top: 10px;">🔗 Connect to Notion</button>
+    <button class="button" onclick="notionSync()" style="background: #10b981; margin-top: 10px;">🔄 Sync with Notion</button>
     <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
-    <button class="button" onclick="testSync()" style="background: #10b981; margin-top: 10px;">Test Sync</button>
-    <button class="button" onclick="shareData()" style="background: #3b82f6; margin-top: 10px;">Share Data</button>
-    <button class="button" onclick="loadSharedData()" style="background: #8b5cf6; margin-top: 10px;">Load Shared Data</button>
     <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
@@ -549,38 +534,33 @@
     <button onclick="showHistory()">Past Reflections</button>
   </div>
   <script>
-    // Initialize Supabase client
-    let supabase;
+    // Notion integration
+    let notionClient = null;
+    let notionDatabaseId = null;
     
-    function initializeSupabase() {
-      console.log('=== INITIALIZING SUPABASE ===');
-      console.log('Window supabase available:', typeof window.supabase !== 'undefined');
-      console.log('Window supabase:', window.supabase);
+    function initializeNotion() {
+      console.log('=== INITIALIZING NOTION ===');
       
-      if (typeof window.supabase === 'undefined') {
-        console.error('Supabase library not loaded');
-        console.log('Available window properties:', Object.keys(window).filter(k => k.includes('supabase')));
+      if (typeof window.NotionClient === 'undefined') {
+        console.error('Notion SDK not loaded');
         return false;
       }
       
-      const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-      
       try {
-        console.log('Creating Supabase client...');
-        supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true
-          }
-        });
-        console.log('Supabase client created:', supabase);
-        console.log('Supabase client initialized successfully');
-        return true;
+        // Initialize Notion client (will need user's integration token)
+        const integrationToken = localStorage.getItem('notionToken');
+        if (integrationToken) {
+          notionClient = new window.NotionClient({
+            auth: integrationToken
+          });
+          console.log('Notion client initialized with token');
+          return true;
+        } else {
+          console.log('No Notion token found, user needs to connect');
+          return false;
+        }
       } catch (error) {
-        console.error('Failed to initialize Supabase client:', error);
-        console.error('Error details:', error.message, error.stack);
+        console.error('Failed to initialize Notion client:', error);
         return false;
       }
     }
@@ -788,30 +768,174 @@
       showAccountScreen();
     }
 
-    async function testSync() {
-      console.log('=== SYNC TEST ===');
-      console.log('Current user:', currentUser);
-      console.log('LocalStorage currentUser:', localStorage.getItem('currentUser'));
-      console.log('All localStorage keys:', Object.keys(localStorage));
+    async function notionLogin() {
+      console.log('=== NOTION LOGIN ===');
       
-      if (currentUser) {
-        // Test local storage sync
-        try {
-          console.log('Testing local storage...');
-          
-          // Load reflections from local storage
-          const userReflectionsKey = 'reflections_' + currentUser.userId;
-          const localReflections = localStorage.getItem(userReflectionsKey);
-          const reflections = localReflections ? JSON.parse(localReflections) : [];
-          
-          console.log('Local storage test successful:', reflections);
-          alert('✅ Sync Test\n\nUsername: ' + currentUser.username + '\nUser ID: ' + currentUser.userId + '\n\nLocal Storage: Working ✅\nRecords found: ' + reflections.length + '\n\nData is stored locally on this device.\nUse Export/Import for cross-device sync.');
-        } catch (err) {
-          console.log('Local storage test failed:', err);
-          alert('❌ Local Storage Test Failed\n\nError: ' + err.message);
+      if (!currentUser) {
+        alert('❌ Please set a username first.');
+        return;
+      }
+      
+      // Prompt for Notion integration token
+      const token = prompt('Enter your Notion Integration Token:\n\n1. Go to https://www.notion.so/my-integrations\n2. Create a new integration\n3. Copy the "Internal Integration Token"\n4. Paste it here:');
+      
+      if (!token) {
+        alert('❌ No token provided. Notion connection cancelled.');
+        return;
+      }
+      
+      try {
+        // Test the token
+        const testClient = new window.NotionClient({ auth: token });
+        const response = await testClient.users.me();
+        
+        // Save token and initialize client
+        localStorage.setItem('notionToken', token);
+        notionClient = testClient;
+        
+        // Create or find database
+        await createNotionDatabase();
+        
+        alert('✅ Notion Connected!\n\nUser: ' + response.name + '\nEmail: ' + response.person?.email + '\n\nYour journals will now sync to Notion!');
+        
+      } catch (error) {
+        console.error('Notion login failed:', error);
+        alert('❌ Notion Connection Failed\n\nError: ' + error.message + '\n\nPlease check your integration token and try again.');
+      }
+    }
+    
+    async function createNotionDatabase() {
+      try {
+        // Try to find existing database first
+        const searchResponse = await notionClient.search({
+          query: 'Spiritual Journey',
+          filter: {
+            property: 'object',
+            value: 'database'
+          }
+        });
+        
+        if (searchResponse.results.length > 0) {
+          notionDatabaseId = searchResponse.results[0].id;
+          console.log('Found existing database:', notionDatabaseId);
+          return;
         }
-      } else {
-        alert('❌ No user found. Please set a username first.');
+        
+        // Create new database
+        const response = await notionClient.databases.create({
+          parent: {
+            type: 'page_id',
+            page_id: 'YOUR_NOTION_PAGE_ID' // This would need to be configured
+          },
+          title: [
+            {
+              type: 'text',
+              text: {
+                content: 'Spiritual Journey'
+              }
+            }
+          ],
+          properties: {
+            'Title': {
+              title: {}
+            },
+            'Reflection': {
+              rich_text: {}
+            },
+            'Date': {
+              date: {}
+            },
+            'Username': {
+              rich_text: {}
+            }
+          }
+        });
+        
+        notionDatabaseId = response.id;
+        localStorage.setItem('notionDatabaseId', notionDatabaseId);
+        console.log('Created new database:', notionDatabaseId);
+        
+      } catch (error) {
+        console.error('Database creation failed:', error);
+        throw error;
+      }
+    }
+    
+    async function notionSync() {
+      console.log('=== NOTION SYNC ===');
+      
+      if (!currentUser) {
+        alert('❌ Please set a username first.');
+        return;
+      }
+      
+      if (!notionClient) {
+        if (!initializeNotion()) {
+          alert('❌ Notion not connected. Please use "Connect to Notion" first.');
+          return;
+        }
+      }
+      
+      try {
+        // Load local reflections
+        const userReflectionsKey = 'reflections_' + currentUser.userId;
+        const localReflections = localStorage.getItem(userReflectionsKey);
+        const reflections = localReflections ? JSON.parse(localReflections) : [];
+        
+        // Sync to Notion
+        let syncedCount = 0;
+        for (const reflection of reflections) {
+          try {
+            await notionClient.pages.create({
+              parent: {
+                database_id: notionDatabaseId
+              },
+              properties: {
+                'Title': {
+                  title: [
+                    {
+                      text: {
+                        content: reflection.title
+                      }
+                    }
+                  ]
+                },
+                'Reflection': {
+                  rich_text: [
+                    {
+                      text: {
+                        content: reflection.reflection
+                      }
+                    }
+                  ]
+                },
+                'Date': {
+                  date: {
+                    start: reflection.date
+                  }
+                },
+                'Username': {
+                  rich_text: [
+                    {
+                      text: {
+                        content: currentUser.username
+                      }
+                    }
+                  ]
+                }
+              }
+            });
+            syncedCount++;
+          } catch (error) {
+            console.error('Failed to sync reflection:', reflection.title, error);
+          }
+        }
+        
+        alert('✅ Notion Sync Complete!\n\nSynced ' + syncedCount + ' reflections to Notion.\n\nYour journals are now available in your Notion workspace!');
+        
+      } catch (error) {
+        console.error('Notion sync failed:', error);
+        alert('❌ Notion Sync Failed\n\nError: ' + error.message);
       }
     }
 
@@ -2656,17 +2780,9 @@
       // Load theme first
       loadTheme();
       
-      // Initialize Supabase first
-      if (!initializeSupabase()) {
-        console.error('Failed to initialize Supabase - app will not work properly');
-        alert('Failed to load authentication system. Please refresh the page.');
-        return;
-      }
+      // Initialize Notion
+      initializeNotion();
       
-      const connectionOk = await testSupabaseConnection();
-      if (!connectionOk) {
-        console.warn('Supabase connection failed - some features may not work');
-      }
       await initAuth();
       startAutoSync(); // Start auto-sync
       setInterval(updateDateTime, 1000);
