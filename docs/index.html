@@ -12,7 +12,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Spiritual Journey</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script>
     // Fallback if the main CDN fails
     if (typeof window.supabase === 'undefined') {
@@ -27,20 +26,6 @@
       };
       document.head.appendChild(script);
     }
-    
-    // Initialize EmailJS (you'll need to get your own service ID, template ID, and public key)
-    // For now, we'll use placeholder values
-    const EMAILJS_SERVICE_ID = 'your_service_id';
-    const EMAILJS_TEMPLATE_ID = 'your_template_id';
-    const EMAILJS_PUBLIC_KEY = 'your_public_key';
-    
-    // Initialize EmailJS when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof emailjs !== 'undefined') {
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-        console.log('EmailJS initialized');
-      }
-    });
   </script>
   <style>
     /* CSS Variables for theming */
@@ -1574,18 +1559,13 @@
         // Show verification screen
         showVerificationScreen(googleEmail, verificationToken);
         
-        // Send confirmation email
+        // Show confirmation link
         const confirmationLink = `${window.location.origin}${window.location.pathname}?verify=${verificationToken}`;
         console.log('Confirmation link for', googleEmail, ':', confirmationLink);
         
-        // Try to send real email
-        const emailSent = await sendConfirmationEmail(googleEmail, confirmationLink);
-        
-        if (emailSent) {
-          authMessage.textContent = '✅ Confirmation email sent! Check your inbox.';
-        } else {
-          authMessage.textContent = '📧 Confirmation link generated! Check the popup for the link.';
-        }
+        // Show the confirmation link
+        showConfirmationLink(googleEmail, confirmationLink);
+        authMessage.textContent = '📧 Confirmation link generated! Check the popup for the link.';
         
       } catch (err) {
         console.error('Email sign up error:', err);
@@ -1631,33 +1611,9 @@
       }
     }
 
-    // Email Sending Function
-    async function sendConfirmationEmail(email, confirmationLink) {
-      try {
-        // Check if EmailJS is properly configured
-        if (EMAILJS_SERVICE_ID === 'your_service_id' || EMAILJS_TEMPLATE_ID === 'your_template_id' || EMAILJS_PUBLIC_KEY === 'your_public_key') {
-          console.log('EmailJS not configured - showing demo alert instead');
-          alert(`📧 Confirmation Email (Demo Mode)\n\nTo: ${email}\n\nSubject: Verify Your Spiritual Journey Account\n\nClick this link to verify your email:\n${confirmationLink}\n\n\n⚠️ To send real emails, configure EmailJS with your service credentials.`);
-          return false;
-        }
-        
-        // Send real email using EmailJS
-        const templateParams = {
-          to_email: email,
-          confirmation_link: confirmationLink,
-          app_name: 'My Spiritual Journey'
-        };
-        
-        const response = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-        console.log('Email sent successfully:', response);
-        return true;
-        
-      } catch (error) {
-        console.error('Failed to send email:', error);
-        // Fallback to demo alert
-        alert(`📧 Confirmation Email (Fallback Mode)\n\nTo: ${email}\n\nSubject: Verify Your Spiritual Journey Account\n\nClick this link to verify your email:\n${confirmationLink}\n\n\n⚠️ Email service error - showing link for testing.`);
-        return false;
-      }
+    // Simple Email Confirmation Function
+    function showConfirmationLink(email, confirmationLink) {
+      alert(`📧 Confirmation Link\n\nTo: ${email}\n\nClick this link to verify your email:\n${confirmationLink}\n\nCopy and paste this link in your browser to complete verification.`);
     }
 
     // Email Verification Functions
@@ -1764,17 +1720,12 @@
         linkElement.href = confirmationLink;
         linkElement.textContent = confirmationLink;
         
-        // Send confirmation email
+        // Show confirmation link
         console.log('New confirmation link for', pendingUser.email, ':', confirmationLink);
         
-        // Try to send real email
-        const emailSent = await sendConfirmationEmail(pendingUser.email, confirmationLink);
-        
-        if (emailSent) {
-          verificationMessage.textContent = '✅ New confirmation email sent! Check your inbox.';
-        } else {
-          verificationMessage.textContent = '📧 New confirmation link generated! Check the popup for the link.';
-        }
+        // Show the new confirmation link
+        showConfirmationLink(pendingUser.email, confirmationLink);
+        verificationMessage.textContent = '📧 New confirmation link generated! Check the popup for the link.';
         
       } catch (err) {
         console.error('Resend verification error:', err);
