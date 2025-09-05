@@ -12,7 +12,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Spiritual Journey</title>
   <!-- Notion SDK -->
-  <script src="https://unpkg.com/@notionhq/client@2.2.3/dist/index.umd.js"></script>
+      <script src="https://unpkg.com/@notionhq/client@2.2.3/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <style>
     /* CSS Variables for theming */
     :root {
@@ -524,6 +525,23 @@
     <button class="button" onclick="showSignupScreen()" style="background: var(--accent-color); margin-top: 15px;">Don't have an account? Create Account</button>
     <button class="button" onclick="showMainScreen()" style="background: #6b7280; margin-top: 10px;">Back to Main</button>
   </div>
+
+  <!-- Email Verification Screen -->
+  <div id="verification-screen" class="content hidden">
+    <h2>Verify Your Email</h2>
+    <p>We've sent a 6-digit verification code to <span id="verification-email"></span></p>
+    <p>Please check your email and enter the code below.</p>
+    
+    <div id="verification-form">
+      <input type="text" id="verification-code" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}">
+      <button class="button" onclick="verifyEmail()">Verify Email</button>
+    </div>
+    
+    <div id="verification-message" class="prompt" style="display: none; margin-top: 15px;"></div>
+    
+    <button class="button" onclick="resendVerificationCode()" style="background: var(--accent-color); margin-top: 15px;">Resend Code</button>
+    <button class="button" onclick="showSignupScreen()" style="background: #6b7280; margin-top: 10px;">Back to Signup</button>
+  </div>
   <!-- Entry Screen -->
   <div id="entry-screen" class="content hidden">
     <h2 id="current-date"></h2>
@@ -797,6 +815,145 @@
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('signup-screen').classList.add('hidden');
+      document.getElementById('verification-screen').classList.add('hidden');
+    }
+
+    function showVerificationScreen(email) {
+      document.getElementById('verification-screen').classList.remove('hidden');
+      document.getElementById('signup-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('main-screen').classList.add('hidden');
+      
+      document.getElementById('verification-email').textContent = email;
+      document.getElementById('verification-code').value = '';
+    }
+
+    async function sendVerificationEmail(email, code) {
+      try {
+        // Initialize EmailJS (you'll need to set up your EmailJS account)
+        emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); // Replace with your EmailJS public key
+        
+        const templateParams = {
+          to_email: email,
+          verification_code: code,
+          app_name: 'Spiritual Journey'
+        };
+        
+        // Send email using EmailJS
+        const response = await emailjs.send(
+          'YOUR_SERVICE_ID', // Replace with your EmailJS service ID
+          'YOUR_TEMPLATE_ID', // Replace with your EmailJS template ID
+          templateParams
+        );
+        
+        console.log('Verification email sent:', response);
+        return response;
+        
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+        
+        // Fallback: Show the code in an alert for demo purposes
+        alert(`Demo Mode: Your verification code is ${code}\n\nIn production, this would be sent to your email.`);
+        return { status: 200 }; // Simulate success
+      }
+    }
+
+    async function verifyEmail() {
+      const code = document.getElementById('verification-code').value.trim();
+      const email = document.getElementById('verification-email').textContent;
+      const message = document.getElementById('verification-message');
+      
+      if (!code || code.length !== 6) {
+        message.textContent = 'Please enter a valid 6-digit code';
+        message.style.display = 'block';
+        message.style.color = 'var(--error-color)';
+        return;
+      }
+      
+      try {
+        // Get stored user data
+        const userData = JSON.parse(localStorage.getItem('pendingUser_' + email));
+        
+        if (!userData) {
+          message.textContent = 'Verification code expired. Please create a new account.';
+          message.style.display = 'block';
+          message.style.color = 'var(--error-color)';
+          return;
+        }
+        
+        if (userData.verificationCode === code) {
+          // Verification successful
+          userData.verified = true;
+          userData.verifiedAt = new Date().toISOString();
+          
+          // Save verified user
+          localStorage.setItem('user_' + email, JSON.stringify(userData));
+          localStorage.removeItem('pendingUser_' + email);
+          
+          // Set as current user
+          cloudUser = {
+            email: email,
+            token: 'verified-token-' + Date.now(),
+            id: 'user-' + Date.now()
+          };
+          localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
+          
+          message.textContent = '✅ Email verified successfully! Welcome to Spiritual Journey!';
+          message.style.display = 'block';
+          message.style.color = 'var(--success-color)';
+          
+          // Go to main screen
+          setTimeout(() => {
+            showMainScreen();
+          }, 2000);
+          
+        } else {
+          message.textContent = '❌ Invalid verification code. Please try again.';
+          message.style.display = 'block';
+          message.style.color = 'var(--error-color)';
+        }
+        
+      } catch (error) {
+        console.error('Verification failed:', error);
+        message.textContent = '❌ Verification failed. Please try again.';
+        message.style.display = 'block';
+        message.style.color = 'var(--error-color)';
+      }
+    }
+
+    async function resendVerificationCode() {
+      const email = document.getElementById('verification-email').textContent;
+      const message = document.getElementById('verification-message');
+      
+      try {
+        // Get stored user data
+        const userData = JSON.parse(localStorage.getItem('pendingUser_' + email));
+        
+        if (!userData) {
+          message.textContent = 'No pending verification found. Please create a new account.';
+          message.style.display = 'block';
+          message.style.color = 'var(--error-color)';
+          return;
+        }
+        
+        // Generate new code
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        userData.verificationCode = newCode;
+        localStorage.setItem('pendingUser_' + email, JSON.stringify(userData));
+        
+        // Send new email
+        await sendVerificationEmail(email, newCode);
+        
+        message.textContent = '✅ New verification code sent! Please check your email.';
+        message.style.display = 'block';
+        message.style.color = 'var(--success-color)';
+        
+      } catch (error) {
+        console.error('Failed to resend code:', error);
+        message.textContent = '❌ Failed to resend code. Please try again.';
+        message.style.display = 'block';
+        message.style.color = 'var(--error-color)';
+      }
     }
 
     async function createAccount() {
@@ -817,41 +974,36 @@
       }
       
       try {
-        // Simulate account creation (in real app, this would call your backend)
-        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: email,
-            password: password
-          })
-        });
+        // Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
         
-        if (response.ok) {
-          message.textContent = '✅ Account created! Please check your email to verify your account.';
-          message.style.display = 'block';
-          message.style.color = 'var(--success-color)';
-          
-          // Clear form
-          document.getElementById('signup-email').value = '';
-          document.getElementById('signup-password').value = '';
-        } else {
-          const error = await response.json();
-          message.textContent = '❌ ' + (error.message || 'Account creation failed');
-          message.style.display = 'block';
-          message.style.color = 'var(--error-color)';
-        }
-      } catch (error) {
-        // For demo purposes, simulate success
-        message.textContent = '✅ Account created! Please check your email to verify your account.';
+        // Store user data temporarily (in real app, this would be in your backend)
+        const userData = {
+          email: email,
+          password: password,
+          verificationCode: verificationCode,
+          verified: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Store in localStorage for demo (in real app, this would be in your database)
+        localStorage.setItem('pendingUser_' + email, JSON.stringify(userData));
+        
+        // Send verification email using EmailJS
+        await sendVerificationEmail(email, verificationCode);
+        
+        message.textContent = '✅ Account created! Please check your email for the verification code.';
         message.style.display = 'block';
         message.style.color = 'var(--success-color)';
         
-        // Clear form
-        document.getElementById('signup-email').value = '';
-        document.getElementById('signup-password').value = '';
+        // Show verification screen
+        showVerificationScreen(email);
+        
+      } catch (error) {
+        console.error('Account creation failed:', error);
+        message.textContent = '❌ Failed to create account. Please try again.';
+        message.style.display = 'block';
+        message.style.color = 'var(--error-color)';
       }
     }
 
