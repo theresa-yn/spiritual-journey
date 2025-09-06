@@ -750,9 +750,19 @@
     
     function initializeFirebase() {
       try {
+        // Check if Firebase is available
+        if (typeof window.firebase === 'undefined') {
+          console.error('Firebase library not loaded yet');
+          return false;
+        }
+        
         // Initialize Firebase
         firebase = window.firebase;
-        firebase.initializeApp(firebaseConfig);
+        
+        // Check if already initialized
+        if (firebase.apps.length === 0) {
+          firebase.initializeApp(firebaseConfig);
+        }
         
         // Initialize Firebase Auth and Firestore
         auth = firebase.auth();
@@ -1138,10 +1148,21 @@
       try {
         // Check if Firebase is initialized
         if (!firebase || !auth) {
-          message.textContent = 'Firebase not initialized. Please refresh the page and try again.';
+          message.textContent = 'Firebase is loading... Please wait a moment and try again.';
           message.style.display = 'block';
           message.style.color = '#ff6b6b';
           console.error('Firebase not initialized:', { firebase: !!firebase, auth: !!auth });
+          
+          // Try to reinitialize Firebase
+          setTimeout(async () => {
+            if (initializeFirebase()) {
+              message.textContent = 'Firebase loaded! You can now sign in.';
+              message.style.color = '#4CAF50';
+              setTimeout(() => {
+                message.style.display = 'none';
+              }, 2000);
+            }
+          }, 2000);
           return;
         }
         
@@ -2458,12 +2479,22 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       // Load theme first
       loadTheme();
       
-      // Initialize Firebase
-      if (initializeFirebase()) {
-        console.log('Firebase initialized successfully');
-        await initFirebaseAuth();
-      } else {
-        console.log('Firebase not configured, showing auth screen');
+      // Try to initialize Firebase with retry
+      let firebaseInitialized = false;
+      for (let i = 0; i < 3; i++) {
+        if (initializeFirebase()) {
+          firebaseInitialized = true;
+          console.log('Firebase initialized successfully');
+          await initFirebaseAuth();
+          break;
+        } else {
+          console.log(`Firebase initialization attempt ${i + 1} failed, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        }
+      }
+      
+      if (!firebaseInitialized) {
+        console.log('Firebase not configured after retries, showing auth screen');
         showAuthScreen();
       }
       
