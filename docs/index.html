@@ -675,7 +675,9 @@
              multiple="false"
              style="display: none;"
              webkitdirectory="false"
-             directory="false">
+             directory="false"
+             x-moz-errormessage=""
+             data-capture="none">
       <input type="file" 
              accept="image/*" 
              id="camera-input" 
@@ -2396,13 +2398,30 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     document.getElementById('image-input').addEventListener('change', previewImage);
     document.getElementById('camera-input').addEventListener('change', previewImage);
     
-    // Add click listeners for debugging
-    document.querySelector('label[for="image-input"]').addEventListener('click', function() {
+    // Add click listeners for gallery and camera buttons
+    document.querySelector('label[for="image-input"]').addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent default label behavior
       console.log('📷 Gallery button clicked');
+      
+      // Ensure the gallery input opens photo library
+      const galleryInput = document.getElementById('image-input');
+      galleryInput.removeAttribute('capture');
+      galleryInput.setAttribute('data-capture', 'none');
+      
+      // Trigger the file picker
+      galleryInput.click();
     });
     
-    document.querySelector('label[for="camera-input"]').addEventListener('click', function() {
+    document.querySelector('label[for="camera-input"]').addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent default label behavior
       console.log('📸 Camera button clicked');
+      
+      // Ensure the camera input opens camera
+      const cameraInput = document.getElementById('camera-input');
+      cameraInput.setAttribute('capture', 'environment');
+      
+      // Trigger the camera
+      cameraInput.click();
     });
 
     // Load reflections and initialize auth on page load
