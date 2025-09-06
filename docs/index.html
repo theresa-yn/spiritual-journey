@@ -151,29 +151,6 @@
       right: 0;
     }
     
-    .datetime-container {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1px;
-    }
-    
-    .date-display {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      font-weight: 400;
-      letter-spacing: 0.2px;
-      line-height: 1.1;
-      opacity: 0.9;
-    }
-    
-    .time-display {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-weight: 300;
-      letter-spacing: 0.3px;
-      opacity: 0.7;
-    }
     .content {
       flex-grow: 1;
       display: flex;
@@ -282,7 +259,79 @@
     .floating-plus:active {
       transform: translateY(-1px) scale(1.01);
     }
-    .hidden { display: none; }
+    .hidden { 
+      display: none; 
+    }
+    
+    /* Elegant screen transitions */
+    .screen-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .fade-out {
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.2s ease-out;
+    }
+    
+    .fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.3s ease-out;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      pointer-events: none;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-primary) !important;
+    }
+    
+    .loading-overlay.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: all !important;
+      display: flex !important;
+    }
+    
+    /* Prevent white flash during transitions */
+    body.transitioning {
+      overflow: hidden;
+    }
+    
+    .screen-container {
+      position: relative;
+      min-height: 100vh;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top: 3px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading-text {
+      margin-top: 20px;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      font-weight: 300;
+    }
     input[type="text"], input[type="email"], input[type="password"], textarea {
       width: 90%;
       padding: 12px;
@@ -348,7 +397,7 @@
     #current-date {
       font-size: 1.1rem;
       font-weight: 400;
-      color: var(--accent-secondary);
+      color: var(--accent-primary);
       margin-bottom: 6px;
       letter-spacing: 0.5px;
     }
@@ -382,8 +431,6 @@
       
       /* Mobile header adjustments */
       .header { padding: 10px 16px; }
-      .date-display { font-size: 0.8rem; }
-      .time-display { font-size: 0.7rem; }
     }
     .options-menu {
       position: fixed;
@@ -405,23 +452,24 @@
       background: var(--button-gradient);
       color: #ffffff;
       border: none;
-      padding: 12px 16px;
-      border-radius: 10px;
+      padding: 10px 20px;
+      border-radius: 20px;
       cursor: pointer;
       transition: all 0.3s ease-in-out;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 500;
       text-align: center;
       min-height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
     }
     .options-menu button:hover {
       background: var(--button-hover);
       color: #ffffff;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
     .options-menu button:active {
       transform: translateY(0);
@@ -540,27 +588,34 @@
   <!-- Sun for Sky Theme -->
   <div class="sun" style="display: none;"></div>
   
-  <div class="header">
-    <div class="datetime-container">
-      <div id="current-date" class="date-display"></div>
-      <div id="current-time" class="time-display"></div>
+  <!-- Elegant Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="opacity: 0; visibility: hidden;">
+    <div style="text-align: center;">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loading-text">Signing in...</div>
     </div>
+  </div>
+  
+  <div class="header">
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
       <!-- Authentication removed - automatic sync without signup -->
+    </div>
+    <div>
+      <button id="sign-out-btn" class="button" onclick="handleSignOut()" style="background: var(--accent-secondary); padding: 8px 12px; font-size: 0.8rem; display: none;">Sign Out</button>
     </div>
   </div>
   
 
   <!-- Authentication Screen -->
-  <div id="auth-screen" class="content">
+  <div id="auth-screen" class="content screen-transition">
     <h2>My Spiritual Journey</h2>
     
     <!-- Firebase Auth Options -->
     <div style="text-align: center; margin-top: 30px;">
       <!-- Google Sign In Button -->
-      <button class="button firebase-google-btn" onclick="signInWithGoogle()" style="background: #4285f4; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1rem; padding: 15px 30px; margin: 0 auto;">
-        <svg width="24" height="24" viewBox="0 0 24 24">
+      <button class="button firebase-google-btn" onclick="signInWithGoogle()" style="background: #4285f4; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 10px 20px; margin: 0 auto; border-radius: 20px; font-weight: 500; box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3); transition: all 0.2s ease;">
+        <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -578,13 +633,12 @@
   </div>
 
   <!-- Main Screen -->
-  <div id="main-screen" class="content hidden">
+  <div id="main-screen" class="content hidden screen-transition">
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <button class="button" onclick="handleSignOut()" style="background: var(--accent-secondary); margin-top: 10px;">Sign Out</button>
-          <h2>My Spiritual Journey</h2>
-      <p>Tap the plus button to start your journey</p>
+    <h2>My Spiritual Journey</h2>
+    <p>Tap the plus button to start your journey</p>
   </div>
   <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
@@ -598,7 +652,12 @@
       <label for="image-input" class="button" style="display: inline-block; margin: 10px 0; cursor: pointer;">
         📷 Add Photo
       </label>
-      <input type="file" accept="image/*" id="image-input" capture="environment" style="display: none;">
+      <input type="file" 
+             accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic,.heif" 
+             id="image-input" 
+             capture="environment user" 
+             multiple="false"
+             style="display: none;">
       <div id="image-preview-container" style="display: none;">
         <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
           📸 Loading image...
@@ -626,6 +685,7 @@
   <div id="options-menu" class="options-menu">
     <button onclick="showEntryScreen()">Start Journaling</button>
     <button onclick="showHistory()">Past Reflections</button>
+    <button onclick="showQuotaInfo()" style="background: var(--accent-secondary); font-size: 0.8rem;">📊 Quota Info</button>
   </div>
   <script>
     // Firebase configuration
@@ -693,6 +753,7 @@
     let editingIndex = null;
     let user = null;
     let currentTheme = 'dark'; // Default theme
+    let lastQuoteIndex = -1; // Track last quote to avoid repetition
 
     const quotes = [
       "The wound is the place where the light enters you. – Rumi",
@@ -734,8 +795,15 @@
     }
 
     function newQuote() {
-      document.getElementById('quote').textContent =
-        quotes[Math.floor(Math.random() * quotes.length)];
+      let randomIndex;
+      
+      // Ensure we don't show the same quote twice in a row
+      do {
+        randomIndex = Math.floor(Math.random() * quotes.length);
+      } while (randomIndex === lastQuoteIndex && quotes.length > 1);
+      
+      lastQuoteIndex = randomIndex;
+      document.getElementById('quote').textContent = quotes[randomIndex];
     }
 
     function newQuestion() {
@@ -801,6 +869,10 @@
       document.getElementById('main-screen').classList.add('hidden');
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
+      
+      // Hide sign out button in header
+      document.getElementById('sign-out-btn').style.display = 'none';
+      
       showLoginForm();
     }
 
@@ -810,14 +882,8 @@
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       
-      // Update user info display
-      if (currentUser) {
-        if (currentUser.isFirebase) {
-          document.getElementById('user-email').textContent = currentUser.email || currentUser.name;
-        } else if (currentUser.email) {
-          document.getElementById('user-email').textContent = currentUser.email;
-        }
-      }
+      // Show sign out button in header
+      document.getElementById('sign-out-btn').style.display = 'block';
     }
 
     // Handle user signup
@@ -962,17 +1028,75 @@
       document.getElementById('cloud-options').style.display = 'none';
     }
 
-    // Firebase Google Sign-In
+    // Elegant transition functions - NO WHITE FLASHES
+    function showLoadingOverlay(text = 'Loading...') {
+      const overlay = document.getElementById('loading-overlay');
+      const loadingText = document.getElementById('loading-text');
+      loadingText.textContent = text;
+      
+      // Immediately show overlay to prevent any white flash
+      overlay.style.opacity = '1';
+      overlay.style.visibility = 'visible';
+      overlay.style.pointerEvents = 'all';
+      overlay.style.display = 'flex';
+      overlay.style.zIndex = '99999';
+      overlay.classList.add('active');
+      
+      // Prevent body scrolling during transition
+      document.body.classList.add('transitioning');
+    }
+    
+    function hideLoadingOverlay() {
+      const overlay = document.getElementById('loading-overlay');
+      
+      // Reset body scrolling
+      document.body.classList.remove('transitioning');
+      
+      // Fade out the overlay slowly to ensure smooth transition
+      overlay.style.opacity = '0';
+      overlay.style.visibility = 'hidden';
+      overlay.style.pointerEvents = 'none';
+      
+      // Remove active class after fade
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 200);
+    }
+    
+    function instantScreenChange(fromScreen, toScreen, callback) {
+      const from = document.getElementById(fromScreen);
+      const to = document.getElementById(toScreen);
+      
+      // Instantly hide current screen and show new screen
+      from.classList.add('hidden');
+      to.classList.remove('hidden');
+      
+      // Show/hide sign out button based on screen
+      if (toScreen === 'main-screen') {
+        document.getElementById('sign-out-btn').style.display = 'block';
+      } else if (toScreen === 'auth-screen') {
+        document.getElementById('sign-out-btn').style.display = 'none';
+      }
+      
+      // Execute callback if provided
+      if (callback) callback();
+      
+      // Hide loading overlay after a longer delay to ensure everything is ready
+      setTimeout(() => {
+        hideLoadingOverlay();
+      }, 1000); // 1 second delay to ensure no white page
+    }
+
+    // Firebase Google Sign-In - SIMPLE APPROACH
     async function signInWithGoogle() {
       const message = document.getElementById('auth-message');
       
       try {
-        message.textContent = 'Signing in with Google...';
-        message.style.display = 'block';
-        
         // Check if Firebase is initialized
         if (!firebase || !auth) {
           message.textContent = 'Firebase not initialized. Please refresh the page and try again.';
+          message.style.display = 'block';
+          message.style.color = '#ff6b6b';
           console.error('Firebase not initialized:', { firebase: !!firebase, auth: !!auth });
           return;
         }
@@ -990,12 +1114,12 @@
           isFirebase: true
         };
         
-        message.textContent = 'Signed in successfully!';
-        message.style.color = 'var(--accent-primary)';
-        
-        // Show main screen and load reflections
-        showMainScreen();
+        // Load reflections in background
         await loadReflections();
+        
+        // Simple instant screen change - no loading overlay
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
         
       } catch (error) {
         console.error('Google sign-in error:', error);
@@ -1015,6 +1139,7 @@
         }
         
         message.textContent = errorMessage;
+        message.style.display = 'block';
         message.style.color = '#ff6b6b';
       }
     }
@@ -1046,6 +1171,55 @@ Next Steps:
         db: typeof db,
         config: firebaseConfig
       });
+    }
+
+    async function debugFirebaseData() {
+      if (!currentUser || !currentUser.isFirebase) {
+        alert('Please sign in with Google first to debug data.');
+        return;
+      }
+
+      try {
+        console.log('🔍 Debugging Firebase Data...');
+        console.log('Current User:', currentUser);
+        
+        // Test Firestore connection
+        const testRef = db.collection('reflections');
+        const snapshot = await testRef.where('userId', '==', currentUser.id).get();
+        
+        console.log('Firestore Query Results:', {
+          totalDocs: snapshot.size,
+          docs: snapshot.docs.map(doc => ({
+            id: doc.id,
+            data: doc.data()
+          }))
+        });
+        
+        // Check localStorage
+        const localData = localStorage.getItem('reflections');
+        console.log('LocalStorage Data:', localData ? JSON.parse(localData) : 'No local data');
+        
+        const debugInfo = `🔍 Firebase Data Debug:
+
+User ID: ${currentUser.id}
+User Email: ${currentUser.email}
+
+Firestore Results:
+- Total documents: ${snapshot.size}
+- Documents: ${snapshot.docs.map(doc => doc.data().title || 'Untitled').join(', ') || 'None'}
+
+LocalStorage:
+- Has local data: ${localData ? 'Yes' : 'No'}
+- Local reflections: ${localData ? JSON.parse(localData).length : 0}
+
+Check browser console (F12) for detailed logs.`;
+        
+        alert(debugInfo);
+        
+      } catch (error) {
+        console.error('Debug error:', error);
+        alert(`Debug Error: ${error.message}\n\nCheck browser console for details.`);
+      }
     }
 
     function showFirebaseSetup() {
@@ -1097,11 +1271,38 @@ Need help? Check the console for any error messages.`;
       alert('🐘 Supabase Setup:\n\nYou\'re already using Supabase!\n\nTo fix email issues:\n1. Go to Authentication → Settings\n2. Turn OFF "Enable email confirmations"\n3. Users can sign in immediately\n\nOr configure SMTP for email sending.');
     }
 
+    function showQuotaInfo() {
+      const quotaInfo = `📊 Firebase Quota Information:
+
+🆓 FREE TIER LIMITS:
+• 50,000 reads per day
+• 20,000 writes per day
+• 1GB storage
+• 10GB bandwidth
+
+⚠️ QUOTA EXCEEDED?
+Your data is SAFE! It's saved locally and will sync when quota resets.
+
+💡 SOLUTIONS:
+1. Wait for daily quota reset (usually midnight UTC)
+2. Upgrade to Firebase Blaze plan ($25/month)
+3. Continue using app - data syncs automatically when quota resets
+
+✅ YOUR DATA IS PROTECTED:
+• All journals saved locally
+• Automatic sync when quota resets
+• No data loss
+
+Continue journaling - your spiritual journey is safe! 🌟`;
+      
+      alert(quotaInfo);
+    }
+
     // Handle sign out
     async function handleSignOut() {
       try {
         if (currentUser && currentUser.isFirebase && auth) {
-          // Firebase sign out
+          // Firebase sign out - this will clear the session and allow account switching
           await auth.signOut();
         } else if (currentUser && currentUser.isSupabase && supabase) {
           // Supabase sign out
@@ -1111,18 +1312,28 @@ Need help? Check the console for any error messages.`;
           }
         }
         
+        // Clear all user data
         currentUser = null;
         reflections = [];
         localStorage.removeItem('reflections');
-        showAuthScreen();
+        
+        // Hide sign out button and show auth screen
+        document.getElementById('sign-out-btn').style.display = 'none';
+        document.getElementById('main-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
+        
+        console.log('User signed out successfully - ready for account switching');
         
       } catch (err) {
         console.error('Sign out error:', err);
+        
         // Force sign out even if there's an error
         currentUser = null;
         reflections = [];
         localStorage.removeItem('reflections');
-        showAuthScreen();
+        document.getElementById('sign-out-btn').style.display = 'none';
+        document.getElementById('main-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
       }
     }
 
@@ -1209,12 +1420,35 @@ Need help? Check the console for any error messages.`;
           return;
         } catch (error) {
           console.error('Error loading Firebase reflections:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            userId: currentUser.id
+          });
+          
+          // Handle specific error types
+          let errorMessage = '';
+          if (error.code === 'resource-exhausted' || error.message.includes('quota')) {
+            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached. This is normal for active users.\n\n✅ Your journals are still saved locally and will sync when quota resets.\n\n💡 Solutions:\n• Wait for quota to reset (usually daily)\n• Upgrade to Firebase paid plan\n• Continue using local storage (your data is safe)`;
+          } else if (error.code === 'permission-denied') {
+            errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`;
+          } else if (error.code === 'unavailable') {
+            errorMessage = `🌐 Service Unavailable\n\nFirebase is temporarily unavailable.\n\n✅ Your journals are saved locally and will sync when service returns.`;
+          } else {
+            errorMessage = `⚠️ Connection Error\n\nError: ${error.message}\n\n✅ Your journals are saved locally and will sync when connection is restored.`;
+          }
+          
+          // Show user-friendly error message
+          alert(errorMessage);
+          
           // Fallback to localStorage
           const localReflections = localStorage.getItem('reflections');
           if (localReflections) {
             reflections = JSON.parse(localReflections);
+            console.log('Using localStorage fallback with', reflections.length, 'reflections');
           } else {
             reflections = [];
+            console.log('No local data available');
           }
           return;
         }
@@ -1228,35 +1462,55 @@ Need help? Check the console for any error messages.`;
     async function saveReflections() {
       if (!currentUser) {
         console.log('No user logged in');
+        alert('Please sign in to save your reflection.');
         return;
       }
       
+      // Get form data
+      const title = document.getElementById('title').value.trim();
+      const reflection = document.getElementById('reflection').value.trim();
+      const date = document.getElementById('entry-date').textContent;
+      
+      // Debug logging
+      console.log('💾 Saving reflection with data:', {
+        title: title,
+        reflection: reflection,
+        hasImage: !!currentImage,
+        imageLength: currentImage ? currentImage.length : 0,
+        date: date
+      });
       
       // Handle Firebase mode
       if (currentUser.isFirebase) {
         console.log('Saving reflection for Firebase user');
-        const title = document.getElementById('title').value.trim();
-        const reflection = document.getElementById('reflection').value.trim();
-        const date = document.getElementById('entry-date').textContent;
         
         const reflectionData = {
           userId: currentUser.id,
           title,
           reflection,
           date,
-          image: currentImage,
+          image: currentImage || '', // Ensure image is always a string
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         try {
+          // Disable save button during save process
+          const saveButton = document.getElementById('save');
+          saveButton.disabled = true;
+          saveButton.textContent = 'Saving...';
+          
           if (editingIndex !== null && reflections[editingIndex]) {
             // Update existing reflection
+            console.log('📝 Updating existing reflection');
             await db.collection('reflections').doc(reflections[editingIndex].id).update(reflectionData);
             reflections[editingIndex] = { ...reflections[editingIndex], ...reflectionData };
+            console.log('✅ Reflection updated successfully');
           } else {
             // Add new reflection
+            console.log('📝 Adding new reflection');
             const docRef = await db.collection('reflections').add(reflectionData);
             reflections.unshift({ id: docRef.id, ...reflectionData });
+            console.log('✅ Reflection added successfully with ID:', docRef.id);
           }
           
           // Also save to localStorage for offline access
@@ -1265,10 +1519,42 @@ Need help? Check the console for any error messages.`;
           // Clear form and go back
           currentImage = "";
           editingIndex = null;
+          
+          // Reset save button
+          saveButton.disabled = false;
+          saveButton.textContent = 'Save Reflection';
+          
           goBack();
           return;
         } catch (error) {
           console.error('Error saving to Firebase:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            userId: currentUser.id,
+            reflectionData: reflectionData
+          });
+          
+          // Reset save button
+          const saveButton = document.getElementById('save');
+          saveButton.disabled = false;
+          saveButton.textContent = 'Save Reflection';
+          
+          // Handle specific error types
+          let errorMessage = '';
+          if (error.code === 'resource-exhausted' || error.message.includes('quota')) {
+            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached.\n\n✅ Your journal has been saved locally and will sync when quota resets.\n\n💡 Your data is safe! Continue journaling - it will sync later.`;
+          } else if (error.code === 'permission-denied') {
+            errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journal has been saved locally and will sync when fixed.`;
+          } else if (error.code === 'unavailable') {
+            errorMessage = `🌐 Service Unavailable\n\nFirebase is temporarily unavailable.\n\n✅ Your journal has been saved locally and will sync when service returns.`;
+          } else {
+            errorMessage = `⚠️ Save Error\n\nError: ${error.message}\n\n✅ Your journal has been saved locally and will sync when connection is restored.`;
+          }
+          
+          // Show user-friendly error message
+          alert(errorMessage);
+          
           // Fallback to localStorage
           const localData = {
             id: 'firebase_fallback_' + Date.now(),
@@ -1323,7 +1609,8 @@ Need help? Check the console for any error messages.`;
           currentImage = reflections[index].image;
         }
       }
-      document.getElementById('save').disabled = !canSave();
+      // Ensure save button is properly enabled/disabled
+      checkSaveEnabled();
       document.getElementById('start-voice').disabled = false;
       document.getElementById('stop-voice').disabled = true;
       newQuestion();
@@ -1520,12 +1807,32 @@ Need help? Check the console for any error messages.`;
       
       reflections.forEach((item, index) => {
         console.log('Creating display for reflection', index, ':', item.title);
+        
+        // Format the date and time properly
+        let displayDate = 'No date';
+        if (item.createdAt) {
+          // Handle Firebase timestamp
+          const date = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+          displayDate = date.toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+        } else if (item.date) {
+          // Fallback to the date field
+          displayDate = item.date;
+        }
+        
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
           <p>${item.reflection || 'No content'}</p>
-          <small>${item.date || 'No date'}</small>
+          <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${item.image ? `<img src="${item.image}">` : ""}
           <div class="button-group">
             <button class="button" onclick="editReflection(${index})">Edit</button>
@@ -1743,7 +2050,21 @@ Need help? Check the console for any error messages.`;
     function canSave() {
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
-      return !!(title && reflection);
+      const hasImage = currentImage && currentImage.trim() !== '';
+      
+      const canSaveResult = !!(title && (reflection || hasImage));
+      
+      // Debug logging
+      console.log('🔍 canSave check:', {
+        title: title,
+        reflection: reflection,
+        hasImage: hasImage,
+        currentImageLength: currentImage ? currentImage.length : 0,
+        canSave: canSaveResult
+      });
+      
+      // Can save if there's a title and either reflection text OR an image
+      return canSaveResult;
     }
 
     async function saveReflection() {
@@ -1751,17 +2072,32 @@ Need help? Check the console for any error messages.`;
     }
 
     function previewImage(event) {
+      console.log('📷 Photo upload triggered');
+      console.log('Event:', event);
+      console.log('Files:', event.target.files);
+      
       const file = event.target.files[0];
       if (file) {
-        // Check file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image file is too large. Please select an image smaller than 5MB.');
+        console.log('✅ File selected successfully');
+        console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
+        
+        // Check file size (10MB limit for better device compatibility)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('Image file is too large. Please select an image smaller than 10MB.\n\nTip: You can compress the image on your device before uploading.');
           return;
         }
         
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-          alert('Please select a valid image file.');
+        // Check file type - support more formats
+        const supportedTypes = [
+          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+          'image/webp', 'image/bmp', 'image/tiff', 'image/heic', 'image/heif'
+        ];
+        
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const supportedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'heic', 'heif'];
+        
+        if (!file.type.startsWith('image/') && !supportedExtensions.includes(fileExtension)) {
+          alert('Please select a valid image file.\n\nSupported formats: JPG, PNG, GIF, WebP, BMP, TIFF, HEIC, HEIF\n\nTip: Most devices support these formats automatically.');
           return;
         }
         
@@ -1776,32 +2112,46 @@ Need help? Check the console for any error messages.`;
         preview.style.display = 'none';
         
         reader.onload = (e) => {
-          // Set the image source
-          preview.src = e.target.result;
-          currentImage = e.target.result;
-          
-          // Hide loading and show image
-          loading.style.display = 'none';
-          preview.style.display = 'block';
-          
-          // Add a small delay to ensure the image loads
-          setTimeout(() => {
-            if (preview.complete && preview.naturalHeight !== 0) {
-              console.log('Image preview loaded successfully:', file.name);
-              console.log('Image size:', file.size, 'bytes');
-              console.log('Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
-            } else {
-              console.log('Image preview loading...');
-            }
-          }, 100);
+          try {
+            // Set the image source
+            preview.src = e.target.result;
+            currentImage = e.target.result;
+            
+            // Hide loading and show image
+            loading.style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Check if save button should be enabled
+            checkSaveEnabled();
+            
+            // Add a small delay to ensure the image loads
+            setTimeout(() => {
+              if (preview.complete && preview.naturalHeight !== 0) {
+                console.log('✅ Image preview loaded successfully:', file.name);
+                console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
+                console.log('💾 Image size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+              } else {
+                console.log('⏳ Image preview loading...');
+              }
+            }, 100);
+          } catch (error) {
+            console.error('Error processing image:', error);
+            alert('Error processing the image. Please try a different image or format.');
+            container.style.display = 'none';
+          }
         };
         
         reader.onerror = () => {
-          alert('Error reading the image file. Please try again.');
+          alert('Error reading the image file. Please try again.\n\nThis might happen if:\n• The file is corrupted\n• The file format is not supported\n• There\'s insufficient memory\n\nTry selecting a different image.');
           console.error('FileReader error:', reader.error);
+          container.style.display = 'none';
         };
         
+        // Read the file
         reader.readAsDataURL(file);
+      } else {
+        console.log('❌ No file selected');
+        alert('No file selected. Please try again.');
       }
     }
 
@@ -1818,6 +2168,9 @@ Need help? Check the console for any error messages.`;
       input.value = '';
       currentImage = '';
       console.log('Image removed');
+      
+      // Check if save button should be enabled
+      checkSaveEnabled();
     }
 
     function toggleOptionsMenu() {
@@ -1953,6 +2306,11 @@ Need help? Check the console for any error messages.`;
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
     document.getElementById('save').addEventListener('click', saveReflection);
     document.getElementById('image-input').addEventListener('change', previewImage);
+    
+    // Add click listener for photo button debugging
+    document.querySelector('label[for="image-input"]').addEventListener('click', function() {
+      console.log('📷 Add Photo button clicked');
+    });
 
     // Load reflections and initialize auth on page load
     async function initializeApp() {
@@ -1993,8 +2351,18 @@ Need help? Check the console for any error messages.`;
               email: user.email,
               displayName: user.displayName
             });
-            showMainScreen();
-            loadReflections();
+            
+            // Simple screen change if coming from auth screen
+            const authScreen = document.getElementById('auth-screen');
+            if (authScreen && !authScreen.classList.contains('hidden')) {
+              document.getElementById('auth-screen').classList.add('hidden');
+              document.getElementById('main-screen').classList.remove('hidden');
+              document.getElementById('sign-out-btn').style.display = 'block';
+              loadReflections();
+            } else {
+              showMainScreen();
+              loadReflections();
+            }
           } else {
             // User is signed out
             console.log('No Firebase user signed in');
