@@ -1,6 +1,6 @@
 {
-  "name": "My Spiritual Journey",
-  "short_name": "Spirit Journey",
+  "name": "Journal",
+  "short_name": "Journal",
   "description": "A personal spiritual journey app for reflection, meditation, and inner growth.",
   "start_url": ".",
   "scope": ".",
