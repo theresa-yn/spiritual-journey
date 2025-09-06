@@ -730,6 +730,7 @@
     <div id="history-list"></div>
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
+      <button class="button" onclick="retryFailedDeletions()" id="retry-sync-btn" style="display: none;">Retry Sync</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -1716,6 +1717,16 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
       refreshHistoryDisplay();
+      
+      // Show retry sync button if there are failed deletions
+      const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+      const retryBtn = document.getElementById('retry-sync-btn');
+      if (failedDeletions.length > 0) {
+        retryBtn.style.display = 'inline-block';
+        retryBtn.textContent = `Retry Sync (${failedDeletions.length})`;
+      } else {
+        retryBtn.style.display = 'none';
+      }
     }
 
     function editReflection(index) {
@@ -1989,15 +2000,41 @@ Continue journaling - your spiritual journey is safe! 🌟`;
               
               if (error) {
                 console.error('Database deletion error:', error);
-                // Don't throw here - local deletion was successful
-                alert('Reflection deleted locally but there was an issue with the database. It will be removed when you refresh.');
+                // Store the failed deletion for retry
+                const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+                failedDeletions.push({
+                  id: deletedReflection.id,
+                  timestamp: Date.now(),
+                  retryCount: 0
+                });
+                localStorage.setItem('failedDeletions', JSON.stringify(failedDeletions));
+                
+                // Show retry option
+                if (confirm('Reflection deleted locally but database sync failed. Would you like to retry the sync now?')) {
+                  await retryFailedDeletions();
+                } else {
+                  alert('Reflection deleted locally. You can retry the sync later or it will be removed when you refresh.');
+                }
               } else {
                 console.log('Database deletion successful');
               }
             } catch (dbErr) {
               console.error('Database operation failed:', dbErr);
-              // Don't throw here - local deletion was successful
-              alert('Reflection deleted locally but database sync failed. It will be removed when you refresh.');
+              // Store the failed deletion for retry
+              const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+              failedDeletions.push({
+                id: deletedReflection.id,
+                timestamp: Date.now(),
+                retryCount: 0
+              });
+              localStorage.setItem('failedDeletions', JSON.stringify(failedDeletions));
+              
+              // Show retry option
+              if (confirm('Reflection deleted locally but database sync failed. Would you like to retry the sync now?')) {
+                await retryFailedDeletions();
+              } else {
+                alert('Reflection deleted locally. You can retry the sync later or it will be removed when you refresh.');
+              }
             }
           } else {
             console.log('No database ID found, local deletion only');
@@ -2018,6 +2055,79 @@ Continue journaling - your spiritual journey is safe! 🌟`;
           console.error('Error details:', err.message, err.stack);
           alert(`Error deleting reflection: ${err.message}. Please check the console for details.`);
         }
+      }
+    }
+
+    // Retry failed deletions
+    async function retryFailedDeletions() {
+      try {
+        const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+        if (failedDeletions.length === 0) {
+          console.log('No failed deletions to retry');
+          return;
+        }
+
+        console.log('Retrying', failedDeletions.length, 'failed deletions');
+        let successCount = 0;
+        let remainingFailures = [];
+
+        for (const failedDeletion of failedDeletions) {
+          try {
+            const { error } = await supabase
+              .from('reflections')
+              .delete()
+              .eq('id', failedDeletion.id);
+
+            if (error) {
+              console.error('Retry failed for ID:', failedDeletion.id, error);
+              // Increment retry count
+              failedDeletion.retryCount = (failedDeletion.retryCount || 0) + 1;
+              // Only keep failures that haven't been retried too many times
+              if (failedDeletion.retryCount < 3) {
+                remainingFailures.push(failedDeletion);
+              }
+            } else {
+              console.log('Successfully deleted ID:', failedDeletion.id);
+              successCount++;
+            }
+          } catch (err) {
+            console.error('Retry error for ID:', failedDeletion.id, err);
+            failedDeletion.retryCount = (failedDeletion.retryCount || 0) + 1;
+            if (failedDeletion.retryCount < 3) {
+              remainingFailures.push(failedDeletion);
+            }
+          }
+        }
+
+        // Update the failed deletions list
+        localStorage.setItem('failedDeletions', JSON.stringify(remainingFailures));
+
+        if (successCount > 0) {
+          alert(`Successfully synced ${successCount} deletion(s) to the database!`);
+        }
+        
+        if (remainingFailures.length > 0) {
+          console.log('Still have', remainingFailures.length, 'failed deletions');
+        } else {
+          console.log('All failed deletions have been resolved');
+        }
+
+      } catch (err) {
+        console.error('Error retrying failed deletions:', err);
+        alert('Error retrying failed deletions. Please try again later.');
+      }
+    }
+
+    // Auto-retry failed deletions on page load
+    async function autoRetryFailedDeletions() {
+      try {
+        const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+        if (failedDeletions.length > 0) {
+          console.log('Found', failedDeletions.length, 'failed deletions, attempting auto-retry');
+          await retryFailedDeletions();
+        }
+      } catch (err) {
+        console.error('Error in auto-retry:', err);
       }
     }
 
@@ -2500,6 +2610,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       
       setInterval(updateDateTime, 1000);
       updateDateTime();
+      
+      // Auto-retry any failed deletions
+      await autoRetryFailedDeletions();
     }
     
     // Initialize Firebase Auth
