@@ -440,9 +440,9 @@
       }
       
       .toolbar-button {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 16px !important;
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+        min-width: 60px !important;
       }
     }
     
@@ -673,17 +673,17 @@
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
       <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); justify-content: center; align-items: center;">
-        <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
-          📷
+        <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          Photos
         </label>
-        <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
-          📸
+        <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          Camera
         </label>
-        <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
-          🎤
+        <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          Voice
         </button>
-        <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
-          ✨
+        <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          New
         </button>
       </div>
       <input type="file" 
@@ -2439,7 +2439,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     // Add click listeners for gallery and camera buttons
     document.querySelector('label[for="image-input"]').addEventListener('click', function(e) {
       e.preventDefault(); // Prevent default label behavior
-      console.log('📷 Choose Photo button clicked');
+      console.log('Photos button clicked');
       
       // Simple approach: create a clean input and trigger it
       const input = document.createElement('input');
@@ -2462,7 +2462,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     
     document.querySelector('label[for="camera-input"]').addEventListener('click', function(e) {
       e.preventDefault(); // Prevent default label behavior
-      console.log('📸 Take Photo button clicked');
+      console.log('Camera button clicked');
       
       // Ensure the camera input opens camera
       const cameraInput = document.getElementById('camera-input');
