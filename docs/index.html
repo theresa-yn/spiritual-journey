@@ -2382,6 +2382,18 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         console.error('Options menu element not found');
         return;
       }
+      
+      // Ensure buttons are visible if user is signed in
+      if (currentUser) {
+        document.getElementById('start-journaling-btn').style.display = 'block';
+        document.getElementById('past-reflections-btn').style.display = 'block';
+        console.log('User is signed in, showing buttons');
+      } else {
+        document.getElementById('start-journaling-btn').style.display = 'none';
+        document.getElementById('past-reflections-btn').style.display = 'none';
+        console.log('User is not signed in, hiding buttons');
+      }
+      
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 
