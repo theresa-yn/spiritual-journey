@@ -1188,10 +1188,9 @@ Need help? Check the console for any error messages.`;
         return;
       }
         
-      
       // Handle Firebase mode
       if (currentUser.isFirebase) {
-        console.log('Loading reflections for Firebase user');
+        console.log('Loading reflections for Firebase user:', currentUser.id);
         try {
           const snapshot = await db.collection('reflections')
             .where('userId', '==', currentUser.id)
@@ -1202,6 +1201,8 @@ Need help? Check the console for any error messages.`;
             id: doc.id,
             ...doc.data()
           }));
+          
+          console.log('Loaded', reflections.length, 'reflections from Firebase');
           
           // Also save to localStorage for offline access
           localStorage.setItem('reflections', JSON.stringify(reflections));
@@ -1219,51 +1220,9 @@ Need help? Check the console for any error messages.`;
         }
       }
         
-      const userId = currentUser.id;
-      
-        try {
-        console.log('Loading reflections for user:', userId);
-          
-        // Load from Supabase database
-          const { data, error } = await supabase
-            .from('reflections')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-          
-          if (error) {
-          console.error('Error loading reflections:', error);
-          reflections = [];
-            return;
-          }
-          
-        reflections = data || [];
-        console.log('Loaded reflections from database:', reflections.length);
-        
-        // Check if user has local data that needs migration
-        const localReflections = localStorage.getItem('reflections');
-        if (localReflections && reflections.length === 0) {
-          const localData = JSON.parse(localReflections);
-          if (localData.length > 0) {
-            console.log('Found local data to migrate, starting migration...');
-            await migrateLocalData();
-            return; // migrateLocalData will reload reflections
-          }
-        }
-        
-        // Also save to localStorage for offline access
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-        
-      } catch (err) {
-        console.error('Unexpected error loading reflections:', err);
-        // Fallback to localStorage
-        const localReflections = localStorage.getItem('reflections');
-        if (localReflections) {
-          reflections = JSON.parse(localReflections);
-        } else {
-          reflections = [];
-        }
-      }
+      // Fallback for non-Firebase users (should not happen in current setup)
+      console.log('No Firebase user detected, showing empty reflections');
+      reflections = [];
     }
 
     async function saveReflections() {
@@ -1331,64 +1290,9 @@ Need help? Check the console for any error messages.`;
         }
       }
       
-      const title = document.getElementById('title').value.trim();
-      const reflection = document.getElementById('reflection').value.trim();
-      const date = document.getElementById('current-date').textContent;
-      
-      const reflectionData = {
-        user_id: currentUser.id,
-        title,
-        reflection,
-        date,
-        image: currentImage,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (editingIndex !== null && reflections[editingIndex]) {
-          // Update existing reflection
-          const { data, error } = await supabase
-            .from('reflections')
-            .update(reflectionData)
-            .eq('id', reflections[editingIndex].id)
-            .select();
-          
-          if (error) {
-            console.error('Error updating reflection:', error);
-            return;
-          }
-          
-          // Update local array
-          reflections[editingIndex] = data[0];
-          console.log('Successfully updated reflection');
-        } else {
-          // Insert new reflection
-          const { data, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select();
-          
-          if (error) {
-            console.error('Error saving reflection:', error);
-            return;
-          }
-          
-          // Add to local array
-          reflections.unshift(data[0]);
-          console.log('Successfully saved new reflection');
-        }
-        
-        // Update localStorage
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-      
-      // Clear form and go back
-      currentImage = "";
-      editingIndex = null;
-      goBack();
-        
-      } catch (err) {
-        console.error('Unexpected error saving reflection:', err);
-      }
+      // Fallback for non-Firebase users (should not happen in current setup)
+      console.log('No Firebase user detected, cannot save reflection');
+      alert('Please sign in with Google to save your reflections.');
     }
 
 
@@ -2035,66 +1939,11 @@ Need help? Check the console for any error messages.`;
     }
 
 
-    // Initialize auth state
+    // Initialize auth state - Firebase only
     async function initAuth() {
-      try {
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        
-        if (session && session.user) {
-          currentUser = session.user;
-          showMainScreen();
-          await loadReflections();
-          console.log('User already logged in:', currentUser.email);
-        } else {
-          // Check if this is an OAuth redirect
-          const urlParams = new URLSearchParams(window.location.search);
-          const code = urlParams.get('code');
-          const error = urlParams.get('error');
-          
-          if (error) {
-            console.error('OAuth error:', error);
-            showAuthScreen();
-          } else if (code) {
-            // Handle OAuth redirect
-            console.log('OAuth redirect detected, processing...');
-            showAuthScreen();
-          } else {
-            // No user logged in, show auth screen
-            showAuthScreen();
-          }
-        }
-
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange((event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          
-          if (event === 'SIGNED_IN' && session) {
-            currentUser = session.user;
-            showMainScreen();
-            loadReflections();
-            
-            // Clear URL parameters after successful OAuth
-            if (window.location.search.includes('code=')) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-          } else if (event === 'SIGNED_OUT') {
-            currentUser = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            showAuthScreen();
-          } else if (event === 'TOKEN_REFRESHED' && session) {
-            currentUser = session.user;
-          }
-        });
-      } catch (err) {
-        console.error('Error initializing auth:', err);
-        showAuthScreen();
-      }
+      // This function is no longer needed since we use Firebase auth
+      // Firebase auth is handled in initFirebaseAuth()
+      console.log('Using Firebase authentication only');
     }
 
     // Event listeners
@@ -2117,7 +1966,7 @@ Need help? Check the console for any error messages.`;
         console.log('Firebase initialized successfully');
         await initFirebaseAuth();
       } else {
-        console.log('Firebase not configured, using local storage mode');
+        console.log('Firebase not configured, showing auth screen');
         showAuthScreen();
       }
       
@@ -2139,11 +1988,16 @@ Need help? Check the console for any error messages.`;
               photoURL: user.photoURL,
               isFirebase: true
             };
+            console.log('Firebase user signed in:', {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName
+            });
             showMainScreen();
             loadReflections();
-            console.log('User already signed in:', user.email);
           } else {
             // User is signed out
+            console.log('No Firebase user signed in');
             showAuthScreen();
           }
         });
