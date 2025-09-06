@@ -673,14 +673,15 @@
         📱 Photos App: iPhone Photos, Samsung Gallery, Google Photos, etc.
       </div>
       <input type="file" 
-             accept="image/*" 
+             accept="image/*,image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif" 
              id="image-input" 
              multiple="false"
              style="display: none;"
              webkitdirectory="false"
              directory="false"
              x-moz-errormessage=""
-             data-capture="none">
+             data-capture="none"
+             data-testid="photos-input">
       <input type="file" 
              accept="image/*" 
              id="camera-input" 
@@ -2406,13 +2407,28 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       e.preventDefault(); // Prevent default label behavior
       console.log('📱 Photos App button clicked');
       
-      // Ensure the gallery input opens photo library
-      const galleryInput = document.getElementById('image-input');
-      galleryInput.removeAttribute('capture');
-      galleryInput.setAttribute('data-capture', 'none');
+      // Create a completely new file input for photos
+      const newInput = document.createElement('input');
+      newInput.type = 'file';
+      newInput.accept = 'image/*';
+      newInput.multiple = false;
+      newInput.style.display = 'none';
+      
+      // Add event listener to the new input
+      newInput.addEventListener('change', previewImage);
+      
+      // Add to DOM temporarily
+      document.body.appendChild(newInput);
       
       // Trigger the file picker
-      galleryInput.click();
+      newInput.click();
+      
+      // Clean up after a delay
+      setTimeout(() => {
+        if (document.body.contains(newInput)) {
+          document.body.removeChild(newInput);
+        }
+      }, 1000);
     });
     
     document.querySelector('label[for="camera-input"]').addEventListener('click', function(e) {
