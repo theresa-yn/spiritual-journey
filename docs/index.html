@@ -729,7 +729,6 @@
     <div id="history-list"></div>
     <div class="button-group">
       <button class="button" onclick="goBack()">Back</button>
-      <button class="button" onclick="retryFailedDeletions()" id="retry-sync-btn" style="display: none;">Retry Sync</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -1716,16 +1715,6 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       document.getElementById('options-menu').style.display = 'none';
       await loadReflections();
       refreshHistoryDisplay();
-      
-      // Show retry sync button if there are failed deletions
-      const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
-      const retryBtn = document.getElementById('retry-sync-btn');
-      if (failedDeletions.length > 0) {
-        retryBtn.style.display = 'inline-block';
-        retryBtn.textContent = `Retry Sync (${failedDeletions.length})`;
-      } else {
-        retryBtn.style.display = 'none';
-      }
     }
 
     function editReflection(index) {
