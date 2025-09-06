@@ -435,14 +435,26 @@
       /* Mobile photo buttons */
       .photo-buttons {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
       
       .photo-buttons label {
         min-width: 100% !important;
-        padding: 14px 20px !important;
+        padding: 16px 24px !important;
         font-size: 1.1rem !important;
+        border-radius: 16px !important;
       }
+    }
+    
+    /* Photo button hover effects */
+    .photo-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+    }
+    
+    .photo-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     }
     .options-menu {
       position: fixed;
@@ -661,20 +673,13 @@
     <input type="text" id="title" placeholder="Title">
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
-      <div class="photo-buttons" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
-        <label for="image-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center;">
-          📱 Photos App
+      <div class="photo-buttons" style="display: flex; gap: 12px; margin: 15px 0; flex-wrap: wrap;">
+        <label for="image-input" class="button photo-button" style="display: inline-block; cursor: pointer; padding: 14px 24px; font-size: 1rem; border-radius: 12px; transition: all 0.3s ease; flex: 1; min-width: 160px; text-align: center; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          📷 Choose Photo
         </label>
-        <label for="camera-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center; background: var(--accent-secondary);">
-          📸 Camera
+        <label for="camera-input" class="button photo-button" style="display: inline-block; cursor: pointer; padding: 14px 24px; font-size: 1rem; border-radius: 12px; transition: all 0.3s ease; flex: 1; min-width: 160px; text-align: center; background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary)); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          📸 Take Photo
         </label>
-      </div>
-      <div style="text-align: center; margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">
-        📱 Photos App: iPhone Photos, Samsung Gallery, Google Photos, etc.<br>
-        <small style="font-size: 0.75rem; opacity: 0.8;">
-          If Files app opens, look for "Photos" or "Gallery" option<br>
-          Or try the Camera button and select from recent photos
-        </small>
       </div>
       <input type="file" 
              accept="image/*,image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif" 
@@ -2409,7 +2414,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     // Add click listeners for gallery and camera buttons
     document.querySelector('label[for="image-input"]').addEventListener('click', function(e) {
       e.preventDefault(); // Prevent default label behavior
-      console.log('📱 Photos App button clicked');
+      console.log('📷 Choose Photo button clicked');
       
       // Simple approach: create a clean input and trigger it
       const input = document.createElement('input');
@@ -2432,7 +2437,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     
     document.querySelector('label[for="camera-input"]').addEventListener('click', function(e) {
       e.preventDefault(); // Prevent default label behavior
-      console.log('📸 Camera button clicked');
+      console.log('📸 Take Photo button clicked');
       
       // Ensure the camera input opens camera
       const cameraInput = document.getElementById('camera-input');
