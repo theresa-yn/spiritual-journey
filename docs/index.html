@@ -432,15 +432,29 @@
       /* Mobile header adjustments */
       .header { padding: 10px 16px; }
       
-      /* Mobile photo buttons */
-      .photo-buttons {
-        flex-direction: column;
-        gap: 8px;
+      /* Mobile toolbar */
+      .photo-toolbar {
+        flex-wrap: wrap;
+        gap: 6px !important;
+        padding: 10px !important;
       }
       
-      .photo-buttons label {
-        min-width: 100% !important;
+      .toolbar-button {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 16px !important;
       }
+    }
+    
+    /* Toolbar button hover effects */
+    .toolbar-button:hover {
+      background: var(--accent-primary) !important;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .toolbar-button:active {
+      transform: scale(0.95);
     }
     .options-menu {
       position: fixed;
@@ -655,17 +669,22 @@
   <div id="entry-screen" class="content hidden">
     <h2 id="entry-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
-    <button class="button" onclick="newQuestion()">New Question</button>
     <input type="text" id="title" placeholder="Title">
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
-      <div class="photo-buttons" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
-        <label for="image-input" class="button" style="display: inline-block; cursor: pointer; flex: 1; min-width: 150px; text-align: center;">
-          📷 Choose Photo
+      <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); justify-content: center; align-items: center;">
+        <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
+          📷
         </label>
-        <label for="camera-input" class="button" style="display: inline-block; cursor: pointer; flex: 1; min-width: 150px; text-align: center;">
-          📸 Take Photo
+        <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
+          📸
         </label>
+        <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
+          🎤
+        </button>
+        <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 18px;">
+          ✨
+        </button>
       </div>
       <input type="file" 
              accept="image/*,image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif" 
@@ -694,7 +713,6 @@
       </div>
     </div>
     <div class="button-group">
-      <button class="button" id="start-voice">Start Speaking</button>
       <button class="button" id="stop-voice" disabled>Stop Speaking</button>
       <button class="button" id="save" disabled>Save Reflection</button>
       <button class="button" onclick="goBack()">Back</button>
