@@ -662,6 +662,7 @@
 
   <!-- Main Screen -->
   <div id="main-screen" class="content hidden screen-transition">
+    <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
@@ -1670,6 +1671,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       document.getElementById('entry-screen').classList.remove('hidden');
       document.getElementById('history-screen').classList.add('hidden');
       document.getElementById('options-menu').style.display = 'none';
+      
+      // Hide the back button when going to entry screen
+      document.getElementById('back-to-inspire-btn').style.display = 'none';
       document.getElementById('title').value = '';
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
@@ -1706,6 +1710,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       document.getElementById('main-screen').classList.remove('hidden');
       editingIndex = null;
       
+      // Hide the back button when returning to main screen
+      document.getElementById('back-to-inspire-btn').style.display = 'none';
+      
       // Show welcome message if user just signed up
       if (showWelcome && user) {
         const welcomeMessage = document.getElementById('welcome-message');
@@ -1718,6 +1725,12 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         }, 5000);
       }
     }
+    
+    function goBackToInspire() {
+      // This function is called from the back button on main screen
+      // It's essentially the same as goBack() but more explicit
+      goBack();
+    }
 
     async function showHistory() {
       // No authentication required - allow everyone to view reflections
@@ -1725,6 +1738,10 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       document.getElementById('entry-screen').classList.add('hidden');
       document.getElementById('history-screen').classList.remove('hidden');
       document.getElementById('options-menu').style.display = 'none';
+      
+      // Show the back button on main screen when viewing history
+      document.getElementById('back-to-inspire-btn').style.display = 'block';
+      
       await loadReflections();
       refreshHistoryDisplay();
     }
