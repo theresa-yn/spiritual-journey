@@ -734,6 +734,7 @@
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
         <div id="options-menu" class="options-menu">
+          <button id="home-btn" onclick="goToHome()" style="display: block;">Home</button>
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
         </div>
@@ -1731,6 +1732,20 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       // It's essentially the same as goBack() but more explicit
       goBack();
     }
+    
+    function goToHome() {
+      // Navigate to home page from anywhere in the app
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
+      document.getElementById('options-menu').style.display = 'none';
+      document.getElementById('main-screen').classList.remove('hidden');
+      
+      // Hide the back button when going to home
+      document.getElementById('back-to-inspire-btn').style.display = 'none';
+      
+      // Reset any editing state
+      editingIndex = null;
+    }
 
     async function showHistory() {
       // No authentication required - allow everyone to view reflections
@@ -2399,6 +2414,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         console.error('Options menu element not found');
         return;
       }
+      
+      // Home button is always visible
+      document.getElementById('home-btn').style.display = 'block';
       
       // Ensure buttons are visible if user is signed in
       if (currentUser) {
