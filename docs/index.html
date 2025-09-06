@@ -151,29 +151,6 @@
       right: 0;
     }
     
-    .datetime-container {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1px;
-    }
-    
-    .date-display {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      font-weight: 400;
-      letter-spacing: 0.2px;
-      line-height: 1.1;
-      opacity: 0.9;
-    }
-    
-    .time-display {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-weight: 300;
-      letter-spacing: 0.3px;
-      opacity: 0.7;
-    }
     .content {
       flex-grow: 1;
       display: flex;
@@ -382,8 +359,6 @@
       
       /* Mobile header adjustments */
       .header { padding: 10px 16px; }
-      .date-display { font-size: 0.8rem; }
-      .time-display { font-size: 0.7rem; }
     }
     .options-menu {
       position: fixed;
@@ -405,23 +380,24 @@
       background: var(--button-gradient);
       color: #ffffff;
       border: none;
-      padding: 12px 16px;
-      border-radius: 10px;
+      padding: 10px 20px;
+      border-radius: 20px;
       cursor: pointer;
       transition: all 0.3s ease-in-out;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 500;
       text-align: center;
       min-height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
     }
     .options-menu button:hover {
       background: var(--button-hover);
       color: #ffffff;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
     .options-menu button:active {
       transform: translateY(0);
@@ -541,10 +517,6 @@
   <div class="sun" style="display: none;"></div>
   
   <div class="header">
-    <div class="datetime-container">
-      <div id="current-date" class="date-display"></div>
-      <div id="current-time" class="time-display"></div>
-    </div>
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
       <!-- Authentication removed - automatic sync without signup -->
@@ -559,8 +531,8 @@
     <!-- Firebase Auth Options -->
     <div style="text-align: center; margin-top: 30px;">
       <!-- Google Sign In Button -->
-      <button class="button firebase-google-btn" onclick="signInWithGoogle()" style="background: #4285f4; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1rem; padding: 15px 30px; margin: 0 auto;">
-        <svg width="24" height="24" viewBox="0 0 24 24">
+      <button class="button firebase-google-btn" onclick="signInWithGoogle()" style="background: #4285f4; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 10px 20px; margin: 0 auto; border-radius: 20px; font-weight: 500; box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);">
+        <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -598,7 +570,12 @@
       <label for="image-input" class="button" style="display: inline-block; margin: 10px 0; cursor: pointer;">
         📷 Add Photo
       </label>
-      <input type="file" accept="image/*" id="image-input" capture="environment" style="display: none;">
+      <input type="file" 
+             accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic,.heif" 
+             id="image-input" 
+             capture="environment" 
+             multiple="false"
+             style="display: none;">
       <div id="image-preview-container" style="display: none;">
         <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
           📸 Loading image...
@@ -693,6 +670,7 @@
     let editingIndex = null;
     let user = null;
     let currentTheme = 'dark'; // Default theme
+    let lastQuoteIndex = -1; // Track last quote to avoid repetition
 
     const quotes = [
       "The wound is the place where the light enters you. – Rumi",
@@ -734,8 +712,15 @@
     }
 
     function newQuote() {
-      document.getElementById('quote').textContent =
-        quotes[Math.floor(Math.random() * quotes.length)];
+      let randomIndex;
+      
+      // Ensure we don't show the same quote twice in a row
+      do {
+        randomIndex = Math.floor(Math.random() * quotes.length);
+      } while (randomIndex === lastQuoteIndex && quotes.length > 1);
+      
+      lastQuoteIndex = randomIndex;
+      document.getElementById('quote').textContent = quotes[randomIndex];
     }
 
     function newQuestion() {
@@ -1048,6 +1033,55 @@ Next Steps:
       });
     }
 
+    async function debugFirebaseData() {
+      if (!currentUser || !currentUser.isFirebase) {
+        alert('Please sign in with Google first to debug data.');
+        return;
+      }
+
+      try {
+        console.log('🔍 Debugging Firebase Data...');
+        console.log('Current User:', currentUser);
+        
+        // Test Firestore connection
+        const testRef = db.collection('reflections');
+        const snapshot = await testRef.where('userId', '==', currentUser.id).get();
+        
+        console.log('Firestore Query Results:', {
+          totalDocs: snapshot.size,
+          docs: snapshot.docs.map(doc => ({
+            id: doc.id,
+            data: doc.data()
+          }))
+        });
+        
+        // Check localStorage
+        const localData = localStorage.getItem('reflections');
+        console.log('LocalStorage Data:', localData ? JSON.parse(localData) : 'No local data');
+        
+        const debugInfo = `🔍 Firebase Data Debug:
+
+User ID: ${currentUser.id}
+User Email: ${currentUser.email}
+
+Firestore Results:
+- Total documents: ${snapshot.size}
+- Documents: ${snapshot.docs.map(doc => doc.data().title || 'Untitled').join(', ') || 'None'}
+
+LocalStorage:
+- Has local data: ${localData ? 'Yes' : 'No'}
+- Local reflections: ${localData ? JSON.parse(localData).length : 0}
+
+Check browser console (F12) for detailed logs.`;
+        
+        alert(debugInfo);
+        
+      } catch (error) {
+        console.error('Debug error:', error);
+        alert(`Debug Error: ${error.message}\n\nCheck browser console for details.`);
+      }
+    }
+
     function showFirebaseSetup() {
       const setupGuide = `🔥 Firebase Setup Guide:
 
@@ -1188,10 +1222,9 @@ Need help? Check the console for any error messages.`;
         return;
       }
         
-      
       // Handle Firebase mode
       if (currentUser.isFirebase) {
-        console.log('Loading reflections for Firebase user');
+        console.log('Loading reflections for Firebase user:', currentUser.id);
         try {
           const snapshot = await db.collection('reflections')
             .where('userId', '==', currentUser.id)
@@ -1203,67 +1236,38 @@ Need help? Check the console for any error messages.`;
             ...doc.data()
           }));
           
+          console.log('Loaded', reflections.length, 'reflections from Firebase');
+          
           // Also save to localStorage for offline access
           localStorage.setItem('reflections', JSON.stringify(reflections));
           return;
         } catch (error) {
           console.error('Error loading Firebase reflections:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            userId: currentUser.id
+          });
+          
+          // Show user-friendly error message
+          alert(`Error loading journals: ${error.message}\n\nThis might be due to:\n1. Internet connection issues\n2. Firebase security rules\n3. Database permissions\n\nCheck browser console for details.`);
+          
           // Fallback to localStorage
           const localReflections = localStorage.getItem('reflections');
           if (localReflections) {
             reflections = JSON.parse(localReflections);
+            console.log('Using localStorage fallback with', reflections.length, 'reflections');
           } else {
             reflections = [];
+            console.log('No local data available');
           }
           return;
         }
       }
         
-      const userId = currentUser.id;
-      
-        try {
-        console.log('Loading reflections for user:', userId);
-          
-        // Load from Supabase database
-          const { data, error } = await supabase
-            .from('reflections')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-          
-          if (error) {
-          console.error('Error loading reflections:', error);
-          reflections = [];
-            return;
-          }
-          
-        reflections = data || [];
-        console.log('Loaded reflections from database:', reflections.length);
-        
-        // Check if user has local data that needs migration
-        const localReflections = localStorage.getItem('reflections');
-        if (localReflections && reflections.length === 0) {
-          const localData = JSON.parse(localReflections);
-          if (localData.length > 0) {
-            console.log('Found local data to migrate, starting migration...');
-            await migrateLocalData();
-            return; // migrateLocalData will reload reflections
-          }
-        }
-        
-        // Also save to localStorage for offline access
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-        
-      } catch (err) {
-        console.error('Unexpected error loading reflections:', err);
-        // Fallback to localStorage
-        const localReflections = localStorage.getItem('reflections');
-        if (localReflections) {
-          reflections = JSON.parse(localReflections);
-        } else {
-          reflections = [];
-        }
-      }
+      // Fallback for non-Firebase users (should not happen in current setup)
+      console.log('No Firebase user detected, showing empty reflections');
+      reflections = [];
     }
 
     async function saveReflections() {
@@ -1310,6 +1314,16 @@ Need help? Check the console for any error messages.`;
           return;
         } catch (error) {
           console.error('Error saving to Firebase:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            userId: currentUser.id,
+            reflectionData: reflectionData
+          });
+          
+          // Show user-friendly error message
+          alert(`Error saving journal: ${error.message}\n\nThis might be due to:\n1. Internet connection issues\n2. Firebase security rules\n3. Database permissions\n\nYour journal will be saved locally for now.`);
+          
           // Fallback to localStorage
           const localData = {
             id: 'firebase_fallback_' + Date.now(),
@@ -1331,64 +1345,9 @@ Need help? Check the console for any error messages.`;
         }
       }
       
-      const title = document.getElementById('title').value.trim();
-      const reflection = document.getElementById('reflection').value.trim();
-      const date = document.getElementById('current-date').textContent;
-      
-      const reflectionData = {
-        user_id: currentUser.id,
-        title,
-        reflection,
-        date,
-        image: currentImage,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (editingIndex !== null && reflections[editingIndex]) {
-          // Update existing reflection
-          const { data, error } = await supabase
-            .from('reflections')
-            .update(reflectionData)
-            .eq('id', reflections[editingIndex].id)
-            .select();
-          
-          if (error) {
-            console.error('Error updating reflection:', error);
-            return;
-          }
-          
-          // Update local array
-          reflections[editingIndex] = data[0];
-          console.log('Successfully updated reflection');
-        } else {
-          // Insert new reflection
-          const { data, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select();
-          
-          if (error) {
-            console.error('Error saving reflection:', error);
-            return;
-          }
-          
-          // Add to local array
-          reflections.unshift(data[0]);
-          console.log('Successfully saved new reflection');
-        }
-        
-        // Update localStorage
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-      
-      // Clear form and go back
-      currentImage = "";
-      editingIndex = null;
-      goBack();
-        
-      } catch (err) {
-        console.error('Unexpected error saving reflection:', err);
-      }
+      // Fallback for non-Firebase users (should not happen in current setup)
+      console.log('No Firebase user detected, cannot save reflection');
+      alert('Please sign in with Google to save your reflections.');
     }
 
 
@@ -1616,12 +1575,32 @@ Need help? Check the console for any error messages.`;
       
       reflections.forEach((item, index) => {
         console.log('Creating display for reflection', index, ':', item.title);
+        
+        // Format the date and time properly
+        let displayDate = 'No date';
+        if (item.createdAt) {
+          // Handle Firebase timestamp
+          const date = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+          displayDate = date.toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+        } else if (item.date) {
+          // Fallback to the date field
+          displayDate = item.date;
+        }
+        
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
           <p>${item.reflection || 'No content'}</p>
-          <small>${item.date || 'No date'}</small>
+          <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${item.image ? `<img src="${item.image}">` : ""}
           <div class="button-group">
             <button class="button" onclick="editReflection(${index})">Edit</button>
@@ -1849,15 +1828,25 @@ Need help? Check the console for any error messages.`;
     function previewImage(event) {
       const file = event.target.files[0];
       if (file) {
-        // Check file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image file is too large. Please select an image smaller than 5MB.');
+        console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
+        
+        // Check file size (10MB limit for better device compatibility)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('Image file is too large. Please select an image smaller than 10MB.\n\nTip: You can compress the image on your device before uploading.');
           return;
         }
         
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-          alert('Please select a valid image file.');
+        // Check file type - support more formats
+        const supportedTypes = [
+          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+          'image/webp', 'image/bmp', 'image/tiff', 'image/heic', 'image/heif'
+        ];
+        
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const supportedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'heic', 'heif'];
+        
+        if (!file.type.startsWith('image/') && !supportedExtensions.includes(fileExtension)) {
+          alert('Please select a valid image file.\n\nSupported formats: JPG, PNG, GIF, WebP, BMP, TIFF, HEIC, HEIF\n\nTip: Most devices support these formats automatically.');
           return;
         }
         
@@ -1872,31 +1861,39 @@ Need help? Check the console for any error messages.`;
         preview.style.display = 'none';
         
         reader.onload = (e) => {
-          // Set the image source
-          preview.src = e.target.result;
-          currentImage = e.target.result;
-          
-          // Hide loading and show image
-          loading.style.display = 'none';
-          preview.style.display = 'block';
-          
-          // Add a small delay to ensure the image loads
-          setTimeout(() => {
-            if (preview.complete && preview.naturalHeight !== 0) {
-              console.log('Image preview loaded successfully:', file.name);
-              console.log('Image size:', file.size, 'bytes');
-              console.log('Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
-            } else {
-              console.log('Image preview loading...');
-            }
-          }, 100);
+          try {
+            // Set the image source
+            preview.src = e.target.result;
+            currentImage = e.target.result;
+            
+            // Hide loading and show image
+            loading.style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Add a small delay to ensure the image loads
+            setTimeout(() => {
+              if (preview.complete && preview.naturalHeight !== 0) {
+                console.log('✅ Image preview loaded successfully:', file.name);
+                console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
+                console.log('💾 Image size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+              } else {
+                console.log('⏳ Image preview loading...');
+              }
+            }, 100);
+          } catch (error) {
+            console.error('Error processing image:', error);
+            alert('Error processing the image. Please try a different image or format.');
+            container.style.display = 'none';
+          }
         };
         
         reader.onerror = () => {
-          alert('Error reading the image file. Please try again.');
+          alert('Error reading the image file. Please try again.\n\nThis might happen if:\n• The file is corrupted\n• The file format is not supported\n• There\'s insufficient memory\n\nTry selecting a different image.');
           console.error('FileReader error:', reader.error);
+          container.style.display = 'none';
         };
         
+        // Read the file
         reader.readAsDataURL(file);
       }
     }
@@ -2035,66 +2032,11 @@ Need help? Check the console for any error messages.`;
     }
 
 
-    // Initialize auth state
+    // Initialize auth state - Firebase only
     async function initAuth() {
-      try {
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        
-        if (session && session.user) {
-          currentUser = session.user;
-          showMainScreen();
-          await loadReflections();
-          console.log('User already logged in:', currentUser.email);
-        } else {
-          // Check if this is an OAuth redirect
-          const urlParams = new URLSearchParams(window.location.search);
-          const code = urlParams.get('code');
-          const error = urlParams.get('error');
-          
-          if (error) {
-            console.error('OAuth error:', error);
-            showAuthScreen();
-          } else if (code) {
-            // Handle OAuth redirect
-            console.log('OAuth redirect detected, processing...');
-            showAuthScreen();
-          } else {
-            // No user logged in, show auth screen
-            showAuthScreen();
-          }
-        }
-
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange((event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          
-          if (event === 'SIGNED_IN' && session) {
-            currentUser = session.user;
-            showMainScreen();
-            loadReflections();
-            
-            // Clear URL parameters after successful OAuth
-            if (window.location.search.includes('code=')) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-          } else if (event === 'SIGNED_OUT') {
-            currentUser = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            showAuthScreen();
-          } else if (event === 'TOKEN_REFRESHED' && session) {
-            currentUser = session.user;
-          }
-        });
-      } catch (err) {
-        console.error('Error initializing auth:', err);
-        showAuthScreen();
-      }
+      // This function is no longer needed since we use Firebase auth
+      // Firebase auth is handled in initFirebaseAuth()
+      console.log('Using Firebase authentication only');
     }
 
     // Event listeners
@@ -2117,7 +2059,7 @@ Need help? Check the console for any error messages.`;
         console.log('Firebase initialized successfully');
         await initFirebaseAuth();
       } else {
-        console.log('Firebase not configured, using local storage mode');
+        console.log('Firebase not configured, showing auth screen');
         showAuthScreen();
       }
       
@@ -2139,11 +2081,16 @@ Need help? Check the console for any error messages.`;
               photoURL: user.photoURL,
               isFirebase: true
             };
+            console.log('Firebase user signed in:', {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName
+            });
             showMainScreen();
             loadReflections();
-            console.log('User already signed in:', user.email);
           } else {
             // User is signed out
+            console.log('No Firebase user signed in');
             showAuthScreen();
           }
         });
