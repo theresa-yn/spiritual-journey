@@ -11,9 +11,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Spiritual Journey</title>
-  <!-- Notion SDK -->
-      <script src="https://unpkg.com/@notionhq/client@2.2.3/dist/index.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <style>
     /* CSS Variables for theming */
     :root {
@@ -32,7 +33,6 @@
       --input-bg: rgba(15, 15, 35, 0.8);
       --card-bg: rgba(15, 15, 35, 0.8);
       --star-color: #ffffff;
-      --success-color: #10b981;
       --button-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       --button-hover: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
     }
@@ -139,6 +139,7 @@
     .header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding: 12px 20px;
       background: var(--header-bg);
       backdrop-filter: blur(10px);
@@ -148,6 +149,30 @@
       top: 0;
       left: 0;
       right: 0;
+    }
+    
+    .datetime-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+    }
+    
+    .date-display {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      line-height: 1.1;
+      opacity: 0.9;
+    }
+    
+    .time-display {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 300;
+      letter-spacing: 0.3px;
+      opacity: 0.7;
     }
     .content {
       flex-grow: 1;
@@ -354,6 +379,11 @@
       .floating-plus { width: 52px; height: 52px; font-size: 26px; }
       .options-menu { min-width: 170px; padding: 10px; }
       .options-menu button { padding: 10px 14px; font-size: 0.95rem; min-height: 38px; }
+      
+      /* Mobile header adjustments */
+      .header { padding: 10px 16px; }
+      .date-display { font-size: 0.8rem; }
+      .time-display { font-size: 0.7rem; }
     }
     .options-menu {
       position: fixed;
@@ -395,6 +425,58 @@
     }
     .options-menu button:active {
       transform: translateY(0);
+    }
+
+    /* Google Sign In Button Styling */
+    .google-signin-btn {
+      background: #4285f4 !important;
+      border: 1px solid #4285f4 !important;
+      color: white !important;
+      font-weight: 500;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .google-signin-btn:hover {
+      background: #3367d6 !important;
+      border-color: #3367d6 !important;
+      color: white !important;
+      box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .google-signin-btn:active {
+      background: #2c5aa0 !important;
+      transform: translateY(0);
+    }
+
+    .google-signin-btn svg {
+      flex-shrink: 0;
+    }
+
+    /* Apple Sign In Button Styling */
+    .apple-signin-btn {
+      background: #000000 !important;
+      border: 1px solid #000000 !important;
+      color: white !important;
+      font-weight: 500;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .apple-signin-btn:hover {
+      background: #333333 !important;
+      border-color: #333333 !important;
+      color: white !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .apple-signin-btn:active {
+      background: #1a1a1a !important;
+      transform: translateY(0);
+    }
+
+    .apple-signin-btn svg {
+      flex-shrink: 0;
     }
 
     /* Sun for sky theme */
@@ -459,7 +541,10 @@
   <div class="sun" style="display: none;"></div>
   
   <div class="header">
-    <span id="current-time"></span>
+    <div class="datetime-container">
+      <div id="current-date" class="date-display"></div>
+      <div id="current-time" class="time-display"></div>
+    </div>
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
       <!-- Authentication removed - automatic sync without signup -->
@@ -467,15 +552,36 @@
   </div>
   
 
-  <!-- Account Setup Screen -->
-  <div id="account-screen" class="content">
+  <!-- Authentication Screen -->
+  <div id="auth-screen" class="content">
     <h2>Welcome to Your Spiritual Journey</h2>
-    <p>Create an account or sign in to sync your journals across all devices</p>
     
-    <button class="button" onclick="showSignupScreen()" style="background: #3b82f6; margin-bottom: 15px;">📧 Create Account</button>
-    <button class="button" onclick="showLoginScreen()" style="background: #10b981; margin-bottom: 15px;">🔑 Sign In</button>
+    <!-- Firebase Auth Options -->
+    <div style="text-align: center; margin-top: 30px;">
+      <!-- Google Sign In Button -->
+      <button class="button firebase-google-btn" onclick="signInWithGoogle()" style="background: #4285f4; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1rem; padding: 15px 30px; margin: 0 auto;">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="white" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+      
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin: 20px 0;">One-click sign-in with your Google account</p>
+      
+      
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Or try without signing up:</p>
+        
+        <button class="button" onclick="startLocalJourney()" style="background: var(--accent-secondary); margin: 5px;">
+          🚀 Try as Guest (Local Storage)
+        </button>
+      </div>
+    </div>
     
-    <div id="account-message" class="prompt" style="display: none; margin-top: 15px;"></div>
+    <div id="auth-message" class="prompt" style="display: none; margin-top: 15px;"></div>
   </div>
 
   <!-- Main Screen -->
@@ -483,68 +589,14 @@
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <button class="button" onclick="showSignupScreen()" style="background: #3b82f6; margin-top: 10px;">📧 Create Account</button>
-    <button class="button" onclick="showLoginScreen()" style="background: #10b981; margin-top: 10px;">🔑 Sign In</button>
-    <button class="button" onclick="syncToCloud()" style="background: #8b5cf6; margin-top: 10px;">☁️ Sync to Cloud</button>
-    <button class="button" onclick="logout()" style="background: var(--accent-color); margin-top: 10px;">Switch Account</button>
-    <button class="button" onclick="clearAllData()" style="background: #dc2626; margin-top: 10px;">Clear All Data</button>
+    <button class="button" onclick="handleSignOut()" style="background: var(--accent-secondary); margin-top: 10px;">Sign Out</button>
           <h2>My Spiritual Journey</h2>
       <p>Tap the plus button to start your journey</p>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">✨ Syncs across all your devices</p>
   </div>
-  <!-- Signup Screen -->
-  <div id="signup-screen" class="content hidden">
-    <h2>Create Account</h2>
-    <p>Enter your email to create an account and sync your journals across all devices.</p>
-    
-    <div id="signup-form">
-      <input type="email" id="signup-email" placeholder="Enter your email address" required>
-      <input type="password" id="signup-password" placeholder="Create a password" required>
-      <button class="button" onclick="createAccount()">Create Account</button>
-    </div>
-    
-    <div id="signup-message" class="prompt" style="display: none; margin-top: 15px;"></div>
-    
-    <button class="button" onclick="showLoginScreen()" style="background: var(--accent-color); margin-top: 15px;">Already have an account? Sign In</button>
-    <button class="button" onclick="showMainScreen()" style="background: #6b7280; margin-top: 10px;">Back to Main</button>
-  </div>
-
-  <!-- Login Screen -->
-  <div id="login-screen" class="content hidden">
-    <h2>Sign In</h2>
-    <p>Enter your email and password to access your journals.</p>
-    
-    <div id="login-form">
-      <input type="email" id="login-email" placeholder="Enter your email address" required>
-      <input type="password" id="login-password" placeholder="Enter your password" required>
-      <button class="button" onclick="signIn()">Sign In</button>
-    </div>
-    
-    <div id="login-message" class="prompt" style="display: none; margin-top: 15px;"></div>
-    
-    <button class="button" onclick="showSignupScreen()" style="background: var(--accent-color); margin-top: 15px;">Don't have an account? Create Account</button>
-    <button class="button" onclick="showMainScreen()" style="background: #6b7280; margin-top: 10px;">Back to Main</button>
-  </div>
-
-  <!-- Email Verification Screen -->
-  <div id="verification-screen" class="content hidden">
-    <h2>Verify Your Email</h2>
-    <p>We've sent a 6-digit verification code to <span id="verification-email"></span></p>
-    <p>Please check your email and enter the code below.</p>
-    
-    <div id="verification-form">
-      <input type="text" id="verification-code" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}">
-      <button class="button" onclick="verifyEmail()">Verify Email</button>
-    </div>
-    
-    <div id="verification-message" class="prompt" style="display: none; margin-top: 15px;"></div>
-    
-    <button class="button" onclick="resendVerificationCode()" style="background: var(--accent-color); margin-top: 15px;">Resend Code</button>
-    <button class="button" onclick="showSignupScreen()" style="background: #6b7280; margin-top: 10px;">Back to Signup</button>
-  </div>
+  <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
   <div id="entry-screen" class="content hidden">
-    <h2 id="current-date"></h2>
+    <h2 id="entry-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
     <button class="button" onclick="newQuestion()">New Question</button>
     <input type="text" id="title" placeholder="Title">
@@ -558,7 +610,7 @@
         <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
           📸 Loading image...
         </div>
-      <img id="preview-image" class="preview" src="" alt="Preview">
+        <img id="preview-image" class="preview" src="" alt="Preview">
         <button type="button" class="button" onclick="removeImage()" style="margin-top: 10px;">Remove Photo</button>
       </div>
     </div>
@@ -583,27 +635,61 @@
     <button onclick="showHistory()">Past Reflections</button>
   </div>
   <script>
-    // Cloud storage integration
-    let cloudUser = null;
-    const API_BASE_URL = 'https://your-backend-api.com/api'; // This would need to be configured
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCBKWKwZq8XqECABmuPn5vZ3D8O3hz8Ts0",
+      authDomain: "spiritual-journey-e3330.firebaseapp.com",
+      projectId: "spiritual-journey-e3330",
+      storageBucket: "spiritual-journey-e3330.firebasestorage.app",
+      messagingSenderId: "443749946566",
+      appId: "1:443749946566:web:b19c90120ed09bb128f3c7",
+      measurementId: "G-QFCNBZL9G9"
+    };
+
+    // Initialize Firebase
+    let firebase;
+    let auth;
+    let db;
     
-    function initializeCloud() {
-      console.log('=== INITIALIZING CLOUD STORAGE ===');
-      
-      // Check if user is logged in
-      const savedUser = localStorage.getItem('cloudUser');
-      if (savedUser) {
-        try {
-          cloudUser = JSON.parse(savedUser);
-          console.log('Cloud user loaded:', cloudUser.email);
+    function initializeFirebase() {
+      try {
+        // Initialize Firebase
+        firebase = window.firebase;
+        firebase.initializeApp(firebaseConfig);
+        
+        // Initialize Firebase Auth and Firestore
+        auth = firebase.auth();
+        db = firebase.firestore();
+        
+        console.log('Firebase initialized successfully');
         return true;
       } catch (error) {
-          console.error('Failed to parse saved user:', error);
-          localStorage.removeItem('cloudUser');
-          return false;
-        }
-      } else {
-        console.log('No cloud user found, user needs to sign in');
+        console.error('Firebase initialization error:', error);
+        return false;
+      }
+    }
+    
+    function initializeSupabase() {
+      if (typeof window.supabase === 'undefined') {
+        console.error('Supabase library not loaded');
+        return false;
+      }
+      
+      const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
+      
+      try {
+        supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+          auth: {
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true
+          }
+        });
+        console.log('Supabase client initialized successfully');
+        return true;
+      } catch (error) {
+        console.error('Failed to initialize Supabase client:', error);
         return false;
       }
     }
@@ -665,1091 +751,553 @@
 
     function updateDateTime() {
       const now = new Date();
-      const options = {
-        weekday: 'long', month: 'short', day: 'numeric',
-        year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+      
+      // Format date for header - minimalist format
+      const dateOptions = {
+        month: 'short', 
+        day: 'numeric'
       };
-      document.getElementById('current-date').textContent =
-        now.toLocaleString('en-US', options).replace(',', '');
-      document.getElementById('current-time').textContent =
-        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' CDT';
+      const formattedDate = now.toLocaleDateString('en-US', dateOptions);
+      document.getElementById('current-date').textContent = formattedDate;
+      
+      // Format time for header - clean format
+      const timeOptions = { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+      };
+      const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
+      document.getElementById('current-time').textContent = formattedTime;
+      
+      // Format date and time for entry screen
+      const entryDateElement = document.getElementById('entry-date');
+      if (entryDateElement) {
+        const entryOptions = {
+          weekday: 'long', 
+          month: 'long', 
+          day: 'numeric',
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          hour12: true
+        };
+        entryDateElement.textContent = now.toLocaleString('en-US', entryOptions);
+      }
     }
 
-    // Simple username system
+    // Authentication management
     let currentUser = null;
-    
-    // Generate deterministic UUID for database compatibility
-    function generateDeterministicUUID(username) {
-      // Create a deterministic UUID based on username for cross-device sync
-      const input = username.toLowerCase();
-      
-      // Create a seed from the username
-      let seed = 0;
-      for (let i = 0; i < input.length; i++) {
-        const char = input.charCodeAt(i);
-        seed = ((seed << 5) - seed) + char;
-        seed = seed & seed;
-      }
-      
-      // Generate deterministic UUID v4 format
-      // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-      const positiveSeed = Math.abs(seed);
-      
-      // Create 32 hex characters from the seed
-      const hexString = positiveSeed.toString(16).padStart(8, '0') + 
-                       (positiveSeed * 7).toString(16).padStart(8, '0') +
-                       (positiveSeed * 13).toString(16).padStart(8, '0') +
-                       (positiveSeed * 17).toString(16).padStart(8, '0');
-      
-      // Format as proper UUID: 8-4-4-4-12
-      const uuid = [
-        hexString.substring(0, 8),                    // 8 chars
-        hexString.substring(8, 12),                   // 4 chars
-        '4' + hexString.substring(13, 16),           // 4 chars (version 4)
-        ((parseInt(hexString.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hexString.substring(17, 20), // 4 chars (variant)
-        hexString.substring(20, 32)                   // 12 chars
-      ].join('-');
-      
-      console.log('Generated deterministic UUID for', username, ':', uuid);
-      return uuid;
-    }
-    
-    // Migrate old user format to new proper UUID format
-    function migrateUserToProperUUID(user) {
-      if (!user || !user.userId) return user;
-      
-      // Check if userId is in old format (starts with 'user_' or is numeric)
-      if (user.userId.startsWith('user_') || /^\d+$/.test(user.userId)) {
-        console.log('Migrating old user format to proper UUID:', user.userId);
-        
-        // Generate new deterministic UUID based on username
-        const newUserId = generateDeterministicUUID(user.username);
-        
-        // Create new user object with proper UUID
-        const migratedUser = {
-          username: user.username,
-          userId: newUserId
-        };
-        
-        console.log('Migrated user:', migratedUser);
-        
-        // Save migrated user
-        localStorage.setItem('currentUser', JSON.stringify(migratedUser));
-        
-        // Also migrate any existing reflections data
-        const oldKey = 'reflections_' + user.userId;
-        const newKey = 'reflections_' + newUserId;
-        const oldData = localStorage.getItem(oldKey);
-        if (oldData) {
-          localStorage.setItem(newKey, oldData);
-          localStorage.removeItem(oldKey);
-          console.log('Migrated reflections data from', oldKey, 'to', newKey);
-        }
-        
-        return migratedUser;
-      }
-      
-      return user;
+
+    // Show login form
+    function showLoginForm() {
+      document.getElementById('login-form').style.display = 'block';
+      document.getElementById('signup-form').style.display = 'none';
+      document.getElementById('auth-message').style.display = 'none';
     }
 
-    function setUsername() {
-      console.log('=== SET USERNAME CALLED ===');
-      const username = document.getElementById('username').value.trim();
-      const message = document.getElementById('account-message');
-      
-      console.log('Username entered:', username);
-      console.log('Username length:', username.length);
-      
-      if (!username) {
-        console.log('No username entered');
-        message.textContent = 'Please enter a username';
-        message.style.display = 'block';
-        return;
-      }
-      
-      if (username.length < 2) {
-        console.log('Username too short');
-        message.textContent = 'Username must be at least 2 characters';
-        message.style.display = 'block';
-        return;
-      }
-      
-      // Generate a deterministic UUID for database compatibility
-      const userId = generateDeterministicUUID(username);
-      console.log('Generated deterministic UUID:', userId);
-      
-      currentUser = {
-        username: username,
-        userId: userId
-      };
-      
-      console.log('Created user object:', currentUser);
-      
-      // Save to localStorage
-      const userJson = JSON.stringify(currentUser);
-      console.log('Saving to localStorage:', userJson);
-      localStorage.setItem('currentUser', userJson);
-      
-      // Verify save
-      const saved = localStorage.getItem('currentUser');
-      console.log('Verified save:', saved);
-      
-      message.textContent = 'Welcome, ' + username + '!';
-      message.style.display = 'block';
-      message.style.color = 'var(--success-color)';
-      
-      // Show main screen immediately
-      setTimeout(() => {
-        console.log('Switching to main screen');
-        showMainScreen();
-      }, 1000);
+    // Show signup form
+    function showSignupForm() {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('signup-form').style.display = 'block';
+      document.getElementById('auth-message').style.display = 'none';
     }
 
-    function showSignupScreen() {
-      document.getElementById('signup-screen').classList.remove('hidden');
+    // Show auth screen
+    function showAuthScreen() {
+      document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
+      showLoginForm();
     }
 
-    function showLoginScreen() {
-      document.getElementById('login-screen').classList.remove('hidden');
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('signup-screen').classList.add('hidden');
-      document.getElementById('verification-screen').classList.add('hidden');
-    }
-
-    function showVerificationScreen(email) {
-      document.getElementById('verification-screen').classList.remove('hidden');
-      document.getElementById('signup-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('main-screen').classList.add('hidden');
+    function showMainScreen() {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('main-screen').classList.remove('hidden');
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.add('hidden');
       
-      document.getElementById('verification-email').textContent = email;
-      document.getElementById('verification-code').value = '';
-    }
-
-    async function sendVerificationEmail(email, code) {
-      try {
-        // Use a simple email service that actually works
-        // This will send a real email to the user's inbox
-        
-        const emailContent = {
-          to: email,
-          subject: 'Spiritual Journey - Email Verification',
-          message: `Welcome to Spiritual Journey!
-
-Your verification code is: ${code}
-
-Please enter this code in the app to verify your email address.
-
-This code will expire in 10 minutes.
-
-Best regards,
-The Spiritual Journey Team`
-        };
-        
-        // Use a simple email service that actually works
-        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            service_id: 'service_spiritual_journey',
-            template_id: 'template_verification',
-            user_id: 'user_spiritual_journey',
-            template_params: {
-              to_email: email,
-              verification_code: code,
-              app_name: 'Spiritual Journey',
-              message: emailContent.message
-            }
-          })
-        });
-        
-        if (response.ok) {
-          console.log('Verification email sent successfully to:', email);
-          return { status: 200 };
-        } else {
-          throw new Error('Email service failed');
+      // Update user info display
+      if (currentUser) {
+        if (currentUser.isLocal) {
+          document.getElementById('user-email').textContent = 'Local Storage';
+        } else if (currentUser.isFirebase) {
+          document.getElementById('user-email').textContent = currentUser.email || currentUser.name;
+        } else if (currentUser.email) {
+          document.getElementById('user-email').textContent = currentUser.email;
         }
-        
-      } catch (error) {
-        console.error('Failed to send verification email:', error);
-        
-        // Email service is not configured yet, show the code directly
-        showVerificationCodeModal(email, code);
-        return { status: 200 };
       }
     }
 
-    function showVerificationCodeModal(email, code) {
-      // Create a modal to show the verification code
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        font-family: Arial, sans-serif;
-      `;
-      
-      modal.innerHTML = `
-        <div style="
-          background: var(--bg-primary);
-          border: 1px solid var(--accent-color);
-          border-radius: 12px;
-          padding: 30px;
-          max-width: 400px;
-          text-align: center;
-          color: var(--text-primary);
-        ">
-          <h2 style="color: var(--accent-color); margin-bottom: 20px;">📧 Email Verification</h2>
-          <p style="margin-bottom: 20px;">Email service is being configured. For testing, here's your verification code:</p>
-          <div style="
-            background: var(--bg-secondary);
-            border: 2px solid var(--accent-color);
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-          ">
-            <h1 style="
-              color: var(--accent-color);
-              font-size: 32px;
-              margin: 0;
-              letter-spacing: 5px;
-              font-family: monospace;
-            ">${code}</h1>
-          </div>
-          <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
-            Sent to: ${email}
-          </p>
-          <button onclick="this.parentElement.parentElement.remove()" style="
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-          ">Got it!</button>
-        </div>
-      `;
-      
-      document.body.appendChild(modal);
-      
-      // Auto-remove after 30 seconds
-      setTimeout(() => {
-        if (modal.parentElement) {
-          modal.remove();
-        }
-      }, 30000);
-    }
-
-    async function verifyEmail() {
-      const code = document.getElementById('verification-code').value.trim();
-      const email = document.getElementById('verification-email').textContent;
-      const message = document.getElementById('verification-message');
-      
-      if (!code || code.length !== 6) {
-        message.textContent = 'Please enter a valid 6-digit code';
-        message.style.display = 'block';
-        message.style.color = 'var(--error-color)';
-        return;
-      }
-      
-      try {
-        // Get stored user data
-        const userData = JSON.parse(localStorage.getItem('pendingUser_' + email));
-        
-        if (!userData) {
-          message.textContent = 'Verification code expired. Please create a new account.';
-          message.style.display = 'block';
-          message.style.color = 'var(--error-color)';
-          return;
-        }
-        
-        if (userData.verificationCode === code) {
-          // Verification successful
-          userData.verified = true;
-          userData.verifiedAt = new Date().toISOString();
-          
-          // Save verified user
-          localStorage.setItem('user_' + email, JSON.stringify(userData));
-          localStorage.removeItem('pendingUser_' + email);
-          
-          // Set as current user
-          cloudUser = {
-            email: email,
-            token: 'verified-token-' + Date.now(),
-            id: 'user-' + Date.now()
-          };
-          localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-          
-          message.textContent = '✅ Email verified successfully! Welcome to Spiritual Journey!';
-          message.style.display = 'block';
-          message.style.color = 'var(--success-color)';
-          
-          // Go to main screen
-          setTimeout(() => {
-            showMainScreen();
-          }, 2000);
-          
-        } else {
-          message.textContent = '❌ Invalid verification code. Please try again.';
-          message.style.display = 'block';
-          message.style.color = 'var(--error-color)';
-        }
-        
-      } catch (error) {
-        console.error('Verification failed:', error);
-        message.textContent = '❌ Verification failed. Please try again.';
-        message.style.display = 'block';
-        message.style.color = 'var(--error-color)';
-      }
-    }
-
-    async function resendVerificationCode() {
-      const email = document.getElementById('verification-email').textContent;
-      const message = document.getElementById('verification-message');
-      
-      try {
-        // Get stored user data
-        const userData = JSON.parse(localStorage.getItem('pendingUser_' + email));
-        
-        if (!userData) {
-          message.textContent = 'No pending verification found. Please create a new account.';
-          message.style.display = 'block';
-          message.style.color = 'var(--error-color)';
-          return;
-        }
-        
-        // Generate new code
-        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-        userData.verificationCode = newCode;
-        localStorage.setItem('pendingUser_' + email, JSON.stringify(userData));
-        
-        // Send new email
-        await sendVerificationEmail(email, newCode);
-        
-        message.textContent = '✅ New verification code sent! Please check your email.';
-        message.style.display = 'block';
-        message.style.color = 'var(--success-color)';
-        
-      } catch (error) {
-        console.error('Failed to resend code:', error);
-        message.textContent = '❌ Failed to resend code. Please try again.';
-        message.style.display = 'block';
-        message.style.color = 'var(--error-color)';
-      }
-    }
-
-    async function createAccount() {
+    // Handle user signup
+    async function handleSignup() {
       const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value;
-      const message = document.getElementById('signup-message');
+      const password = document.getElementById('signup-password').value.trim();
+      const message = document.getElementById('auth-message');
       
       if (!email || !password) {
-        message.textContent = 'Please fill in all fields';
+        message.textContent = 'Please enter both email and password.';
         message.style.display = 'block';
         return;
       }
       
       if (password.length < 6) {
-        message.textContent = 'Password must be at least 6 characters';
+        message.textContent = 'Password must be at least 6 characters long.';
         message.style.display = 'block';
         return;
       }
       
       try {
-        // Generate verification code
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        message.textContent = 'Creating account...';
+        message.style.display = 'block';
         
-        // Store user data temporarily (in real app, this would be in your backend)
-        const userData = {
+        const { data, error } = await supabase.auth.signUp({
           email: email,
           password: password,
-          verificationCode: verificationCode,
-          verified: false,
-          createdAt: new Date().toISOString()
-        };
-        
-        // Store in localStorage for demo (in real app, this would be in your database)
-        localStorage.setItem('pendingUser_' + email, JSON.stringify(userData));
-        
-        // Send verification email using EmailJS
-        await sendVerificationEmail(email, verificationCode);
-        
-        message.textContent = '✅ Account created! Please check your email for the verification code.';
-        message.style.display = 'block';
-        message.style.color = 'var(--success-color)';
-        
-        // Show verification screen
-        showVerificationScreen(email);
-        
-      } catch (error) {
-        console.error('Account creation failed:', error);
-        message.textContent = '❌ Failed to create account. Please try again.';
-        message.style.display = 'block';
-        message.style.color = 'var(--error-color)';
-      }
-    }
-
-    async function signIn() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      const message = document.getElementById('login-message');
-      
-      if (!email || !password) {
-        message.textContent = 'Please fill in all fields';
-        message.style.display = 'block';
-        return;
-      }
-      
-      try {
-        // Simulate sign in (in real app, this would call your backend)
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: email,
-            password: password
-          })
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          
-          // Save user data
-          cloudUser = {
-            email: email,
-            token: userData.token,
-            id: userData.userId
-          };
-          localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-          
-          message.textContent = '✅ Sign in successful!';
-          message.style.display = 'block';
-          message.style.color = 'var(--success-color)';
-          
-          // Go to main screen
-          setTimeout(() => {
-            showMainScreen();
-          }, 1000);
-          
-        } else {
-          const error = await response.json();
-          message.textContent = '❌ ' + (error.message || 'Sign in failed');
-          message.style.display = 'block';
-          message.style.color = 'var(--error-color)';
-        }
-      } catch (error) {
-        // For demo purposes, simulate success
-        cloudUser = {
-          email: email,
-          token: 'demo-token-' + Date.now(),
-          id: 'user-' + Date.now()
-        };
-        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-        
-        message.textContent = '✅ Sign in successful!';
-        message.style.display = 'block';
-        message.style.color = 'var(--success-color)';
-        
-        // Go to main screen
-        setTimeout(() => {
-          showMainScreen();
-        }, 1000);
-      }
-    }
-
-    function logout() {
-      console.log('=== LOGOUT ===');
-      console.log('Current user before logout:', currentUser);
-      
-      // Clear cloud user data
-      localStorage.removeItem('cloudUser');
-      cloudUser = null;
-      
-      // Clear user data
-      localStorage.removeItem('currentUser');
-      currentUser = null;
-      showAccountScreen();
-    }
-
-    async function syncToCloud() {
-      console.log('=== SYNC TO CLOUD ===');
-      
-      if (!cloudUser) {
-        alert('❌ Please sign in to sync your journals to the cloud.');
-        return;
-      }
-      
-      if (!currentUser) {
-        alert('❌ Please set a username first.');
-        return;
-      }
-      
-      try {
-        // Load local reflections
-        const userReflectionsKey = 'reflections_' + currentUser.userId;
-        const localReflections = localStorage.getItem(userReflectionsKey);
-        const reflections = localReflections ? JSON.parse(localReflections) : [];
-        
-        // Sync to cloud
-        const response = await fetch(`${API_BASE_URL}/journals/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${cloudUser.token}`
-          },
-          body: JSON.stringify({
-            userId: cloudUser.id,
-            reflections: reflections
-          })
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          alert('✅ Cloud Sync Complete!\n\nSynced ' + reflections.length + ' reflections to the cloud.\n\nYour journals are now available on all your devices!');
-        } else {
-          throw new Error('Sync failed');
-        }
-        
-      } catch (error) {
-        // For demo purposes, simulate success
-        alert('✅ Cloud Sync Complete!\n\nSynced ' + (reflections ? reflections.length : 0) + ' reflections to the cloud.\n\nYour journals are now available on all your devices!');
-      }
-    }
-    
-    async function exchangeCodeForToken(code) {
-      try {
-        // Exchange authorization code for access token
-        const response = await fetch('https://api.notion.com/v1/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + btoa('YOUR_CLIENT_ID:YOUR_CLIENT_SECRET') // This would need to be configured
-          },
-          body: JSON.stringify({
-            grant_type: 'authorization_code',
-            code: code,
-            redirect_uri: window.location.origin + window.location.pathname
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Token exchange failed');
-        }
-        
-        const tokenData = await response.json();
-        
-        // Save tokens
-        localStorage.setItem('notionAccessToken', tokenData.access_token);
-        localStorage.setItem('notionRefreshToken', tokenData.refresh_token);
-        
-        // Initialize Notion client
-        notionClient = new window.NotionClient({
-          auth: tokenData.access_token
-        });
-        
-        // Get user info
-        const userResponse = await notionClient.users.me();
-        
-        // Create or find database
-        await createNotionDatabase();
-        
-        alert('✅ Notion Connected!\n\nUser: ' + userResponse.name + '\nEmail: ' + userResponse.person?.email + '\n\nYour journals will now sync to Notion!');
-        
-        // Clear URL parameters
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-      } catch (error) {
-        console.error('Token exchange failed:', error);
-        alert('❌ Notion Connection Failed\n\nError: ' + error.message);
-      }
-    }
-    
-    async function createNotionDatabase() {
-      try {
-        // Try to find existing database first
-        const searchResponse = await notionClient.search({
-          query: 'Spiritual Journey',
-          filter: {
-            property: 'object',
-            value: 'database'
+          options: {
+            emailRedirectTo: `${window.location.origin}${window.location.pathname}`
           }
         });
-        
-        if (searchResponse.results.length > 0) {
-          notionDatabaseId = searchResponse.results[0].id;
-          console.log('Found existing database:', notionDatabaseId);
-          return;
-        }
-        
-        // Create new database
-        const response = await notionClient.databases.create({
-          parent: {
-            type: 'page_id',
-            page_id: 'YOUR_NOTION_PAGE_ID' // This would need to be configured
-          },
-          title: [
-            {
-              type: 'text',
-              text: {
-                content: 'Spiritual Journey'
-              }
-            }
-          ],
-          properties: {
-            'Title': {
-              title: {}
-            },
-            'Reflection': {
-              rich_text: {}
-            },
-            'Date': {
-              date: {}
-            },
-            'Username': {
-              rich_text: {}
-            }
-          }
-        });
-        
-        notionDatabaseId = response.id;
-        localStorage.setItem('notionDatabaseId', notionDatabaseId);
-        console.log('Created new database:', notionDatabaseId);
-        
-      } catch (error) {
-        console.error('Database creation failed:', error);
-        throw error;
-      }
-    }
-    
-    async function notionSync() {
-      console.log('=== NOTION SYNC ===');
-      
-      if (!currentUser) {
-        alert('❌ Please set a username first.');
-        return;
-      }
-      
-      if (!notionClient) {
-        if (!initializeNotion()) {
-          alert('❌ Notion not connected. Please use "Connect to Notion" first.');
-          return;
-        }
-      }
-      
-      try {
-        // Load local reflections
-        const userReflectionsKey = 'reflections_' + currentUser.userId;
-        const localReflections = localStorage.getItem(userReflectionsKey);
-        const reflections = localReflections ? JSON.parse(localReflections) : [];
-        
-        // Sync to Notion
-        let syncedCount = 0;
-        for (const reflection of reflections) {
-          try {
-            await notionClient.pages.create({
-              parent: {
-                database_id: notionDatabaseId
-              },
-              properties: {
-                'Title': {
-                  title: [
-                    {
-                      text: {
-                        content: reflection.title
-                      }
-                    }
-                  ]
-                },
-                'Reflection': {
-                  rich_text: [
-                    {
-                      text: {
-                        content: reflection.reflection
-                      }
-                    }
-                  ]
-                },
-                'Date': {
-                  date: {
-                    start: reflection.date
-                  }
-                },
-                'Username': {
-                  rich_text: [
-                    {
-                      text: {
-                        content: currentUser.username
-                      }
-                    }
-                  ]
-                }
-              }
-            });
-            syncedCount++;
-          } catch (error) {
-            console.error('Failed to sync reflection:', reflection.title, error);
-          }
-        }
-        
-        alert('✅ Notion Sync Complete!\n\nSynced ' + syncedCount + ' reflections to Notion.\n\nYour journals are now available in your Notion workspace!');
-        
-      } catch (error) {
-        console.error('Notion sync failed:', error);
-        alert('❌ Notion Sync Failed\n\nError: ' + error.message);
-      }
-    }
-
-    async function manualSync() {
-      console.log('=== MANUAL SYNC ===');
-      
-      if (!currentUser) {
-        alert('❌ No user found. Please set a username first.');
-        return;
-      }
-      
-      // Check if supabase is initialized
-      if (!supabase) {
-        console.log('Supabase not initialized, trying to initialize...');
-        if (!initializeSupabase()) {
-          alert('❌ Supabase Initialization Failed\n\nCannot connect to database.\nPlease refresh the page and try again.');
-          return;
-        }
-      }
-      
-      try {
-        console.log('Starting manual sync for user:', currentUser.userId);
-        
-        // Load reflections from database using user_email instead of user_id
-        const { data, error } = await supabase
-          .from('reflections')
-          .select('*')
-          .eq('user_email', currentUser.username)
-          .order('created_at', { ascending: false });
         
         if (error) {
-          console.error('Database error during sync:', error);
-          alert('❌ Sync Failed\n\nDatabase Error: ' + error.message);
+          console.error('Signup error details:', error);
+          message.textContent = `Error: ${error.message}`;
           return;
         }
         
-        console.log('Loaded from database:', data);
+        console.log('Signup response:', data);
         
-        // Update local storage
-        const userReflectionsKey = 'reflections_' + currentUser.userId;
-        localStorage.setItem(userReflectionsKey, JSON.stringify(data));
-        
-        // Update reflections array
-        reflections = data || [];
-        
-        // Refresh display
-        refreshHistoryDisplay();
-        
-        alert('✅ Manual Sync Complete!\n\nLoaded ' + (data ? data.length : 0) + ' reflections from database.\n\nUser ID: ' + currentUser.userId);
+        if (data.user && !data.user.email_confirmed_at) {
+          message.textContent = 'Account created! Please check your email (including spam folder) to confirm your account.';
+          message.style.color = 'var(--accent-primary)';
+          message.style.fontSize = '0.9rem';
+        } else {
+          message.textContent = 'Account created successfully!';
+          message.style.color = 'var(--accent-primary)';
+          // Auto-login if email confirmation is not required
+          currentUser = data.user;
+          showMainScreen();
+          await loadReflections();
+        }
         
       } catch (err) {
-        console.error('Manual sync error:', err);
-        alert('❌ Sync Error\n\nError: ' + err.message);
+        console.error('Signup error:', err);
+        message.textContent = 'An error occurred. Please try again.';
       }
     }
 
-    function forceUUIDUpdate() {
-      console.log('=== FORCE UUID UPDATE ===');
+    // Handle user login
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const message = document.getElementById('auth-message');
       
-      if (!currentUser) {
-        alert('❌ No user found. Please set a username first.');
-        return;
-      }
-      
-      const oldUserId = currentUser.userId;
-      const username = currentUser.username;
-      
-      console.log('Current user ID:', oldUserId);
-      console.log('Username:', username);
-      
-      // Generate new deterministic UUID
-      const newUserId = generateDeterministicUUID(username);
-      console.log('New deterministic UUID:', newUserId);
-      
-      // Create new user object
-      const newUser = {
-        username: username,
-        userId: newUserId
-      };
-      
-      // Save new user
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      currentUser = newUser;
-      
-      // Migrate reflections data if it exists
-      const oldKey = 'reflections_' + oldUserId;
-      const newKey = 'reflections_' + newUserId;
-      const oldData = localStorage.getItem(oldKey);
-      
-      if (oldData) {
-        localStorage.setItem(newKey, oldData);
-        localStorage.removeItem(oldKey);
-        console.log('Migrated reflections from', oldKey, 'to', newKey);
-      }
-      
-      alert('✅ UUID Updated!\n\nOld ID: ' + oldUserId + '\nNew ID: ' + newUserId + '\n\nYour data has been migrated to the new format.');
-      
-      console.log('UUID update complete. New user:', currentUser);
-    }
-
-    async function shareData() {
-      console.log('=== SHARING DATA ===');
-      
-      if (!currentUser) {
-        alert('❌ No user found. Please set a username first.');
+      if (!email || !password) {
+        message.textContent = 'Please enter both email and password.';
+        message.style.display = 'block';
         return;
       }
       
       try {
-        // Get user's reflections
-        const userReflectionsKey = 'reflections_' + currentUser.userId;
-        const localReflections = localStorage.getItem(userReflectionsKey);
-        const reflections = localReflections ? JSON.parse(localReflections) : [];
+        message.textContent = 'Signing in...';
+        message.style.display = 'block';
         
-        // Create share data
-        const shareData = {
-          username: currentUser.username,
-          userId: currentUser.userId,
-          reflections: reflections,
-          shareDate: new Date().toISOString()
-        };
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
         
-        // Encode data as base64
-        const dataStr = JSON.stringify(shareData);
-        const encodedData = btoa(dataStr);
-        
-        // Create share URL
-        const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
-        
-        // Try to copy to clipboard
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(shareUrl);
-          alert('✅ Data Shared!\n\nShare URL copied to clipboard!\n\nSend this URL to your other devices:\n' + shareUrl.substring(0, 100) + '...\n\nOn other devices, use "Load Shared Data" to import.');
-        } else {
-          // Fallback: show URL in alert
-          alert('✅ Data Shared!\n\nShare this URL with your other devices:\n\n' + shareUrl + '\n\nOn other devices, use "Load Shared Data" to import.');
+        if (error) {
+          message.textContent = `Error: ${error.message}`;
+          return;
         }
         
+        currentUser = data.user;
+        message.textContent = 'Signed in successfully!';
+        message.style.color = 'var(--accent-primary)';
+        
+        // Show main screen and load reflections
+        showMainScreen();
+        await loadReflections();
+        
       } catch (err) {
-        console.error('Share failed:', err);
-        alert('❌ Share Failed\n\nError: ' + err.message);
+        console.error('Login error:', err);
+        message.textContent = 'An error occurred. Please try again.';
       }
     }
 
-    function loadSharedData() {
-      console.log('=== LOADING SHARED DATA ===');
+    // Handle forgot password
+    async function handleForgotPassword() {
+      const email = document.getElementById('login-email').value.trim();
+      const message = document.getElementById('auth-message');
       
-      if (!currentUser) {
-        alert('❌ No user found. Please set a username first.');
+      if (!email) {
+        message.textContent = 'Please enter your email address first.';
+        message.style.display = 'block';
         return;
       }
       
-      // Check if there's data in the URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const encodedData = urlParams.get('data');
-      
-      if (encodedData) {
-        try {
-          // Decode the data
-          const dataStr = atob(encodedData);
-          const sharedData = JSON.parse(dataStr);
-          
-          if (!sharedData.reflections || !Array.isArray(sharedData.reflections)) {
-            alert('❌ Invalid shared data format.');
-            return;
-          }
-          
-          // Merge with existing data
-          const userReflectionsKey = 'reflections_' + currentUser.userId;
-          const existingReflections = localStorage.getItem(userReflectionsKey);
-          const currentReflections = existingReflections ? JSON.parse(existingReflections) : [];
-          
-          // Merge reflections (avoid duplicates)
-          const mergedReflections = [...currentReflections];
-          for (const sharedReflection of sharedData.reflections) {
-            const exists = mergedReflections.some(existing => 
-              existing.title === sharedReflection.title && 
-              existing.date === sharedReflection.date &&
-              existing.reflection === sharedReflection.reflection
-            );
-            if (!exists) {
-              mergedReflections.push(sharedReflection);
-            }
-          }
-          
-          // Save merged data
-          localStorage.setItem(userReflectionsKey, JSON.stringify(mergedReflections));
-          reflections = mergedReflections;
-          
-          // Refresh display
-          refreshHistoryDisplay();
-          
-          // Clear URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          alert('✅ Shared Data Loaded!\n\nImported ' + sharedData.reflections.length + ' reflections.\nTotal reflections: ' + mergedReflections.length);
-          
-        } catch (err) {
-          console.error('Load shared data failed:', err);
-          alert('❌ Load Shared Data Failed\n\nError: ' + err.message);
+      try {
+        message.textContent = 'Sending password reset email...';
+        message.style.display = 'block';
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}${window.location.pathname}`
+        });
+        
+        if (error) {
+          message.textContent = `Error: ${error.message}`;
+          return;
         }
-      } else {
-        // Prompt for URL
-        const shareUrl = prompt('Enter the share URL from another device:');
-        if (shareUrl) {
-          try {
-            const url = new URL(shareUrl);
-            const dataParam = url.searchParams.get('data');
-            if (dataParam) {
-              // Set the data parameter and reload
-              window.location.search = '?data=' + dataParam;
-            } else {
-              alert('❌ Invalid share URL. Please check the URL and try again.');
-            }
-          } catch (err) {
-            alert('❌ Invalid URL format. Please check the URL and try again.');
-          }
-        }
+        
+        message.textContent = 'Password reset email sent! Check your inbox.';
+        message.style.color = 'var(--accent-primary)';
+        
+      } catch (err) {
+        console.error('Password reset error:', err);
+        message.textContent = 'An error occurred. Please try again.';
       }
     }
 
-    function clearAllData() {
-      console.log('=== CLEARING ALL DATA ===');
-      console.log('Before clear - localStorage keys:', Object.keys(localStorage));
+    // OAuth functions removed - focusing on working authentication methods
+
+    // Simple local storage authentication - no configuration needed
+    function startLocalJourney() {
+      const message = document.getElementById('auth-message');
       
-      // Clear all localStorage
-      localStorage.clear();
+      // Set local user
+      currentUser = {
+        id: 'local_' + Date.now(),
+        email: 'Local User',
+        isLocal: true
+      };
       
-      console.log('After clear - localStorage keys:', Object.keys(localStorage));
+      message.textContent = 'Welcome! You\'re now using the app with local storage. Your journals are saved in your browser.';
+      message.style.color = 'var(--accent-primary)';
+      message.style.display = 'block';
       
-      // Reset current user
-      currentUser = null;
-      
-      alert('✅ All data cleared!\n\nLocalStorage has been completely cleared.\nYou can now test with a fresh start.');
-      
-      // Show account screen
-      showAccountScreen();
+      // Show main screen
+      setTimeout(() => {
+        showMainScreen();
+        loadReflections();
+      }, 1500);
     }
 
-    function showAccountScreen() {
-      document.getElementById('account-screen').classList.remove('hidden');
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('entry-screen').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
+    function showCloudOptions() {
+      document.getElementById('cloud-options').style.display = 'block';
     }
 
-    function showMainScreen() {
-      document.getElementById('account-screen').classList.add('hidden');
-      document.getElementById('main-screen').classList.remove('hidden');
-      document.getElementById('entry-screen').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
+    function hideCloudOptions() {
+      document.getElementById('cloud-options').style.display = 'none';
+    }
+
+    // Firebase Google Sign-In
+    async function signInWithGoogle() {
+      const message = document.getElementById('auth-message');
+      
+      try {
+        message.textContent = 'Signing in with Google...';
+        message.style.display = 'block';
+        
+        // Check if Firebase is initialized
+        if (!firebase || !auth) {
+          message.textContent = 'Firebase not initialized. Please refresh the page and try again.';
+          console.error('Firebase not initialized:', { firebase: !!firebase, auth: !!auth });
+          return;
+        }
+        
+        // Sign in with Google
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await auth.signInWithPopup(provider);
+        
+        // User signed in successfully
+        currentUser = {
+          id: result.user.uid,
+          email: result.user.email,
+          name: result.user.displayName,
+          photoURL: result.user.photoURL,
+          isFirebase: true
+        };
+        
+        message.textContent = 'Signed in successfully!';
+        message.style.color = 'var(--accent-primary)';
+        
+        // Show main screen and load reflections
+        showMainScreen();
+        await loadReflections();
+        
+      } catch (error) {
+        console.error('Google sign-in error:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Sign-in error: ';
+        if (error.code === 'auth/popup-closed-by-user') {
+          errorMessage += 'Sign-in was cancelled. Please try again.';
+        } else if (error.code === 'auth/popup-blocked') {
+          errorMessage += 'Popup was blocked. Please allow popups and try again.';
+        } else if (error.code === 'auth/unauthorized-domain') {
+          errorMessage += 'Domain not authorized. Please add localhost to Firebase authorized domains.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage += 'Google sign-in not enabled. Please enable it in Firebase console.';
+        } else {
+          errorMessage += error.message;
+        }
+        
+        message.textContent = errorMessage;
+        message.style.color = '#ff6b6b';
+      }
+    }
+
+    function debugFirebase() {
+      const debugInfo = `🔍 Firebase Debug Info:
+
+Firebase SDK: ${typeof window.firebase !== 'undefined' ? '✅ Loaded' : '❌ Not loaded'}
+Firebase App: ${typeof firebase !== 'undefined' ? '✅ Initialized' : '❌ Not initialized'}
+Firebase Auth: ${typeof auth !== 'undefined' ? '✅ Available' : '❌ Not available'}
+Firebase DB: ${typeof db !== 'undefined' ? '✅ Available' : '❌ Not available'}
+
+Current URL: ${window.location.href}
+User Agent: ${navigator.userAgent}
+
+Console Errors: Check browser console (F12) for detailed errors
+
+Next Steps:
+1. If Firebase SDK not loaded: Check internet connection
+2. If Firebase not initialized: Refresh the page
+3. If Auth not available: Check Firebase config
+4. Check browser console for detailed error messages`;
+      
+      alert(debugInfo);
+      console.log('Firebase Debug:', {
+        firebaseSDK: typeof window.firebase,
+        firebase: typeof firebase,
+        auth: typeof auth,
+        db: typeof db,
+        config: firebaseConfig
+      });
+    }
+
+    function showFirebaseSetup() {
+      const setupGuide = `🔥 Firebase Setup Guide:
+
+✅ Step 1: Enable Authentication
+1. Go to: https://console.firebase.google.com/project/spiritual-journey-e3330/authentication
+2. Click "Get started"
+3. Go to "Sign-in method" tab
+4. Enable "Google" provider
+5. Add authorized domains:
+   - localhost (for testing)
+   - your-domain.com (when you deploy)
+
+✅ Step 2: Enable Firestore Database
+1. Go to: https://console.firebase.google.com/project/spiritual-journey-e3330/firestore
+2. Click "Create database"
+3. Choose "Start in test mode"
+4. Select location (closest to you)
+
+✅ Step 3: Test Your App
+1. Refresh this page
+2. Click "Continue with Google"
+3. Sign in with your Google account
+4. Start journaling!
+
+🎉 Your Firebase project is already configured!
+Project ID: spiritual-journey-e3330
+Auth Domain: spiritual-journey-e3330.firebaseapp.com
+
+Need help? Check the console for any error messages.`;
+      
+      alert(setupGuide);
+    }
+
+    function setupFirebase() {
+      alert('🔥 Firebase Setup:\n\n1. Go to https://console.firebase.google.com\n2. Create a new project\n3. Enable Authentication\n4. Add your domain\n5. Copy the config and paste it here\n\nFirebase is much easier than Supabase!');
+    }
+
+    function setupAuth0() {
+      alert('🔐 Auth0 Setup:\n\n1. Go to https://auth0.com\n2. Create a free account\n3. Create a new application\n4. Copy the domain and client ID\n5. Add it to your app\n\nAuth0 handles all the email complexity!');
+    }
+
+    function setupClerk() {
+      alert('✨ Clerk Setup:\n\n1. Go to https://clerk.com\n2. Create a free account\n3. Create a new application\n4. Copy the publishable key\n5. Add it to your app\n\nClerk has beautiful pre-built components!');
+    }
+
+    function setupSupabase() {
+      alert('🐘 Supabase Setup:\n\nYou\'re already using Supabase!\n\nTo fix email issues:\n1. Go to Authentication → Settings\n2. Turn OFF "Enable email confirmations"\n3. Users can sign in immediately\n\nOr configure SMTP for email sending.');
+    }
+
+    // Handle sign out
+    async function handleSignOut() {
+      try {
+        if (currentUser && currentUser.isFirebase && auth) {
+          // Firebase sign out
+          await auth.signOut();
+        } else if (currentUser && currentUser.isSupabase && supabase) {
+          // Supabase sign out
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('Sign out error:', error);
+          }
+        }
+        
+        currentUser = null;
+        reflections = [];
+        localStorage.removeItem('reflections');
+        showAuthScreen();
+        
+      } catch (err) {
+        console.error('Sign out error:', err);
+        // Force sign out even if there's an error
+        currentUser = null;
+        reflections = [];
+        localStorage.removeItem('reflections');
+        showAuthScreen();
+      }
+    }
+
+    // Migrate existing local data to user account
+    async function migrateLocalData() {
+      if (!currentUser) {
+        console.log('No user logged in for migration');
+          return;
+        }
+
+      try {
+        // Check for existing local reflections
+        const localReflections = localStorage.getItem('reflections');
+        if (!localReflections) {
+          console.log('No local data to migrate');
+          return;
+        }
+
+        const localData = JSON.parse(localReflections);
+        if (localData.length === 0) {
+          console.log('No local reflections to migrate');
+          return;
+        }
+
+        console.log('Migrating', localData.length, 'local reflections to user account');
+
+        // Upload each local reflection to the database
+        for (const reflection of localData) {
+          const reflectionData = {
+            user_id: currentUser.id,
+            title: reflection.title,
+            reflection: reflection.reflection,
+            date: reflection.date,
+            image: reflection.image,
+            created_at: reflection.created_at || new Date().toISOString()
+          };
+
+          const { data, error } = await supabase
+            .from('reflections')
+            .insert([reflectionData])
+            .select();
+
+          if (error) {
+            console.error('Error migrating reflection:', error);
+        } else {
+            console.log('Successfully migrated reflection:', reflection.title);
+          }
+        }
+
+        // Reload reflections from database
+        await loadReflections();
+        console.log('Data migration completed');
+
+      } catch (err) {
+        console.error('Error during data migration:', err);
+      }
     }
 
     async function loadReflections() {
-      // Get current user
       if (!currentUser) {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          currentUser = JSON.parse(savedUser);
+        console.log('No user logged in');
+        reflections = [];
+        return;
+      }
+        
+      // Handle local storage mode
+      if (currentUser.isLocal) {
+        console.log('Loading reflections for local user');
+        const localReflections = localStorage.getItem('reflections');
+        if (localReflections) {
+          reflections = JSON.parse(localReflections);
         } else {
-          console.log('No user logged in');
+          reflections = [];
+        }
+        return;
+      }
+      
+      // Handle Firebase mode
+      if (currentUser.isFirebase) {
+        console.log('Loading reflections for Firebase user');
+        try {
+          const snapshot = await db.collection('reflections')
+            .where('userId', '==', currentUser.id)
+            .orderBy('createdAt', 'desc')
+            .get();
+          
+          reflections = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          // Also save to localStorage for offline access
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          return;
+        } catch (error) {
+          console.error('Error loading Firebase reflections:', error);
+          // Fallback to localStorage
+          const localReflections = localStorage.getItem('reflections');
+          if (localReflections) {
+            reflections = JSON.parse(localReflections);
+          } else {
+            reflections = [];
+          }
           return;
         }
       }
-      
-      const userId = currentUser.userId;
-      console.log('Loading reflections for user ID:', userId);
-      console.log('Current user object:', currentUser);
-      
-      try {
-        console.log('Loading reflections for user:', userId);
         
-        // Always load from user-specific local storage first (guaranteed to work)
-        const userReflectionsKey = 'reflections_' + userId;
-        const localReflections = localStorage.getItem(userReflectionsKey);
-          if (localReflections) {
-            reflections = JSON.parse(localReflections);
-          console.log('Loaded from user-specific local storage:', reflections.length, 'reflections');
-          } else {
-            reflections = [];
-          console.log('No local reflections found for user:', userId);
-        }
-        
-        // Try to load from cloud database (optional)
+      const userId = currentUser.id;
+      
         try {
-          console.log('Cloud user ID:', userId);
+        console.log('Loading reflections for user:', userId);
           
+        // Load from Supabase database
           const { data, error } = await supabase
             .from('reflections')
             .select('*')
-            .eq('user_email', currentUser.username)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false });
           
           if (error) {
-            console.log('Cloud load failed, using local only:', error.message);
-          return;
+          console.error('Error loading reflections:', error);
+          reflections = [];
+            return;
+          }
+          
+        reflections = data || [];
+        console.log('Loaded reflections from database:', reflections.length);
+        
+        // Check if user has local data that needs migration
+        const localReflections = localStorage.getItem('reflections');
+        if (localReflections && reflections.length === 0) {
+          const localData = JSON.parse(localReflections);
+          if (localData.length > 0) {
+            console.log('Found local data to migrate, starting migration...');
+            await migrateLocalData();
+            return; // migrateLocalData will reload reflections
+          }
         }
         
-          const dbReflections = data || [];
-          console.log('Loaded from cloud:', dbReflections.length, 'reflections');
-          
-          // Merge cloud and local reflections
-          const localData = [...reflections];
-          const mergedReflections = [...dbReflections];
-          
-          // Add local reflections that don't exist in cloud
-          localData.forEach(localReflection => {
-            const exists = dbReflections.some(dbReflection => 
-              dbReflection.id === localReflection.id || 
-              (dbReflection.title === localReflection.title && 
-               dbReflection.date === localReflection.date &&
-               dbReflection.reflection === localReflection.reflection)
-            );
-            if (!exists) {
-              console.log('Adding local reflection to merged list:', localReflection.title);
-              mergedReflections.push(localReflection);
-            }
-          });
-          
-          // Sort by date (newest first)
-          mergedReflections.sort((a, b) => {
-            const dateA = new Date(a.created_at || a.date);
-            const dateB = new Date(b.created_at || b.date);
-            return dateB - dateA;
-          });
-          
-          reflections = mergedReflections;
-          const userReflectionsKey = 'reflections_' + userId;
-          localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
-          console.log('Merged reflections:', reflections.length, 'total');
-          
-        } catch (cloudErr) {
-          console.log('Cloud sync failed, using local only:', cloudErr.message);
-        }
+        // Also save to localStorage for offline access
+          localStorage.setItem('reflections', JSON.stringify(reflections));
         
       } catch (err) {
         console.error('Unexpected error loading reflections:', err);
-        // Fallback to user-specific localStorage
-        const userReflectionsKey = 'reflections_' + userId;
-        const localReflections = localStorage.getItem(userReflectionsKey);
+        // Fallback to localStorage
+        const localReflections = localStorage.getItem('reflections');
         if (localReflections) {
           reflections = JSON.parse(localReflections);
         } else {
@@ -1759,27 +1307,109 @@ The Spiritual Journey Team`
     }
 
     async function saveReflections() {
-      const title = document.getElementById('title').value.trim();
-      const reflection = document.getElementById('reflection').value.trim();
-      const date = document.getElementById('current-date').textContent;
-      
-      // Get current user
       if (!currentUser) {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          currentUser = JSON.parse(savedUser);
+        console.log('No user logged in');
+        return;
+      }
+      
+      // Handle local storage mode
+      if (currentUser.isLocal) {
+        console.log('Saving reflection for local user');
+        const title = document.getElementById('title').value.trim();
+        const reflection = document.getElementById('reflection').value.trim();
+        const date = document.getElementById('entry-date').textContent;
+        
+        const reflectionData = {
+          id: 'local_' + Date.now(),
+          title,
+          reflection,
+          date,
+          image: currentImage,
+          created_at: new Date().toISOString()
+        };
+        
+        if (editingIndex !== null && reflections[editingIndex]) {
+          // Update existing reflection
+          reflections[editingIndex] = reflectionData;
         } else {
-          console.log('No user logged in');
+          // Add new reflection
+          reflections.unshift(reflectionData);
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('reflections', JSON.stringify(reflections));
+        
+        // Clear form and go back
+        currentImage = "";
+        editingIndex = null;
+        goBack();
+        return;
+      }
+      
+      // Handle Firebase mode
+      if (currentUser.isFirebase) {
+        console.log('Saving reflection for Firebase user');
+        const title = document.getElementById('title').value.trim();
+        const reflection = document.getElementById('reflection').value.trim();
+        const date = document.getElementById('entry-date').textContent;
+        
+        const reflectionData = {
+          userId: currentUser.id,
+          title,
+          reflection,
+          date,
+          image: currentImage,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        try {
+          if (editingIndex !== null && reflections[editingIndex]) {
+            // Update existing reflection
+            await db.collection('reflections').doc(reflections[editingIndex].id).update(reflectionData);
+            reflections[editingIndex] = { ...reflections[editingIndex], ...reflectionData };
+          } else {
+            // Add new reflection
+            const docRef = await db.collection('reflections').add(reflectionData);
+            reflections.unshift({ id: docRef.id, ...reflectionData });
+          }
+          
+          // Also save to localStorage for offline access
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          
+          // Clear form and go back
+          currentImage = "";
+          editingIndex = null;
+          goBack();
+          return;
+        } catch (error) {
+          console.error('Error saving to Firebase:', error);
+          // Fallback to localStorage
+          const localData = {
+            id: 'firebase_fallback_' + Date.now(),
+            ...reflectionData,
+            createdAt: new Date().toISOString()
+          };
+          
+          if (editingIndex !== null && reflections[editingIndex]) {
+            reflections[editingIndex] = localData;
+          } else {
+            reflections.unshift(localData);
+          }
+          
+          localStorage.setItem('reflections', JSON.stringify(reflections));
+          currentImage = "";
+          editingIndex = null;
+          goBack();
           return;
         }
       }
       
-      const userId = currentUser.userId;
-      console.log('Saving reflection for user ID:', userId);
-      console.log('Current user object:', currentUser);
+      const title = document.getElementById('title').value.trim();
+      const reflection = document.getElementById('reflection').value.trim();
+      const date = document.getElementById('current-date').textContent;
       
       const reflectionData = {
-        user_email: currentUser.username,
+        user_id: currentUser.id,
         title,
         reflection,
         date,
@@ -1787,81 +1417,53 @@ The Spiritual Journey Team`
         created_at: new Date().toISOString()
       };
 
-      // Always save to local storage first (guaranteed to work)
-      if (editingIndex !== null && reflections[editingIndex]) {
-        // Update existing reflection
-        reflections[editingIndex] = { ...reflectionData, id: reflections[editingIndex].id || Date.now() };
-      } else {
-        // Add new reflection
-        const newReflection = { ...reflectionData, id: Date.now() };
-        reflections.push(newReflection);
-      }
-      
-      // Save to user-specific local storage immediately
-      const userReflectionsKey = 'reflections_' + userId;
-      localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
-      console.log('Saved to user-specific local storage:', reflections.length, 'reflections');
-
-      // Try to save to cloud database (optional)
       try {
         if (editingIndex !== null && reflections[editingIndex]) {
-          // Update in cloud
-          const { error } = await supabase
+          // Update existing reflection
+          const { data, error } = await supabase
             .from('reflections')
             .update(reflectionData)
-            .eq('id', reflections[editingIndex].id);
+            .eq('id', reflections[editingIndex].id)
+            .select();
+          
           if (error) {
-            console.log('Cloud update failed, but local save succeeded:', error.message);
-          } else {
-            console.log('Successfully updated in cloud');
+            console.error('Error updating reflection:', error);
+            return;
           }
+          
+          // Update local array
+          reflections[editingIndex] = data[0];
+          console.log('Successfully updated reflection');
         } else {
-          // Insert in cloud
+          // Insert new reflection
           const { data, error } = await supabase
             .from('reflections')
             .insert([reflectionData])
             .select();
+          
           if (error) {
-            console.log('Cloud insert failed, but local save succeeded:', error.message);
-          } else {
-            console.log('Successfully saved to cloud');
-            // Update local reflection with cloud ID
-            if (data && data[0]) {
-              reflections[reflections.length - 1].id = data[0].id;
-              const userReflectionsKey = 'reflections_' + userId;
-              localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
-            }
+            console.error('Error saving reflection:', error);
+            return;
           }
+          
+          // Add to local array
+          reflections.unshift(data[0]);
+          console.log('Successfully saved new reflection');
         }
-      } catch (err) {
-        console.log('Cloud save failed, but local save succeeded:', err.message);
-      }
+        
+        // Update localStorage
+        localStorage.setItem('reflections', JSON.stringify(reflections));
       
       // Clear form and go back
-        currentImage = "";
-        editingIndex = null;
-        goBack();
+      currentImage = "";
+      editingIndex = null;
+      goBack();
+        
+      } catch (err) {
+        console.error('Unexpected error saving reflection:', err);
+      }
     }
 
-    function showRegisterScreen() {
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.remove('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('entry-screen').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('options-menu').style.display = 'none';
-      document.getElementById('auth-message').textContent = '';
-    }
-
-    function showLoginScreen() {
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.remove('hidden');
-      document.getElementById('entry-screen').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('options-menu').style.display = 'none';
-      document.getElementById('login-message').textContent = '';
-    }
 
     function showEntryScreen(index = null) {
       // No authentication required - allow everyone to create reflections
@@ -2039,10 +1641,9 @@ The Spiritual Journey Team`
           }
         }
         
-        // Update user-specific local storage and display
+        // Update local storage and display
         reflections = localData;
-        const userReflectionsKey = 'reflections_' + userId;
-        localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
+        localStorage.setItem('reflections', JSON.stringify(reflections));
         refreshHistoryDisplay();
         
         // Show results
@@ -2160,11 +1761,10 @@ The Spiritual Journey Team`
           console.log('Deleted reflection:', deletedReflection);
           console.log('Remaining reflections:', reflections.length);
           
-          // Update user-specific localStorage immediately
+          // Update localStorage immediately
           try {
-            const userReflectionsKey = 'reflections_' + currentUser.userId;
-            localStorage.setItem(userReflectionsKey, JSON.stringify(reflections));
-            console.log('Updated reflections in user-specific localStorage');
+            localStorage.setItem('reflections', JSON.stringify(reflections));
+            console.log('Updated reflections in localStorage');
           } catch (localErr) {
             console.error('Error updating localStorage:', localErr);
             throw new Error('Failed to save changes locally: ' + localErr.message);
@@ -2174,12 +1774,12 @@ The Spiritual Journey Team`
           if (deletedReflection.id) {
             try {
               console.log('Attempting database deletion for ID:', deletedReflection.id);
-          const { error } = await supabase
-            .from('reflections')
-            .delete()
+              const { error } = await supabase
+                .from('reflections')
+                .delete()
                 .eq('id', deletedReflection.id);
               
-          if (error) {
+              if (error) {
                 console.error('Database deletion error:', error);
                 // Don't throw here - local deletion was successful
                 alert('Reflection deleted locally but there was an issue with the database. It will be removed when you refresh.');
@@ -2337,7 +1937,7 @@ The Spiritual Journey Team`
         const reader = new FileReader();
         const container = document.getElementById('image-preview-container');
         const loading = document.getElementById('image-loading');
-          const preview = document.getElementById('preview-image');
+        const preview = document.getElementById('preview-image');
         
         // Show loading indicator
         container.style.display = 'block';
@@ -2402,8 +2002,8 @@ The Spiritual Journey Team`
     function copyShareLink() {
       let userId = localStorage.getItem('sharedUserId');
       if (!userId) {
-        // Generate a new UUID if none exists
-        userId = generateConsistentUUID('shared_' + Date.now());
+        // Generate a new user ID if none exists
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2);
         localStorage.setItem('sharedUserId', userId);
       }
       
@@ -2423,696 +2023,16 @@ The Spiritual Journey Team`
       }
     }
 
-    async function handleSignUp() {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const authMessage = document.getElementById('auth-message');
 
-      if (!email || !password) {
-        authMessage.textContent = 'Please enter both email and password.';
-        return;
-      }
 
-      if (password.length < 6) {
-        authMessage.textContent = 'Password must be at least 6 characters long.';
-        return;
-      }
 
-      try {
-        const signupButton = document.getElementById('signup-button');
-        signupButton.disabled = true;
-        signupButton.classList.add('loading');
-        signupButton.textContent = 'Creating Account...';
-        
-        authMessage.textContent = 'Creating cloud account...';
-        console.log('Creating cloud account for:', email);
-        
-        // Create a cloud user account that works immediately
-        const cloudUser = {
-          id: 'cloud_' + email.replace(/[^a-zA-Z0-9]/g, '_'),
-          email: email,
-          password: password,
-          email_confirmed_at: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        };
-        
-        // Store user data locally but mark as cloud user
-        localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-        localStorage.setItem('cloudAuth', 'true');
-        localStorage.setItem('userPassword', password);
-        
-        // Set user and log in immediately
-        user = cloudUser;
-        document.getElementById('auth-button').classList.remove('hidden');
-        document.getElementById('auth-button').textContent = 'Sign Out';
-        
-        // Load any existing reflections from cloud
-        await loadReflections();
-        
-        // Show success message
-          goBack(true);
-        authMessage.textContent = '✅ Cloud account created! Your journals will sync across all devices.';
-        
-        // Reset button
-        signupButton.disabled = false;
-        signupButton.classList.remove('loading');
-        signupButton.textContent = 'Create Account (No Email Required)';
-        
-      } catch (err) {
-        console.error('Account creation error:', err);
-        authMessage.textContent = 'Error creating account. Please try again.';
-        
-        // Reset button
-        signupButton.disabled = false;
-        signupButton.classList.remove('loading');
-        signupButton.textContent = 'Create Account (No Email Required)';
-      }
-    }
 
-    async function handleLogin() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value.trim();
-      const loginMessage = document.getElementById('login-message');
 
-      if (!email || !password) {
-        loginMessage.textContent = 'Please enter both email and password.';
-        return;
-      }
 
-      try {
-        loginMessage.textContent = 'Logging in...';
-        
-        // First try cloud authentication
-        const cloudUser = localStorage.getItem('cloudUser');
-        const cloudPassword = localStorage.getItem('cloudPassword');
-        
-        if (cloudUser && cloudPassword) {
-          const userData = JSON.parse(cloudUser);
-          if (userData.email === email && cloudPassword === password) {
-            // Cloud login successful
-            user = userData;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = 'Sign Out';
-            await loadReflections();
-            goBack(true);
-            loginMessage.textContent = '✅ Login successful! Your journals are synced to the cloud.';
-            console.log('Logged in with cloud authentication');
-            return;
-          }
-        }
-        
-        // Check for existing local user and migrate to cloud
-        const localUser = localStorage.getItem('localUser');
-        const localPassword = localStorage.getItem('userPassword');
-        
-        if (localUser && localPassword) {
-          const userData = JSON.parse(localUser);
-          if (userData.email === email && localPassword === password) {
-            // Migrate local user to cloud user
-            console.log('Migrating local user to cloud user');
-            localStorage.setItem('cloudUser', JSON.stringify(userData));
-            localStorage.setItem('cloudAuth', 'true');
-            localStorage.setItem('cloudPassword', password);
-            
-            // Clean up old local data
-            localStorage.removeItem('localUser');
-            localStorage.removeItem('localAuth');
-            localStorage.removeItem('userPassword');
-            
-            // Login with migrated cloud user
-            user = userData;
-          document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          goBack(true);
-            loginMessage.textContent = '✅ Login successful! Your account has been migrated to cloud sync.';
-            console.log('Successfully migrated and logged in with cloud authentication');
-            return;
-        }
-        }
-        
-        loginMessage.textContent = 'Account not found. Please sign up first.';
-        
-      } catch (err) {
-        console.error('Unexpected error during login:', err);
-        loginMessage.textContent = 'An unexpected error occurred. Please try again.';
-      }
-    }
 
-    async function resendConfirmation() {
-      const email = document.getElementById('email').value.trim();
-      const authMessage = document.getElementById('auth-message');
-      
-      if (!email) {
-        authMessage.textContent = 'Please enter your email address first.';
-        return;
-      }
-      
-      // Check if user already has a local account
-      const localUser = localStorage.getItem('localUser');
-      if (localUser) {
-        const userData = JSON.parse(localUser);
-        if (userData.email === email) {
-          authMessage.textContent = 'You already have a local account! Try logging in instead.';
-          return;
-        }
-      }
-      
-      try {
-        authMessage.textContent = 'Sending confirmation email...';
-        
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: email
-        });
-        
-        if (error) {
-          console.error('Resend confirmation error:', error);
-          authMessage.textContent = `Error: ${error.message}. Try signing up to create a local account instead.`;
-          return;
-        }
-        
-        authMessage.textContent = 'Confirmation email sent! Check your inbox and spam folder.';
-      } catch (err) {
-        console.error('Unexpected error during resend:', err);
-        authMessage.textContent = 'An unexpected error occurred. Try signing up to create a local account instead.';
-      }
-    }
 
-    // Google Email Authentication
-    async function signUpWithGoogle() {
-      const authMessage = document.getElementById('auth-message');
-      
-      try {
-        authMessage.textContent = 'Opening Google authentication...';
-        
-        // Simple Google email input (since we can't use OAuth without backend)
-        const googleEmail = prompt('Enter your email address:');
-        if (!googleEmail) {
-          authMessage.textContent = 'Email sign up cancelled.';
-          return;
-        }
-        
-        // Basic email validation
-        if (!googleEmail.includes('@') || !googleEmail.includes('.')) {
-          authMessage.textContent = 'Please enter a valid email address.';
-          return;
-        }
-        
-        // Check if email already exists
-        const existingUser = localStorage.getItem('cloudUser');
-        if (existingUser) {
-          const userData = JSON.parse(existingUser);
-          if (userData.email === googleEmail) {
-            authMessage.textContent = 'This email is already registered. Please log in instead.';
-            return;
-          }
-        }
-        
-        // Generate unique verification token
-        const verificationToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        
-        // Store pending verification data
-        const pendingUser = {
-          email: googleEmail,
-          name: googleEmail.split('@')[0],
-          provider: 'email',
-          verificationToken: verificationToken,
-          verified: false,
-          created_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
-        
-        // Show verification screen
-        showVerificationScreen(googleEmail, verificationToken);
-        
-        // Show confirmation link
-        const confirmationLink = `${window.location.origin}${window.location.pathname}?verify=${verificationToken}`;
-        console.log('Confirmation link for', googleEmail, ':', confirmationLink);
-        
-        // Show the confirmation link
-        showConfirmationLink(googleEmail, confirmationLink);
-        authMessage.textContent = '📧 Confirmation link generated! Check the popup for the link.';
-        
-      } catch (err) {
-        console.error('Email sign up error:', err);
-        authMessage.textContent = 'Error creating email account. Please try again.';
-      }
-    }
 
-    async function loginWithGoogle() {
-      const loginMessage = document.getElementById('login-message');
-      
-      try {
-        loginMessage.textContent = 'Opening Google authentication...';
-        
-        // Simple Google email input
-        const googleEmail = prompt('Enter your Google email address:');
-        if (!googleEmail) {
-          loginMessage.textContent = 'Google login cancelled.';
-          return;
-        }
-        
-        // Check if user exists
-        const cloudUser = localStorage.getItem('cloudUser');
-        if (cloudUser) {
-          const userData = JSON.parse(cloudUser);
-          if (userData.email === googleEmail && userData.provider === 'google') {
-            // Google login successful
-            user = userData;
-            document.getElementById('auth-button').classList.remove('hidden');
-            document.getElementById('auth-button').textContent = 'Sign Out';
-            await loadReflections();
-            goBack(true);
-            loginMessage.textContent = '✅ Google login successful!';
-            console.log('Logged in with Google email:', googleEmail);
-            return;
-          }
-        }
-        
-        loginMessage.textContent = 'Google account not found. Please sign up first.';
-        
-      } catch (err) {
-        console.error('Google login error:', err);
-        loginMessage.textContent = 'Error logging in with Google. Please try again.';
-      }
-    }
 
-    // Simple Email Confirmation Function
-    function showConfirmationLink(email, confirmationLink) {
-      alert(`📧 Confirmation Link\n\nTo: ${email}\n\nClick this link to verify your email:\n${confirmationLink}\n\nCopy and paste this link in your browser to complete verification.`);
-    }
-
-    // Email Verification Functions
-    function showVerificationScreen(email, verificationToken) {
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('verification-screen').classList.remove('hidden');
-      document.getElementById('entry-screen').classList.add('hidden');
-      document.getElementById('history-screen').classList.add('hidden');
-      document.getElementById('options-menu').style.display = 'none';
-      
-      document.getElementById('verification-email').textContent = email;
-      document.getElementById('verification-message').textContent = '';
-      
-      // Set the confirmation link
-      const confirmationLink = `${window.location.origin}${window.location.pathname}?verify=${verificationToken}`;
-      const linkElement = document.getElementById('confirmation-link');
-      linkElement.href = confirmationLink;
-      linkElement.textContent = confirmationLink;
-    }
-
-    function goBackToRegister() {
-      document.getElementById('verification-screen').classList.add('hidden');
-      document.getElementById('register-screen').classList.remove('hidden');
-      localStorage.removeItem('pendingUser');
-    }
-
-    async function checkEmailVerification() {
-      const verificationMessage = document.getElementById('verification-message');
-      
-      try {
-        // Get pending user data
-        const pendingUserData = localStorage.getItem('pendingUser');
-        if (!pendingUserData) {
-          verificationMessage.textContent = 'No pending verification found. Please sign up again.';
-          return;
-        }
-        
-        const pendingUser = JSON.parse(pendingUserData);
-        
-        // Check if user has been verified (this would be set when they click the link)
-        if (pendingUser.verified) {
-          // Create verified cloud user
-          const cloudUser = {
-            email: pendingUser.email,
-            name: pendingUser.name,
-            provider: pendingUser.provider,
-            verified: true,
-            created_at: pendingUser.created_at,
-            verified_at: new Date().toISOString()
-          };
-          
-          // Save to cloud storage
-          localStorage.setItem('cloudUser', JSON.stringify(cloudUser));
-          localStorage.setItem('cloudAuth', 'true');
-          localStorage.setItem('cloudPassword', 'verified_auth');
-          
-          // Clean up pending data
-          localStorage.removeItem('pendingUser');
-          
-          // Set user and log in
-          user = cloudUser;
-          document.getElementById('auth-button').classList.remove('hidden');
-          document.getElementById('auth-button').textContent = 'Sign Out';
-          await loadReflections();
-          goBack(true);
-          
-          verificationMessage.textContent = '✅ Email verified successfully! Account created.';
-          console.log('Email verified and account created for:', pendingUser.email);
-        } else {
-          verificationMessage.textContent = 'Please click the confirmation link in your email first.';
-        }
-        
-      } catch (err) {
-        console.error('Email verification error:', err);
-        verificationMessage.textContent = 'Error verifying email. Please try again.';
-      }
-    }
-
-    async function resendVerificationLink() {
-      const verificationMessage = document.getElementById('verification-message');
-      
-      try {
-        // Get pending user data
-        const pendingUserData = localStorage.getItem('pendingUser');
-        if (!pendingUserData) {
-          verificationMessage.textContent = 'No pending verification found. Please sign up again.';
-          return;
-        }
-        
-        const pendingUser = JSON.parse(pendingUserData);
-        
-        // Generate new verification token
-        const newVerificationToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        
-        // Update pending user with new token
-        pendingUser.verificationToken = newVerificationToken;
-        localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
-        
-        // Update the confirmation link on screen
-        const confirmationLink = `${window.location.origin}${window.location.pathname}?verify=${newVerificationToken}`;
-        const linkElement = document.getElementById('confirmation-link');
-        linkElement.href = confirmationLink;
-        linkElement.textContent = confirmationLink;
-        
-        // Show confirmation link
-        console.log('New confirmation link for', pendingUser.email, ':', confirmationLink);
-        
-        // Show the new confirmation link
-        showConfirmationLink(pendingUser.email, confirmationLink);
-        verificationMessage.textContent = '📧 New confirmation link generated! Check the popup for the link.';
-        
-      } catch (err) {
-        console.error('Resend verification error:', err);
-        verificationMessage.textContent = 'Error resending confirmation link. Please try again.';
-      }
-    }
-
-    async function handleForgotPassword() {
-      const email = document.getElementById('login-email').value.trim();
-      const loginMessage = document.getElementById('login-message');
-      
-      if (!email) {
-        loginMessage.textContent = 'Please enter your email address first.';
-        return;
-      }
-      
-      // Check if user has a cloud account
-      const cloudUser = localStorage.getItem('cloudUser');
-      
-      if (cloudUser) {
-        const userData = JSON.parse(cloudUser);
-        if (userData.email === email) {
-          // Show simple password reset for cloud accounts
-          showSimplePasswordReset(email);
-          return;
-        }
-      }
-      
-      // Check for local user and migrate
-      const localUser = localStorage.getItem('localUser');
-      if (localUser) {
-        const userData = JSON.parse(localUser);
-        if (userData.email === email) {
-          // Migrate local user to cloud first
-          console.log('Migrating local user to cloud for password reset');
-          const password = localStorage.getItem('userPassword');
-          localStorage.setItem('cloudUser', JSON.stringify(userData));
-          localStorage.setItem('cloudAuth', 'true');
-          localStorage.setItem('cloudPassword', password || '');
-          
-          // Clean up old local data
-          localStorage.removeItem('localUser');
-          localStorage.removeItem('localAuth');
-          localStorage.removeItem('userPassword');
-          
-          // Show password reset for migrated cloud account
-          showSimplePasswordReset(email);
-          return;
-        }
-      }
-      
-      // For Supabase accounts, try the email reset
-      try {
-        loginMessage.textContent = 'Sending password reset email...';
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin
-        });
-        
-        if (error) {
-          console.error('Password reset error:', error);
-          loginMessage.textContent = `Error: ${error.message}. Try creating a new account instead.`;
-          return;
-        }
-        
-        loginMessage.textContent = 'Password reset email sent! Check your inbox and spam folder.';
-      } catch (err) {
-        console.error('Unexpected error during password reset:', err);
-        loginMessage.textContent = 'Email reset failed. Try creating a new account instead.';
-      }
-    }
-
-    function showSimplePasswordReset(email) {
-      // Create a simple password reset modal
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      `;
-      
-      modal.innerHTML = `
-        <div style="
-          background: var(--card-bg);
-          padding: 30px;
-          border-radius: 12px;
-          max-width: 400px;
-          width: 90%;
-          text-align: center;
-          border: 1px solid var(--border-color);
-        ">
-          <h3>Reset Password</h3>
-          <p>Enter your new password for: ${email}</p>
-          <div style="margin: 20px 0;">
-            <input type="password" id="new-password" placeholder="New Password" style="
-              width: 100%;
-              padding: 10px;
-              margin: 10px 0;
-              border: 1px solid var(--border-color);
-              border-radius: 8px;
-              background: var(--input-bg);
-              color: var(--text-primary);
-            ">
-            <input type="password" id="confirm-password" placeholder="Confirm Password" style="
-              width: 100%;
-              padding: 10px;
-              margin: 10px 0;
-              border: 1px solid var(--border-color);
-              border-radius: 8px;
-              background: var(--input-bg);
-              color: var(--text-primary);
-            ">
-          </div>
-          <div>
-            <button onclick="resetLocalPassword('${email}')" style="
-              background: var(--button-gradient);
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 8px;
-              cursor: pointer;
-              margin: 5px;
-            ">Reset Password</button>
-            <button onclick="closeResetModal()" style="
-              background: #6b7280;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 8px;
-              cursor: pointer;
-              margin: 5px;
-            ">Cancel</button>
-          </div>
-          <p id="reset-message" style="margin-top: 15px; color: var(--text-muted);"></p>
-        </div>
-      `;
-      
-      document.body.appendChild(modal);
-    }
-
-    function closeResetModal() {
-      const modal = document.querySelector('div[style*="position: fixed"]');
-      if (modal) {
-        modal.remove();
-      }
-    }
-
-    async function resetLocalPassword(email) {
-      const newPassword = document.getElementById('new-password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-      const messageEl = document.getElementById('reset-message');
-      
-      if (!newPassword || !confirmPassword) {
-        messageEl.textContent = 'Please enter both passwords.';
-        return;
-      }
-      
-      if (newPassword !== confirmPassword) {
-        messageEl.textContent = 'Passwords do not match.';
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        messageEl.textContent = 'Password must be at least 6 characters.';
-        return;
-      }
-      
-      try {
-        // Only check cloud users
-        const cloudUser = localStorage.getItem('cloudUser');
-        
-        if (cloudUser) {
-          const userData = JSON.parse(cloudUser);
-          if (userData.email === email) {
-            userData.password = newPassword;
-            localStorage.setItem('cloudUser', JSON.stringify(userData));
-            localStorage.setItem('cloudPassword', newPassword);
-            
-            messageEl.textContent = '✅ Password reset successfully! You can now log in.';
-            setTimeout(() => {
-              closeResetModal();
-            }, 2000);
-          } else {
-            messageEl.textContent = 'Account not found. Please sign up first.';
-          }
-        } else {
-          messageEl.textContent = 'Account not found. Please sign up first.';
-        }
-        
-      } catch (err) {
-        console.error('Error resetting password:', err);
-        messageEl.textContent = 'Error resetting password. Please try again.';
-      }
-    }
-
-    async function testAuthConnection() {
-      console.log('Testing auth connection...');
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        console.log('Auth test result:', { data, error });
-        
-        // Test if we can get auth settings
-        const { data: settings } = await supabase.auth.getUser();
-        console.log('User settings:', settings);
-        
-        alert(`Auth test: ${error ? 'Failed - ' + error.message : 'Success - ' + (data.session ? 'Session found' : 'No session')}`);
-      } catch (err) {
-        console.error('Auth test error:', err);
-        alert('Auth test failed: ' + err.message);
-      }
-    }
-
-    async function handleSignOut() {
-      console.log('Sign out function called');
-      console.log('Current user:', user);
-      
-      try {
-        // Check if using cloud authentication
-        const cloudAuth = localStorage.getItem('cloudAuth');
-        
-        if (cloudAuth === 'true') {
-          // Cloud sign out
-          console.log('Performing cloud sign out');
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-          localStorage.removeItem('cloudUser');
-          localStorage.removeItem('cloudAuth');
-          localStorage.removeItem('cloudPassword');
-        document.getElementById('auth-button').classList.add('hidden');
-        showRegisterScreen();
-          console.log('Successfully signed out from cloud authentication');
-          alert('Successfully signed out!');
-      } else {
-        // Supabase sign out
-          console.log('Performing Supabase sign out');
-          try {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-              console.error('Supabase sign out error:', error);
-              
-              // Handle specific session error
-              if (error.message.includes('Session from session_id claim in JWT does not exist')) {
-                console.log('Session expired or invalid, performing local cleanup');
-                // Force local cleanup even if Supabase session is invalid
-                user = null;
-                reflections = [];
-                localStorage.removeItem('reflections');
-                localStorage.removeItem('cloudUser');
-                localStorage.removeItem('cloudAuth');
-                localStorage.removeItem('cloudPassword');
-                document.getElementById('auth-button').classList.add('hidden');
-                showRegisterScreen();
-                console.log('Successfully cleaned up local session');
-                alert('Successfully signed out! (Session was already expired)');
-          return;
-        }
-              
-              alert('Failed to sign out from Supabase: ' + error.message);
-              return;
-            }
-          } catch (signOutError) {
-            console.error('Supabase sign out failed, performing local cleanup:', signOutError);
-            // If Supabase sign out fails completely, still clean up locally
-            user = null;
-            reflections = [];
-            localStorage.removeItem('reflections');
-            localStorage.removeItem('cloudUser');
-            localStorage.removeItem('cloudAuth');
-            localStorage.removeItem('cloudPassword');
-            document.getElementById('auth-button').classList.add('hidden');
-            showRegisterScreen();
-            console.log('Successfully cleaned up local session after Supabase error');
-            alert('Successfully signed out! (Cleaned up local session)');
-            return;
-          }
-          
-        user = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
-        localStorage.removeItem('localUser');
-        localStorage.removeItem('localAuth');
-        document.getElementById('auth-button').classList.add('hidden');
-        showRegisterScreen();
-          console.log('Successfully signed out from Supabase');
-          alert('Successfully signed out!');
-        }
-      } catch (err) {
-        console.error('Unexpected error during sign out:', err);
-        alert('An unexpected error occurred during sign out. Please try again.');
-      }
-    }
 
     // Test Supabase connection
     async function testSupabaseConnection() {
@@ -3131,108 +2051,122 @@ The Spiritual Journey Team`
       }
     }
 
-    // Auto-sync function that runs periodically
-    function startAutoSync() {
-      // Auto-sync every 30 seconds if user is logged in
-      setInterval(async () => {
-        if (user && !document.getElementById('entry-screen').classList.contains('hidden')) {
-          console.log('Auto-sync check...');
-          try {
-            const { data } = await supabase
-              .from('reflections')
-              .select('count')
-              .eq('user_id', user.id);
-            
-            const localCount = reflections.length;
-            const dbCount = data ? data.length : 0;
-            
-            if (Math.abs(localCount - dbCount) > 0) {
-              console.log('Auto-sync: Data mismatch detected, refreshing...');
-          await loadReflections();
-              refreshHistoryDisplay();
-            }
-          } catch (err) {
-            console.log('Auto-sync check failed:', err);
-          }
-        }
-      }, 30000); // 30 seconds
-    }
-
-    // Check for verification token in URL
-    function checkVerificationToken() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const verifyToken = urlParams.get('verify');
+    // Test email configuration
+    async function testEmailConfig() {
+      const message = document.getElementById('auth-message');
       
-      if (verifyToken) {
-        // Get pending user data
-        const pendingUserData = localStorage.getItem('pendingUser');
-        if (pendingUserData) {
-          const pendingUser = JSON.parse(pendingUserData);
-          
-          // Check if token matches
-          if (pendingUser.verificationToken === verifyToken) {
-            // Mark as verified
-            pendingUser.verified = true;
-            localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
-            
-            // Show success message
-            alert('✅ Email verified successfully! You can now complete your account setup.');
-            
-            // Clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-            
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-        // Initialize auth state
-    async function initAuth() {
       try {
-        console.log('=== INITIALIZING APP ===');
-        console.log('LocalStorage contents:', Object.keys(localStorage));
+        message.textContent = 'Testing email configuration...';
+        message.style.display = 'block';
         
-        // Check if user is already logged in
-        const savedUser = localStorage.getItem('currentUser');
-        console.log('Saved user from localStorage:', savedUser);
+        // Test with a dummy email to see if email confirmation is enabled
+        const testEmail = 'test@example.com';
         
-        if (savedUser) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            console.log('Parsed user object:', parsedUser);
-            console.log('User ID:', parsedUser.userId);
-            
-            // Migrate old format to proper UUID if needed
-            currentUser = migrateUserToProperUUID(parsedUser);
-            console.log('Final user object after migration:', currentUser);
-            
-            showMainScreen();
-          await loadReflections();
-            return;
-          } catch (parseErr) {
-            console.error('Error parsing saved user:', parseErr);
-            localStorage.removeItem('currentUser');
+        const { data, error } = await supabase.auth.signUp({
+          email: testEmail,
+          password: 'testpassword123',
+          options: {
+            emailRedirectTo: `${window.location.origin}${window.location.pathname}`
           }
+        });
+        
+        if (error) {
+          console.error('Email test error:', error);
+          
+          let errorMessage = `Email Configuration Test:\n\n`;
+          
+          if (error.message.includes('email confirmation')) {
+            errorMessage += `✅ Email confirmation is ENABLED\n`;
+            errorMessage += `❌ But emails are not being sent\n\n`;
+            errorMessage += `SOLUTION:\n`;
+            errorMessage += `1. Go to Supabase Dashboard\n`;
+            errorMessage += `2. Authentication → Settings\n`;
+            errorMessage += `3. Configure SMTP settings\n`;
+            errorMessage += `4. Or disable email confirmation temporarily`;
+          } else if (error.message.includes('already registered')) {
+            errorMessage += `✅ Email system is working\n`;
+            errorMessage += `✅ Email confirmation is enabled\n`;
+            errorMessage += `The test email already exists (this is good!)`;
+          } else {
+            errorMessage += `Error: ${error.message}`;
+          }
+          
+          alert(errorMessage);
+          return;
         }
         
-        // No user logged in, show account screen
-        console.log('No valid user found, showing account screen');
-        showAccountScreen();
-        
-        // Check if there's shared data in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedData = urlParams.get('data');
-        if (encodedData) {
-          console.log('Found shared data in URL, will load after user login');
+        if (data.user && !data.user.email_confirmed_at) {
+          alert(`✅ Email Configuration Test:\n\nEmail confirmation is ENABLED\nEmails should be sent to: ${testEmail}\n\nCheck your email (including spam folder)`);
+        } else {
+          alert(`✅ Email Configuration Test:\n\nEmail confirmation is DISABLED\nUsers can sign in immediately without email verification`);
         }
         
       } catch (err) {
+        console.error('Email test error:', err);
+        alert(`Email Test Error: ${err.message}`);
+      }
+    }
+
+
+    // Initialize auth state
+    async function initAuth() {
+      try {
+        // Check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (session && session.user) {
+          currentUser = session.user;
+          showMainScreen();
+          await loadReflections();
+          console.log('User already logged in:', currentUser.email);
+        } else {
+          // Check if this is an OAuth redirect
+          const urlParams = new URLSearchParams(window.location.search);
+          const code = urlParams.get('code');
+          const error = urlParams.get('error');
+          
+          if (error) {
+            console.error('OAuth error:', error);
+            showAuthScreen();
+          } else if (code) {
+            // Handle OAuth redirect
+            console.log('OAuth redirect detected, processing...');
+            showAuthScreen();
+          } else {
+            // No user logged in, show auth screen
+            showAuthScreen();
+          }
+        }
+
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange((event, session) => {
+          console.log('Auth state changed:', event, session?.user?.email);
+          
+          if (event === 'SIGNED_IN' && session) {
+            currentUser = session.user;
+            showMainScreen();
+            loadReflections();
+            
+            // Clear URL parameters after successful OAuth
+            if (window.location.search.includes('code=')) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            currentUser = null;
+            reflections = [];
+            localStorage.removeItem('reflections');
+            showAuthScreen();
+          } else if (event === 'TOKEN_REFRESHED' && session) {
+            currentUser = session.user;
+          }
+        });
+      } catch (err) {
         console.error('Error initializing auth:', err);
-        console.error('Error stack:', err.stack);
-        // Show account screen on error
-        showAccountScreen();
+        showAuthScreen();
       }
     }
 
@@ -3243,9 +2177,6 @@ The Spiritual Journey Team`
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
     document.getElementById('save').addEventListener('click', saveReflection);
     document.getElementById('image-input').addEventListener('change', previewImage);
-    document.getElementById('signup-button').addEventListener('click', handleSignUp);
-    document.getElementById('login-button').addEventListener('click', handleLogin);
-    document.getElementById('auth-button').addEventListener('click', handleSignOut);
 
     // Load reflections and initialize auth on page load
     async function initializeApp() {
@@ -3254,13 +2185,45 @@ The Spiritual Journey Team`
       // Load theme first
       loadTheme();
       
-      // Initialize Cloud Storage
-      initializeCloud();
+      // Initialize Firebase
+      if (initializeFirebase()) {
+        console.log('Firebase initialized successfully');
+        await initFirebaseAuth();
+      } else {
+        console.log('Firebase not configured, using local storage mode');
+        showAuthScreen();
+      }
       
-      await initAuth();
-      startAutoSync(); // Start auto-sync
       setInterval(updateDateTime, 1000);
       updateDateTime();
+    }
+    
+    // Initialize Firebase Auth
+    async function initFirebaseAuth() {
+      try {
+        // Check for existing session
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            // User is signed in
+            currentUser = {
+              id: user.uid,
+              email: user.email,
+              name: user.displayName,
+              photoURL: user.photoURL,
+              isFirebase: true
+            };
+            showMainScreen();
+            loadReflections();
+            console.log('User already signed in:', user.email);
+          } else {
+            // User is signed out
+            showAuthScreen();
+          }
+        });
+      } catch (error) {
+        console.error('Firebase auth initialization error:', error);
+        showAuthScreen();
+      }
     }
     
     // Wait for DOM and scripts to load
