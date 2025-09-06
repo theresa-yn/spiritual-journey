@@ -733,8 +733,8 @@
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
         <div id="options-menu" class="options-menu">
-          <button onclick="showEntryScreen()">Start Journaling</button>
-          <button onclick="showHistory()">Past Reflections</button>
+          <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
+          <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
         </div>
   <script>
     // Firebase configuration
@@ -932,6 +932,10 @@
       // Hide sign out button in header
       document.getElementById('sign-out-btn').style.display = 'none';
       
+      // Hide options menu buttons when not signed in
+      document.getElementById('start-journaling-btn').style.display = 'none';
+      document.getElementById('past-reflections-btn').style.display = 'none';
+      
       showLoginForm();
     }
 
@@ -943,6 +947,10 @@
       
       // Show sign out button in header
       document.getElementById('sign-out-btn').style.display = 'block';
+      
+      // Show options menu buttons when signed in
+      document.getElementById('start-journaling-btn').style.display = 'block';
+      document.getElementById('past-reflections-btn').style.display = 'block';
     }
 
     // Handle user signup
@@ -1391,6 +1399,10 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         document.getElementById('sign-out-btn').style.display = 'none';
         document.getElementById('main-screen').classList.add('hidden');
         document.getElementById('auth-screen').classList.remove('hidden');
+        
+        // Hide options menu buttons when signed out
+        document.getElementById('start-journaling-btn').style.display = 'none';
+        document.getElementById('past-reflections-btn').style.display = 'none';
         
         console.log('User signed out successfully - ready for account switching');
         
