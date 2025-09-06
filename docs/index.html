@@ -440,21 +440,26 @@
       }
       
       .toolbar-button {
-        padding: 6px 10px !important;
-        font-size: 12px !important;
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        border-radius: 25px !important;
         min-width: 60px !important;
       }
     }
     
     /* Toolbar button hover effects */
     .toolbar-button:hover {
-      background: var(--accent-primary) !important;
       transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4), 0 0 25px rgba(139, 92, 246, 0.3);
     }
     
     .toolbar-button:active {
       transform: scale(0.95);
+    }
+    
+    .toolbar-button:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
     }
     .options-menu {
       position: fixed;
@@ -673,22 +678,22 @@
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
       <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); justify-content: center; align-items: center;">
-        <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Photos
         </label>
-        <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Camera
         </label>
-        <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Voice
         </button>
-        <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           New
         </button>
-        <button type="button" class="toolbar-button" id="save" disabled style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <button type="button" class="toolbar-button" id="save" disabled style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2); opacity: 0.5;">
           Save
         </button>
-        <button type="button" class="toolbar-button" onclick="goBack()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+        <button type="button" class="toolbar-button" onclick="goBack()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Back
         </button>
       </div>
