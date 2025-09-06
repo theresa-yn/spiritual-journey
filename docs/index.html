@@ -1988,37 +1988,14 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             throw new Error('Failed to save changes locally: ' + localErr.message);
           }
           
-          // Try database deletion if the reflection has an ID
-          if (deletedReflection.id) {
+          // Try database deletion if the reflection has an ID and user is logged in
+          if (deletedReflection.id && currentUser && currentUser.isFirebase) {
             try {
-              console.log('Attempting database deletion for ID:', deletedReflection.id);
-              const { error } = await supabase
-                .from('reflections')
-                .delete()
-                .eq('id', deletedReflection.id);
-              
-              if (error) {
-                console.error('Database deletion error:', error);
-                // Store the failed deletion for retry
-                const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
-                failedDeletions.push({
-                  id: deletedReflection.id,
-                  timestamp: Date.now(),
-                  retryCount: 0
-                });
-                localStorage.setItem('failedDeletions', JSON.stringify(failedDeletions));
-                
-                // Show retry option
-                if (confirm('Reflection deleted locally but database sync failed. Would you like to retry the sync now?')) {
-                  await retryFailedDeletions();
-                } else {
-                  alert('Reflection deleted locally. You can retry the sync later or it will be removed when you refresh.');
-                }
-              } else {
-                console.log('Database deletion successful');
-              }
+              console.log('Attempting Firebase deletion for ID:', deletedReflection.id);
+              await db.collection('reflections').doc(deletedReflection.id).delete();
+              console.log('Firebase deletion successful');
             } catch (dbErr) {
-              console.error('Database operation failed:', dbErr);
+              console.error('Firebase deletion failed:', dbErr);
               // Store the failed deletion for retry
               const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
               failedDeletions.push({
@@ -2036,7 +2013,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
               }
             }
           } else {
-            console.log('No database ID found, local deletion only');
+            console.log('No database ID found or user not logged in, local deletion only');
           }
           
           // Refresh the history display without reloading from storage
@@ -2072,23 +2049,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
 
         for (const failedDeletion of failedDeletions) {
           try {
-            const { error } = await supabase
-              .from('reflections')
-              .delete()
-              .eq('id', failedDeletion.id);
-
-            if (error) {
-              console.error('Retry failed for ID:', failedDeletion.id, error);
-              // Increment retry count
-              failedDeletion.retryCount = (failedDeletion.retryCount || 0) + 1;
-              // Only keep failures that haven't been retried too many times
-              if (failedDeletion.retryCount < 3) {
-                remainingFailures.push(failedDeletion);
-              }
-            } else {
-              console.log('Successfully deleted ID:', failedDeletion.id);
-              successCount++;
-            }
+            await db.collection('reflections').doc(failedDeletion.id).delete();
+            console.log('Successfully deleted ID:', failedDeletion.id);
+            successCount++;
           } catch (err) {
             console.error('Retry error for ID:', failedDeletion.id, err);
             failedDeletion.retryCount = (failedDeletion.retryCount || 0) + 1;
