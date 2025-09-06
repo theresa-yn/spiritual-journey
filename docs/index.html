@@ -2080,25 +2080,12 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         console.log('✅ File selected successfully');
         console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
         
-        // Check file size (10MB limit for better device compatibility)
-        if (file.size > 10 * 1024 * 1024) {
-          alert('Image file is too large. Please select an image smaller than 10MB.\n\nTip: You can compress the image on your device before uploading.');
-          return;
-        }
-        
-        // Check file type - support more formats
-        const supportedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-          'image/webp', 'image/bmp', 'image/tiff', 'image/heic', 'image/heif'
-        ];
-        
-        const fileExtension = file.name.toLowerCase().split('.').pop();
-        const supportedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'heic', 'heif'];
-        
-        if (!file.type.startsWith('image/') && !supportedExtensions.includes(fileExtension)) {
-          alert('Please select a valid image file.\n\nSupported formats: JPG, PNG, GIF, WebP, BMP, TIFF, HEIC, HEIF\n\nTip: Most devices support these formats automatically.');
-          return;
-        }
+        // Accept any file type and size - compression will handle large files
+        console.log('📁 File accepted:', {
+          name: file.name,
+          type: file.type,
+          size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+        });
         
         const reader = new FileReader();
         const container = document.getElementById('image-preview-container');
@@ -2139,13 +2126,13 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             });
           } catch (error) {
             console.error('Error processing image:', error);
-            alert('Error processing the image. Please try a different image or format.');
+            alert('Error processing the file. Please try a different file.\n\nThe app supports any image format and will automatically compress large files.');
             container.style.display = 'none';
           }
         };
         
         reader.onerror = () => {
-          alert('Error reading the image file. Please try again.\n\nThis might happen if:\n• The file is corrupted\n• The file format is not supported\n• There\'s insufficient memory\n\nTry selecting a different image.');
+          alert('Error reading the file. Please try again.\n\nThis might happen if:\n• The file is corrupted\n• The file format is not supported\n• There\'s insufficient memory\n• The file is too large for your device\n\nTry selecting a different file or a smaller image.');
           console.error('FileReader error:', reader.error);
           container.style.display = 'none';
         };
@@ -2164,9 +2151,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Calculate new dimensions (max 800px width/height)
+        // Calculate new dimensions (max 1200px width/height for better quality)
         let { width, height } = img;
-        const maxSize = 800;
+        const maxSize = 1200;
         
         if (width > height) {
           if (width > maxSize) {
@@ -2188,7 +2175,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         ctx.drawImage(img, 0, 0, width, height);
         
         // Try different quality levels to get under 1MB
-        let quality = 0.8;
+        let quality = 0.9;
         let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         
         // If still too large, reduce quality further
@@ -2197,13 +2184,17 @@ Continue journaling - your spiritual journey is safe! 🌟`;
           compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         }
         
-        // If still too large, reduce dimensions
+        // If still too large, reduce dimensions progressively
         if (compressedDataUrl.length > 1000000) {
-          const scaleFactor = 0.8;
-          canvas.width = width * scaleFactor;
-          canvas.height = height * scaleFactor;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          let scaleFactor = 0.8;
+          while (compressedDataUrl.length > 1000000 && scaleFactor > 0.3) {
+            canvas.width = width * scaleFactor;
+            canvas.height = height * scaleFactor;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            scaleFactor -= 0.1;
+          }
         }
         
         console.log('🔄 Image compressed:', {
