@@ -685,6 +685,12 @@
         <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
           New
         </button>
+        <button type="button" class="toolbar-button" id="save" disabled style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          Save
+        </button>
+        <button type="button" class="toolbar-button" onclick="goBack()" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; white-space: nowrap;">
+          Back
+        </button>
       </div>
       <input type="file" 
              accept="image/*,image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif" 
@@ -711,11 +717,6 @@
         <img id="preview-image" class="preview" src="" alt="Preview">
         <button type="button" class="button" onclick="removeImage()" style="margin-top: 10px;">Remove Photo</button>
       </div>
-    </div>
-    <div class="button-group">
-      <button class="button" id="stop-voice" disabled>Stop Speaking</button>
-      <button class="button" id="save" disabled>Save Reflection</button>
-      <button class="button" onclick="goBack()">Back</button>
     </div>
   </div>
   <!-- History Screen -->
@@ -1677,7 +1678,6 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       // Ensure save button is properly enabled/disabled
       checkSaveEnabled();
       document.getElementById('start-voice').disabled = false;
-      document.getElementById('stop-voice').disabled = true;
       newQuestion();
       updateDateTime();
     }
@@ -2076,16 +2076,13 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         checkSaveEnabled();
       };
       recognition.onend = () => {
-        document.getElementById('start-voice').disabled = false;
-        document.getElementById('stop-voice').disabled = true;
+        // Voice recognition ended, user can now save
+        console.log('Voice recognition ended');
       };
       recognition.onerror = () => {
-        document.getElementById('start-voice').disabled = false;
-        document.getElementById('stop-voice').disabled = true;
+        console.log('Voice recognition error');
       };
       recognition.start();
-      document.getElementById('start-voice').disabled = true;
-      document.getElementById('stop-voice').disabled = false;
     }
 
     function stopVoiceRecognition() {
@@ -2427,8 +2424,6 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     }
 
     // Event listeners
-    document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
-    document.getElementById('stop-voice').addEventListener('click', stopVoiceRecognition);
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
     document.getElementById('save').addEventListener('click', saveReflection);
