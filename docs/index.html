@@ -736,7 +736,7 @@
         <div id="options-menu" class="options-menu">
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
-          <button id="home-btn" onclick="goToHome()" style="display: block;">Home</button>
+          <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
         </div>
   <script>
     // Firebase configuration
@@ -937,6 +937,7 @@
       // Hide options menu buttons when not signed in
       document.getElementById('start-journaling-btn').style.display = 'none';
       document.getElementById('past-reflections-btn').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
       
       showLoginForm();
     }
@@ -953,6 +954,7 @@
       // Show options menu buttons when signed in
       document.getElementById('start-journaling-btn').style.display = 'block';
       document.getElementById('past-reflections-btn').style.display = 'block';
+      document.getElementById('home-btn').style.display = 'block';
     }
 
     // Handle user signup
@@ -1405,6 +1407,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         // Hide options menu buttons when signed out
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
+        document.getElementById('home-btn').style.display = 'none';
         
         console.log('User signed out successfully - ready for account switching');
         
@@ -2415,17 +2418,16 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         return;
       }
       
-      // Home button is always visible
-      document.getElementById('home-btn').style.display = 'block';
-      
       // Ensure buttons are visible if user is signed in
       if (currentUser) {
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
+        document.getElementById('home-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
+        document.getElementById('home-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
       
