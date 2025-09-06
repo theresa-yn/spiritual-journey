@@ -663,11 +663,14 @@
     <div>
       <div class="photo-buttons" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
         <label for="image-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center;">
-          📷 Gallery
+          📱 Photos App
         </label>
         <label for="camera-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center; background: var(--accent-secondary);">
           📸 Camera
         </label>
+      </div>
+      <div style="text-align: center; margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">
+        📱 Photos App: iPhone Photos, Samsung Gallery, Google Photos, etc.
       </div>
       <input type="file" 
              accept="image/*" 
@@ -2401,7 +2404,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     // Add click listeners for gallery and camera buttons
     document.querySelector('label[for="image-input"]').addEventListener('click', function(e) {
       e.preventDefault(); // Prevent default label behavior
-      console.log('📷 Gallery button clicked');
+      console.log('📱 Photos App button clicked');
       
       // Ensure the gallery input opens photo library
       const galleryInput = document.getElementById('image-input');
