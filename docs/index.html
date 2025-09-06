@@ -554,7 +554,7 @@
 
   <!-- Authentication Screen -->
   <div id="auth-screen" class="content">
-    <h2>Welcome to Your Spiritual Journey</h2>
+    <h2>My Spiritual Journey</h2>
     
     <!-- Firebase Auth Options -->
     <div style="text-align: center; margin-top: 30px;">
@@ -572,13 +572,6 @@
       <p style="font-size: 0.9rem; color: var(--text-muted); margin: 20px 0;">One-click sign-in with your Google account</p>
       
       
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Or try without signing up:</p>
-        
-        <button class="button" onclick="startLocalJourney()" style="background: var(--accent-secondary); margin: 5px;">
-          🚀 Try as Guest (Local Storage)
-        </button>
-      </div>
     </div>
     
     <div id="auth-message" class="prompt" style="display: none; margin-top: 15px;"></div>
@@ -819,9 +812,7 @@
       
       // Update user info display
       if (currentUser) {
-        if (currentUser.isLocal) {
-          document.getElementById('user-email').textContent = 'Local Storage';
-        } else if (currentUser.isFirebase) {
+        if (currentUser.isFirebase) {
           document.getElementById('user-email').textContent = currentUser.email || currentUser.name;
         } else if (currentUser.email) {
           document.getElementById('user-email').textContent = currentUser.email;
@@ -962,26 +953,6 @@
     // OAuth functions removed - focusing on working authentication methods
 
     // Simple local storage authentication - no configuration needed
-    function startLocalJourney() {
-      const message = document.getElementById('auth-message');
-      
-      // Set local user
-      currentUser = {
-        id: 'local_' + Date.now(),
-        email: 'Local User',
-        isLocal: true
-      };
-      
-      message.textContent = 'Welcome! You\'re now using the app with local storage. Your journals are saved in your browser.';
-      message.style.color = 'var(--accent-primary)';
-      message.style.display = 'block';
-      
-      // Show main screen
-      setTimeout(() => {
-        showMainScreen();
-        loadReflections();
-      }, 1500);
-    }
 
     function showCloudOptions() {
       document.getElementById('cloud-options').style.display = 'block';
@@ -1217,17 +1188,6 @@ Need help? Check the console for any error messages.`;
         return;
       }
         
-      // Handle local storage mode
-      if (currentUser.isLocal) {
-        console.log('Loading reflections for local user');
-        const localReflections = localStorage.getItem('reflections');
-        if (localReflections) {
-          reflections = JSON.parse(localReflections);
-        } else {
-          reflections = [];
-        }
-        return;
-      }
       
       // Handle Firebase mode
       if (currentUser.isFirebase) {
@@ -1312,39 +1272,6 @@ Need help? Check the console for any error messages.`;
         return;
       }
       
-      // Handle local storage mode
-      if (currentUser.isLocal) {
-        console.log('Saving reflection for local user');
-        const title = document.getElementById('title').value.trim();
-        const reflection = document.getElementById('reflection').value.trim();
-        const date = document.getElementById('entry-date').textContent;
-        
-        const reflectionData = {
-          id: 'local_' + Date.now(),
-          title,
-          reflection,
-          date,
-          image: currentImage,
-          created_at: new Date().toISOString()
-        };
-        
-        if (editingIndex !== null && reflections[editingIndex]) {
-          // Update existing reflection
-          reflections[editingIndex] = reflectionData;
-        } else {
-          // Add new reflection
-          reflections.unshift(reflectionData);
-        }
-        
-        // Save to localStorage
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        
-        // Clear form and go back
-        currentImage = "";
-        editingIndex = null;
-        goBack();
-        return;
-      }
       
       // Handle Firebase mode
       if (currentUser.isFirebase) {
