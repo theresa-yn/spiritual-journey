@@ -431,6 +431,18 @@
       
       /* Mobile header adjustments */
       .header { padding: 10px 16px; }
+      
+      /* Mobile photo buttons */
+      .photo-buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .photo-buttons label {
+        min-width: 100% !important;
+        padding: 14px 20px !important;
+        font-size: 1.1rem !important;
+      }
     }
     .options-menu {
       position: fixed;
@@ -649,15 +661,29 @@
     <input type="text" id="title" placeholder="Title">
     <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
-      <label for="image-input" class="button" style="display: inline-block; margin: 10px 0; cursor: pointer;">
-        📷 Add Photo
-      </label>
+      <div class="photo-buttons" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+        <label for="image-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center;">
+          📷 Gallery
+        </label>
+        <label for="camera-input" class="button" style="display: inline-block; cursor: pointer; padding: 12px 20px; font-size: 1rem; border-radius: 8px; transition: all 0.3s ease; flex: 1; min-width: 150px; text-align: center; background: var(--accent-secondary);">
+          📸 Camera
+        </label>
+      </div>
       <input type="file" 
-             accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic,.heif" 
+             accept="image/*" 
              id="image-input" 
-             capture="environment user" 
              multiple="false"
-             style="display: none;">
+             style="display: none;"
+             webkitdirectory="false"
+             directory="false">
+      <input type="file" 
+             accept="image/*" 
+             id="camera-input" 
+             capture="environment" 
+             multiple="false"
+             style="display: none;"
+             webkitdirectory="false"
+             directory="false">
       <div id="image-preview-container" style="display: none;">
         <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
           📸 Loading image...
@@ -2218,13 +2244,15 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       const container = document.getElementById('image-preview-container');
       const loading = document.getElementById('image-loading');
       const preview = document.getElementById('preview-image');
-      const input = document.getElementById('image-input');
+      const galleryInput = document.getElementById('image-input');
+      const cameraInput = document.getElementById('camera-input');
       
       container.style.display = 'none';
       loading.style.display = 'none';
       preview.style.display = 'block';
       preview.src = '';
-      input.value = '';
+      galleryInput.value = '';
+      cameraInput.value = '';
       currentImage = '';
       console.log('Image removed');
       
@@ -2364,11 +2392,17 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
     document.getElementById('save').addEventListener('click', saveReflection);
+    // Add event listeners for both gallery and camera inputs
     document.getElementById('image-input').addEventListener('change', previewImage);
+    document.getElementById('camera-input').addEventListener('change', previewImage);
     
-    // Add click listener for photo button debugging
+    // Add click listeners for debugging
     document.querySelector('label[for="image-input"]').addEventListener('click', function() {
-      console.log('📷 Add Photo button clicked');
+      console.log('📷 Gallery button clicked');
+    });
+    
+    document.querySelector('label[for="camera-input"]').addEventListener('click', function() {
+      console.log('📸 Camera button clicked');
     });
 
     // Load reflections and initialize auth on page load
