@@ -2112,27 +2112,31 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         
         reader.onload = (e) => {
           try {
-            // Set the image source
-            preview.src = e.target.result;
-            currentImage = e.target.result;
-            
-            // Hide loading and show image
-            loading.style.display = 'none';
-            preview.style.display = 'block';
-            
-            // Check if save button should be enabled
-            checkSaveEnabled();
-            
-            // Add a small delay to ensure the image loads
-            setTimeout(() => {
-              if (preview.complete && preview.naturalHeight !== 0) {
-                console.log('✅ Image preview loaded successfully:', file.name);
-                console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
-                console.log('💾 Image size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-              } else {
-                console.log('⏳ Image preview loading...');
-              }
-            }, 100);
+            // Compress the image before storing
+            compressImage(e.target.result, (compressedDataUrl) => {
+              // Set the compressed image source
+              preview.src = compressedDataUrl;
+              currentImage = compressedDataUrl;
+              
+              // Hide loading and show image
+              loading.style.display = 'none';
+              preview.style.display = 'block';
+              
+              // Check if save button should be enabled
+              checkSaveEnabled();
+              
+              // Add a small delay to ensure the image loads
+              setTimeout(() => {
+                if (preview.complete && preview.naturalHeight !== 0) {
+                  console.log('✅ Image preview loaded successfully:', file.name);
+                  console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
+                  console.log('💾 Original size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+                  console.log('💾 Compressed size:', (compressedDataUrl.length / 1024 / 1024).toFixed(2), 'MB');
+                } else {
+                  console.log('⏳ Image preview loading...');
+                }
+              }, 100);
+            });
           } catch (error) {
             console.error('Error processing image:', error);
             alert('Error processing the image. Please try a different image or format.');
@@ -2152,6 +2156,71 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         console.log('❌ No file selected');
         alert('No file selected. Please try again.');
       }
+    }
+
+    function compressImage(dataUrl, callback) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate new dimensions (max 800px width/height)
+        let { width, height } = img;
+        const maxSize = 800;
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Try different quality levels to get under 1MB
+        let quality = 0.8;
+        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        
+        // If still too large, reduce quality further
+        while (compressedDataUrl.length > 1000000 && quality > 0.1) { // 1MB limit
+          quality -= 0.1;
+          compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        
+        // If still too large, reduce dimensions
+        if (compressedDataUrl.length > 1000000) {
+          const scaleFactor = 0.8;
+          canvas.width = width * scaleFactor;
+          canvas.height = height * scaleFactor;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
+        
+        console.log('🔄 Image compressed:', {
+          original: dataUrl.length,
+          compressed: compressedDataUrl.length,
+          reduction: ((1 - compressedDataUrl.length / dataUrl.length) * 100).toFixed(1) + '%'
+        });
+        
+        callback(compressedDataUrl);
+      };
+      
+      img.onerror = function() {
+        console.error('Error loading image for compression');
+        callback(dataUrl); // Fallback to original
+      };
+      
+      img.src = dataUrl;
     }
 
     function removeImage() {
