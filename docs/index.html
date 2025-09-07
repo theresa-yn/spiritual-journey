@@ -665,7 +665,7 @@
     <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
-    <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
+    <div id="quote" class="prompt">Loading inspiration...</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <h2>My Spiritual Journey</h2>
     <p>Tap the plus button to start your journey</p>
@@ -850,7 +850,7 @@
       }
     }
 
-    const quotes = [
+    const originalQuotes = [
       "The wound is the place where the light enters you. – Rumi",
       "We should write because humans are spiritual beings and writing is a powerful form of prayer and meditation. – Gloria Anzaldúa",
       "Fill your paper with the breathings of your heart. – William Wordsworth",
@@ -861,7 +861,7 @@
       "Happiness is not a matter of intensity but of balance, order, rhythm and harmony. – Thomas Merton",
       "Compassion is a verb. – Thich Nhat Hanh",
       "When another person makes you suffer, it is because he suffers deeply within himself. He does not need punishment; he needs help. – Thich Nhat Hanh",
-      "Understanding is love’s other name. If you don’t understand, you cannot love. – Thich Nhat Hanh",
+      "Understanding is love's other name. If you don't understand, you cannot love. – Thich Nhat Hanh",
       "Love is our true destiny. We do not find the meaning of life by ourselves alone—we find it with another. – Thomas Merton",
       "The biggest human temptation is to settle for too little love. – Thomas Merton",
       "Our job is to love others without stopping to inquire whether or not they are worthy. – Thomas Merton",
@@ -872,21 +872,43 @@
       "Silence is the language of God, all else is poor translation. – Thomas Merton",
       "The things we fear most in prayer are the things that can save us. – Thomas Merton",
       "In the stillness of your soul, wisdom whispers its truths. – Unknown",
-      "Every step you take is a dance with the universe’s rhythm. – Unknown",
-      "The heart’s quiet moments hold the seeds of transformation. – Unknown",
+      "Every step you take is a dance with the universe's rhythm. – Unknown",
+      "The heart's quiet moments hold the seeds of transformation. – Unknown",
       "Embrace the shadows, for they guide you to your light. – Unknown",
       "Your spirit blooms where gratitude takes root. – Unknown"
     ];
-    const journalQuestions = [
+
+    // Shuffle quotes array using Fisher-Yates algorithm
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Create shuffled quotes array
+    const quotes = shuffleArray(originalQuotes);
+    const originalJournalQuestions = [
       "What moment today felt like a gift from the universe?",
       "How did you find peace in a challenging situation?",
       "What inspires your soul to create today?",
-      "What is one thing you’re grateful for right now?",
+      "What is one thing you're grateful for right now?",
       "What vision for your future feels most alive?"
     ];
 
+    // Create shuffled journal questions array
+    const journalQuestions = shuffleArray(originalJournalQuestions);
+
     function getRandomQuestion() {
       return journalQuestions[Math.floor(Math.random() * journalQuestions.length)];
+    }
+
+    function setInitialQuote() {
+      // Set the first quote from the shuffled array
+      document.getElementById('quote').textContent = quotes[0];
+      lastQuoteIndex = 0;
     }
 
     function newQuote() {
@@ -2469,6 +2491,9 @@ Need help? Check the console for any error messages.`;
       
       setInterval(updateDateTime, 1000);
       updateDateTime();
+      
+      // Set initial quote from shuffled array
+      setInitialQuote();
       
       // Auto-retry any failed deletions
       await autoRetryFailedDeletions();
