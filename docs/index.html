@@ -794,6 +794,43 @@
     let currentTheme = 'dark'; // Default theme
     let lastQuoteIndex = -1; // Track last quote to avoid repetition
 
+    // Safely persist reflections to localStorage, pruning if needed
+    function saveReflectionsToLocalStorageSafely() {
+      try {
+        localStorage.setItem('reflections', JSON.stringify(reflections));
+        return true;
+      } catch (e) {
+        const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22 || String(e).toLowerCase().includes('quota'));
+        if (!isQuota) return false;
+        // Strip one image from newest-first
+        if (Array.isArray(reflections)) {
+          for (let i = 0; i < reflections.length; i++) {
+            if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
+              reflections[i] = { ...reflections[i], image: '' };
+              break;
+            }
+          }
+        }
+        try {
+          saveReflectionsToLocalStorageSafely();
+          return true;
+        } catch (e2) {
+          let attempts = 0;
+          while (attempts < 10 && Array.isArray(reflections) && reflections.length > 0) {
+            reflections.pop();
+            attempts++;
+            try {
+              localStorage.setItem('reflections', JSON.stringify(reflections));
+              return true;
+            } catch (_) {
+              // keep pruning
+            }
+          }
+          return false;
+        }
+      }
+    }
+
     const quotes = [
       "The wound is the place where the light enters you. – Rumi",
       "We should write because humans are spiritual beings and writing is a powerful form of prayer and meditation. – Gloria Anzaldúa",
