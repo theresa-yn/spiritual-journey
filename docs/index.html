@@ -794,6 +794,19 @@
     let currentTheme = 'dark'; // Default theme
     let lastQuoteIndex = -1; // Track last quote to avoid repetition
 
+    // Backup reflections to a secondary key with timestamp
+    function backupReflections() {
+      try {
+        const payload = {
+          reflections,
+          backedUpAt: new Date().toISOString()
+        };
+        localStorage.setItem('reflections_backup', JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Backup failed:', e);
+      }
+    }
+
     // Safely persist reflections to localStorage, pruning if needed
     function saveReflectionsToLocalStorageSafely() {
       try {
@@ -1288,10 +1301,9 @@ Need help? Check the console for any error messages.`;
           await auth.signOut();
         }
         
-        // Clear all user data
+        // Preserve local journals; only sign out the user
+        backupReflections();
         currentUser = null;
-        reflections = [];
-        localStorage.removeItem('reflections');
         
         // Hide sign out button and show auth screen
         document.getElementById('sign-out-btn').style.display = 'none';
@@ -1395,6 +1407,8 @@ Need help? Check the console for any error messages.`;
           
           // Also save to localStorage for offline access
           saveReflectionsToLocalStorageSafely();
+          // Create a backup
+          backupReflections();
           return;
         } catch (error) {
           console.error('Error loading Firebase reflections:', error);
@@ -1424,8 +1438,24 @@ Need help? Check the console for any error messages.`;
             console.warn('Local browser storage quota issue while loading. Falling back to existing local data.');
           }
           
-          // Fallback to localStorage
-          const localReflections = localStorage.getItem('reflections');
+          // Fallback to local backups/localStorage
+          let localReflections = localStorage.getItem('reflections');
+          if (!localReflections) {
+            const backup = localStorage.getItem('reflections_backup');
+            if (backup) {
+              try {
+                const parsed = JSON.parse(backup);
+                if (parsed && Array.isArray(parsed.reflections)) {
+                  reflections = parsed.reflections;
+                  console.log('Restored from backup with', reflections.length, 'reflections');
+                  saveReflectionsToLocalStorageSafely();
+                  return;
+                }
+              } catch (e) {
+                console.warn('Failed to parse backup:', e);
+              }
+            }
+          }
           if (localReflections) {
             reflections = JSON.parse(localReflections);
             console.log('Using localStorage fallback with', reflections.length, 'reflections');
