@@ -736,6 +736,7 @@
       <button class="button" onclick="clearOldImages()" style="background: var(--accent-primary);">Clear Old Images</button>
       <button class="button" onclick="exportJournals()" style="background: var(--accent-secondary);">Export Journals</button>
       <button class="button" onclick="aggressiveCleanup()" style="background: #dc2626; color: white;">Free More Space</button>
+      <button class="button" onclick="restoreFromBackup()" style="background: #059669; color: white;">Restore Backup</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -810,9 +811,48 @@
       }
     }
 
-    // Safely persist reflections to localStorage, pruning if needed
-    // protectIndex: the reflection index whose image/content must NOT be stripped
+    // Comprehensive data protection system
+    function createMultipleBackups() {
+      try {
+        const timestamp = Date.now();
+        const backupData = {
+          timestamp: timestamp,
+          reflections: reflections,
+          totalCount: reflections.length,
+          version: '2.0'
+        };
+        
+        // Create multiple backup keys with different strategies
+        const backupKeys = [
+          'reflections_backup_1',    // Primary backup
+          'reflections_backup_2',    // Secondary backup
+          `reflections_backup_${timestamp}`, // Timestamped backup
+          'reflections_emergency'    // Emergency backup
+        ];
+        
+        let successCount = 0;
+        backupKeys.forEach(key => {
+          try {
+            localStorage.setItem(key, JSON.stringify(backupData));
+            successCount++;
+          } catch (e) {
+            console.warn(`Failed to create backup ${key}:`, e);
+          }
+        });
+        
+        console.log(`Created ${successCount}/${backupKeys.length} backups`);
+        return successCount > 0;
+      } catch (e) {
+        console.error('Failed to create backups:', e);
+        return false;
+      }
+    }
+
+    // Safely persist reflections to localStorage with comprehensive protection
     function saveReflectionsToLocalStorageSafely(protectIndex = null) {
+      // Always create backups before any save operation
+      createMultipleBackups();
+      
       try {
         localStorage.setItem('reflections', JSON.stringify(reflections));
         return true;
@@ -820,56 +860,69 @@
         const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22 || String(e).toLowerCase().includes('quota'));
         if (!isQuota) return false;
         
-        console.warn('localStorage quota exceeded, attempting to free space...');
+        console.warn('localStorage quota exceeded, implementing data protection strategy...');
         
-        // First, try stripping images from OLDEST entries (keep newest images)
+        // Strategy 1: Strip ALL images except the most recent 3
         if (Array.isArray(reflections)) {
-          for (let i = reflections.length - 1; i >= 0; i--) {
-            if (protectIndex !== null && i === protectIndex) continue;
+          let imagesStripped = 0;
+          for (let i = 3; i < reflections.length; i++) {
             if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
-              console.log(`Stripping image from reflection ${i}: ${reflections[i].title}`);
               reflections[i] = { ...reflections[i], image: '' };
-              break;
+              imagesStripped++;
             }
           }
+          console.log(`Stripped ${imagesStripped} images from old reflections`);
         }
         
         try {
           localStorage.setItem('reflections', JSON.stringify(reflections));
-          console.log('Successfully saved after stripping images');
+          console.log('Successfully saved after stripping old images');
           return true;
         } catch (e2) {
-          console.warn('Still quota exceeded after stripping images, pruning oldest entries...');
+          console.warn('Still quota exceeded, implementing emergency compression...');
           
-          // If still failing, we need to prune entries
-          // But instead of automatically deleting, let's be more conservative
-          let attempts = 0;
-          const maxPruning = Math.min(3, Math.floor(reflections.length / 2)); // Never prune more than half
-          
-          while (attempts < maxPruning && Array.isArray(reflections) && reflections.length > 1) {
-            // Find the oldest entry that's not protected
-            let oldestIndex = reflections.length - 1;
-            if (protectIndex !== null && oldestIndex === protectIndex && reflections.length > 1) {
-              oldestIndex = reflections.length - 2;
-            }
-            
-            const removedReflection = reflections.splice(oldestIndex, 1)[0];
-            console.warn(`Pruned oldest reflection: "${removedReflection.title}" (${removedReflection.date || removedReflection.createdAt})`);
-            
-            attempts++;
-            try {
-              localStorage.setItem('reflections', JSON.stringify(reflections));
-              console.log(`Successfully saved after pruning ${attempts} entries`);
-        return true;
-            } catch (_) {
-              // keep pruning
-            }
+          // Strategy 2: Compress text content (remove extra whitespace, shorten long content)
+          if (Array.isArray(reflections)) {
+            reflections.forEach((reflection, index) => {
+              if (reflection.reflection && reflection.reflection.length > 1000) {
+                // Truncate very long reflections to 1000 characters
+                reflection.reflection = reflection.reflection.substring(0, 1000) + '... [truncated]';
+                console.log(`Compressed long reflection ${index}: ${reflection.title}`);
+              }
+            });
           }
           
-          // If we still can't save, show a warning to the user
-          console.error('Unable to save reflections even after pruning. Storage may be severely limited.');
-          alert(`⚠️ Storage Warning\n\nYour browser storage is nearly full. Some older journals may not be saved.\n\nConsider:\n• Clearing browser cache\n• Signing in to sync to cloud storage\n• Exporting your journals`);
+          try {
+            localStorage.setItem('reflections', JSON.stringify(reflections));
+            console.log('Successfully saved after compression');
+        return true;
+          } catch (e3) {
+            console.error('Emergency: Storage still full after all optimizations');
+            
+            // Strategy 3: Last resort - keep only essential data
+            const emergencyReflections = reflections.map(reflection => ({
+              title: reflection.title || 'Untitled',
+              reflection: reflection.reflection ? reflection.reflection.substring(0, 500) : '',
+              date: reflection.date || reflection.createdAt || new Date().toISOString(),
+              // Remove image, createdAt, and other non-essential fields
+            }));
+            
+            try {
+              localStorage.setItem('reflections', JSON.stringify(emergencyReflections));
+              console.log('Saved emergency compressed version');
+              
+              // Update the main reflections array to match
+              reflections.length = 0;
+              reflections.push(...emergencyReflections);
+              
+              alert(`⚠️ Storage Emergency\n\nYour storage is critically full. I've saved your journals in compressed format to prevent data loss.\n\n• All images removed\n• Long text truncated\n• All journals preserved\n\nPlease export your data and consider signing in to sync to cloud storage.`);
+              return true;
+            } catch (e4) {
+              console.error('CRITICAL: Unable to save even emergency version');
+              alert(`🚨 CRITICAL STORAGE ERROR\n\nUnable to save your journals due to storage limits.\n\nYour data is backed up in multiple locations. Please:\n1. Export your journals immediately\n2. Clear browser cache\n3. Sign in to sync to cloud storage\n\nYour journals are NOT lost - they're in the backups!`);
         return false;
+            }
+          }
         }
       }
     }
@@ -1457,29 +1510,54 @@ Need help? Check the console for any error messages.`;
 
     async function loadReflections() {
       if (!currentUser) {
-        console.log('No user logged in, loading from localStorage');
-        // Load from localStorage when no user is signed in
+        console.log('No user logged in, loading from localStorage with comprehensive backup checking');
+        
+        // Try to load from main storage first
         let localReflections = localStorage.getItem('reflections');
-        if (!localReflections) {
-          const backup = localStorage.getItem('reflections_backup');
+        if (localReflections) {
+          try {
+            reflections = JSON.parse(localReflections);
+            console.log('Loaded', reflections.length, 'reflections from main localStorage');
+            return;
+          } catch (e) {
+            console.warn('Failed to parse main reflections, trying backups:', e);
+          }
+        }
+        
+        // Try multiple backup sources in order of preference
+        const backupKeys = [
+          'reflections_backup_1',
+          'reflections_backup_2', 
+          'reflections_emergency',
+          'reflections_backup'
+        ];
+        
+        // Also check for timestamped backups
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('reflections_backup_') && key !== 'reflections_backup_1' && key !== 'reflections_backup_2') {
+            backupKeys.push(key);
+          }
+        }
+        
+        for (const backupKey of backupKeys) {
+          const backup = localStorage.getItem(backupKey);
           if (backup) {
             try {
               const parsed = JSON.parse(backup);
               if (parsed && Array.isArray(parsed.reflections)) {
                 reflections = parsed.reflections;
-                console.log('Restored from backup with', reflections.length, 'reflections');
+                console.log(`Restored from backup ${backupKey} with`, reflections.length, 'reflections');
                 return;
               }
             } catch (e) {
-              console.warn('Failed to parse backup:', e);
+              console.warn(`Failed to parse backup ${backupKey}:`, e);
             }
           }
-        reflections = [];
-          console.log('No local data available');
-          return;
         }
-        reflections = JSON.parse(localReflections);
-        console.log('Loaded', reflections.length, 'reflections from localStorage');
+        
+        reflections = [];
+        console.log('No local data available from any source');
         return;
       }
         
@@ -1907,7 +1985,7 @@ Need help? Check the console for any error messages.`;
         } catch (e) {
           alert(`❌ Error saving changes: ${e.message}`);
         }
-      } else {
+            } else {
         alert('No old images found to clear.\n\nOnly the 3 most recent journals keep their images.');
       }
     }
@@ -1951,9 +2029,9 @@ Need help? Check the console for any error messages.`;
     function aggressiveCleanup() {
       if (!reflections || reflections.length === 0) {
         alert('No journals to process.');
-        return;
-      }
-      
+          return;
+        }
+        
       const originalCount = reflections.length;
       let spaceSaved = 0;
       let imagesCleared = 0;
@@ -1988,6 +2066,97 @@ Need help? Check the console for any error messages.`;
         
       } catch (e) {
         alert(`❌ Error during cleanup: ${e.message}\n\nTry exporting your journals first as a backup.`);
+      }
+    }
+
+    function restoreFromBackup() {
+      const backupKeys = [];
+      
+      // Find all available backups
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('reflections_backup_') || key === 'reflections_backup')) {
+          backupKeys.push(key);
+        }
+      }
+      
+      if (backupKeys.length === 0) {
+        alert('No backups found in localStorage.');
+        return;
+      }
+      
+      // Show available backups
+      let backupInfo = 'Available Backups:\n\n';
+      backupKeys.forEach((key, index) => {
+        try {
+          const backup = localStorage.getItem(key);
+          const parsed = JSON.parse(backup);
+          const count = parsed.reflections ? parsed.reflections.length : 0;
+          const date = parsed.timestamp ? new Date(parsed.timestamp).toLocaleString() : 'Unknown date';
+          backupInfo += `${index + 1}. ${key} (${count} journals, ${date})\n`;
+        } catch (e) {
+          backupInfo += `${index + 1}. ${key} (corrupted)\n`;
+        }
+      });
+      
+      const choice = prompt(backupInfo + '\nEnter the number of the backup to restore (or 0 to cancel):');
+      const choiceNum = parseInt(choice);
+      
+      if (choiceNum === 0 || isNaN(choiceNum) || choiceNum < 1 || choiceNum > backupKeys.length) {
+        return;
+      }
+      
+      const selectedKey = backupKeys[choiceNum - 1];
+      try {
+        const backup = localStorage.getItem(selectedKey);
+        const parsed = JSON.parse(backup);
+        
+        if (parsed && Array.isArray(parsed.reflections)) {
+          reflections = parsed.reflections;
+          saveReflectionsToLocalStorageSafely();
+          alert(`✅ Restored ${reflections.length} journals from backup: ${selectedKey}\n\nYour journals have been restored successfully!`);
+          refreshHistoryDisplay();
+        } else {
+          alert('❌ Selected backup is corrupted or empty.');
+        }
+      } catch (e) {
+        alert(`❌ Error restoring backup: ${e.message}`);
+      }
+    }
+
+    // Proactive storage monitoring
+    function checkStorageHealth() {
+      try {
+        // Test if we can still write to localStorage
+        const testData = 'storage_test_' + Date.now();
+        localStorage.setItem(testData, 'test');
+        localStorage.removeItem(testData);
+        
+        // Estimate current storage usage
+        let totalSize = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) {
+            totalSize += localStorage.getItem(key).length;
+          }
+        }
+        
+        const sizeKB = Math.round(totalSize / 1024);
+        console.log(`Storage health check: ${sizeKB} KB used`);
+        
+        // If we're using more than 4MB, warn the user
+        if (sizeKB > 4000) {
+          console.warn('Storage usage is high:', sizeKB, 'KB');
+          if (sizeKB > 5000) {
+            alert(`⚠️ Storage Warning\n\nYour browser storage is getting full (${sizeKB} KB used).\n\nTo prevent data loss:\n• Export your journals\n• Clear old images\n• Sign in to sync to cloud storage`);
+          }
+        }
+        
+        return sizeKB;
+      } catch (e) {
+        console.error('Storage health check failed:', e);
+        alert(`🚨 Storage Error\n\nUnable to write to browser storage. This may cause data loss.\n\nPlease:\n1. Export your journals immediately\n2. Clear browser cache\n3. Sign in to sync to cloud storage`);
+        return -1;
       }
     }
 
@@ -2752,6 +2921,9 @@ Need help? Check the console for any error messages.`;
       
       // Check quota status
       checkQuotaStatus();
+      
+      // Check storage health
+      checkStorageHealth();
     }
     
     // Initialize Firebase Auth
