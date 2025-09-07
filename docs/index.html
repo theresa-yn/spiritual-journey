@@ -814,10 +814,18 @@
         // Create separate image backups for each reflection with images
         reflections.forEach((reflection, index) => {
           if (reflection.image && reflection.image.length > 0) {
-            const imageKey = `image_backup_${index}_${reflection.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'untitled'}`;
+            // Use a more robust key that includes title and date
+            const title = reflection.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'untitled';
+            const date = reflection.date || reflection.createdAt || Date.now();
+            const imageKey = `image_backup_${title}_${date}_${index}`;
+            
             try {
               localStorage.setItem(imageKey, reflection.image);
-              imageBackups[index] = imageKey;
+              imageBackups[index] = {
+                key: imageKey,
+                title: reflection.title,
+                date: date
+              };
               backupCount++;
             } catch (e) {
               console.warn(`Failed to backup image for reflection ${index}:`, e);
@@ -846,11 +854,15 @@
         const imageBackups = JSON.parse(mapping);
         let restoredCount = 0;
         
-        Object.entries(imageBackups).forEach(([index, imageKey]) => {
+        Object.entries(imageBackups).forEach(([index, backupInfo]) => {
+          // Handle both old format (string) and new format (object)
+          const imageKey = typeof backupInfo === 'string' ? backupInfo : backupInfo.key;
           const imageData = localStorage.getItem(imageKey);
+          
           if (imageData && reflections[index]) {
             reflections[index].image = imageData;
             restoredCount++;
+            console.log(`Restored image for reflection ${index}: ${reflections[index].title}`);
           }
         });
         
@@ -1596,6 +1608,13 @@ Need help? Check the console for any error messages.`;
           try {
             reflections = JSON.parse(localReflections);
             console.log('Loaded', reflections.length, 'reflections from main localStorage');
+            
+            // Try to restore any missing images from backups
+            const restoredImages = restoreImagesFromBackups();
+            if (restoredImages > 0) {
+              console.log(`Also restored ${restoredImages} images from image backups`);
+            }
+            
             return;
           } catch (e) {
             console.warn('Failed to parse main reflections, trying backups:', e);
@@ -2347,16 +2366,36 @@ Need help? Check the console for any error messages.`;
       
       list.innerHTML = '';
 
-      // Try to reduce memory pressure by stripping images if cache is too large
-      try {
-        // Attempt to serialize; if it fails due to size, trim images
-        JSON.stringify(reflections);
-      } catch (_) {
-        for (let i = reflections.length - 1; i >= 0; i--) {
-          if (reflections[i] && reflections[i].image) {
-            reflections[i] = { ...reflections[i], image: '' };
+      // Try to restore images from backups if they're missing
+      let restoredImages = 0;
+      reflections.forEach((reflection, index) => {
+        if (!reflection.image || reflection.image.length === 0) {
+          // Try to restore from image backups
+          const mapping = localStorage.getItem('image_backup_mapping');
+          if (mapping) {
+            try {
+              const imageBackups = JSON.parse(mapping);
+              const backupInfo = imageBackups[index];
+              if (backupInfo) {
+                // Handle both old format (string) and new format (object)
+                const imageKey = typeof backupInfo === 'string' ? backupInfo : backupInfo.key;
+                const imageData = localStorage.getItem(imageKey);
+                if (imageData) {
+                  reflection.image = imageData;
+                  restoredImages++;
+                  console.log(`Restored missing image for reflection ${index}: ${reflection.title}`);
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to restore image for reflection ${index}:`, e);
+            }
           }
         }
+      });
+      
+      if (restoredImages > 0) {
+        console.log(`Restored ${restoredImages} missing images from backups`);
+        // Save the restored reflections
         saveReflectionsToLocalStorageSafely();
       }
       
