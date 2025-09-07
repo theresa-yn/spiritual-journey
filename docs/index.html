@@ -1357,7 +1357,7 @@ Need help? Check the console for any error messages.`;
           console.log('Loaded', reflections.length, 'reflections from Firebase');
           
           // Also save to localStorage for offline access
-          localStorage.setItem('reflections', JSON.stringify(reflections));
+          saveReflectionsToLocalStorageSafely();
           return;
         } catch (error) {
           console.error('Error loading Firebase reflections:', error);
@@ -1367,23 +1367,25 @@ Need help? Check the console for any error messages.`;
             userId: currentUser.id
           });
           
-          // Handle specific error types (only show quota when Firestore explicitly reports it)
-          let errorMessage = '';
-          if (error && (error.code === 'resource-exhausted' || error.code === 'permission-denied:RESOURCE_EXHAUSTED')) {
-            // Store quota error timestamp only for explicit quota errors
+          // Decide how to surface this error
+          const isExplicitFirestoreQuota = error && (error.code === 'resource-exhausted' || error.code === 'permission-denied:RESOURCE_EXHAUSTED');
+          const browserMsg = (error && (error.message || error.name || '')).toLowerCase();
+          const isBrowserStorageQuota = !isExplicitFirestoreQuota && browserMsg.includes('quota');
+
+          if (isExplicitFirestoreQuota) {
+            // Store quota error timestamp only for explicit Firestore quota errors
             localStorage.setItem('lastQuotaError', Date.now().toString());
-            
-            errorMessage = `📊 Firebase Quota Exceeded\n\nYour Firebase quota has been reached.\n\n✅ Your journals are saved locally and will sync when quota resets.\n\n💡 Tip: If you just upgraded, wait a bit for propagation.`;
+            alert(`📊 Firebase Quota Exceeded\n\nYour Firebase quota has been reached.\n\n✅ Your journals are saved locally and will sync when quota resets.`);
           } else if (error.code === 'permission-denied') {
-            errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`;
+            alert(`🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`);
           } else if (error.code === 'unavailable') {
-            errorMessage = `🌐 Service Unavailable\n\nFirebase is temporarily unavailable.\n\n✅ Your journals are saved locally and will sync when service returns.`;
+            alert(`🌐 Service Unavailable\n\nFirebase is temporarily unavailable.\n\n✅ Your journals are saved locally and will sync when service returns.`);
+          } else if (!isBrowserStorageQuota) {
+            // Only show a generic connection alert if this is NOT a local browser storage quota
+            alert(`⚠️ Connection Error\n\nError: ${error.message}\n\n✅ Your journals are saved locally and will sync when connection is restored.`);
           } else {
-            errorMessage = `⚠️ Connection Error\n\nError: ${error.message}\n\n✅ Your journals are saved locally and will sync when connection is restored.`;
+            console.warn('Local browser storage quota issue while loading. Falling back to existing local data.');
           }
-          
-          // Show user-friendly error message
-          alert(errorMessage);
           
           // Fallback to localStorage
           const localReflections = localStorage.getItem('reflections');
@@ -1460,7 +1462,7 @@ Need help? Check the console for any error messages.`;
           }
           
           // Also save to localStorage for offline access
-          localStorage.setItem('reflections', JSON.stringify(reflections));
+          saveReflectionsToLocalStorageSafely();
           
           // Clear form and go back
           currentImage = "";
@@ -1665,6 +1667,19 @@ Need help? Check the console for any error messages.`;
       }
       
       list.innerHTML = '';
+
+      // Try to reduce memory pressure by stripping images if cache is too large
+      try {
+        // Attempt to serialize; if it fails due to size, trim images
+        JSON.stringify(reflections);
+      } catch (_) {
+        for (let i = reflections.length - 1; i >= 0; i--) {
+          if (reflections[i] && reflections[i].image) {
+            reflections[i] = { ...reflections[i], image: '' };
+          }
+        }
+        saveReflectionsToLocalStorageSafely();
+      }
       
       if (!reflections || reflections.length === 0) {
         list.innerHTML = '<p>No reflections yet. Start journaling to see them here!</p>';
@@ -1768,7 +1783,7 @@ Need help? Check the console for any error messages.`;
           
           // Update localStorage immediately
           try {
-            localStorage.setItem('reflections', JSON.stringify(reflections));
+            saveReflectionsToLocalStorageSafely();
             console.log('Updated reflections in localStorage');
           } catch (localErr) {
             console.error('Error updating localStorage:', localErr);
