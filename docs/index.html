@@ -734,6 +734,8 @@
       <button class="button" onclick="debugReflections()" style="background: var(--accent-secondary);">Debug Journals</button>
       <button class="button" onclick="checkLocalStorage()" style="background: var(--accent-tertiary);">Check Storage</button>
       <button class="button" onclick="clearOldImages()" style="background: var(--accent-primary);">Clear Old Images</button>
+      <button class="button" onclick="exportJournals()" style="background: var(--accent-secondary);">Export Journals</button>
+      <button class="button" onclick="aggressiveCleanup()" style="background: #dc2626; color: white;">Free More Space</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -1907,6 +1909,85 @@ Need help? Check the console for any error messages.`;
         }
       } else {
         alert('No old images found to clear.\n\nOnly the 3 most recent journals keep their images.');
+      }
+    }
+
+    function exportJournals() {
+      if (!reflections || reflections.length === 0) {
+        alert('No journals to export.');
+        return;
+      }
+      
+      // Create export data
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        totalJournals: reflections.length,
+        journals: reflections.map((journal, index) => ({
+          number: index + 1,
+          title: journal.title || 'Untitled',
+          content: journal.reflection || '',
+          date: journal.date || journal.createdAt || 'No date',
+          hasImage: !!(journal.image && journal.image.length > 0)
+        }))
+      };
+      
+      // Create downloadable file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `my-journals-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      alert(`✅ Exported ${reflections.length} journals\n\nFile saved as: ${link.download}\n\nYou can now safely clear old journals to free up space.`);
+    }
+
+    function aggressiveCleanup() {
+      if (!reflections || reflections.length === 0) {
+        alert('No journals to process.');
+        return;
+      }
+      
+      const originalCount = reflections.length;
+      let spaceSaved = 0;
+      let imagesCleared = 0;
+      
+      // Clear ALL images from journals older than the 2 most recent
+      for (let i = 2; i < reflections.length; i++) {
+        if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
+          spaceSaved += reflections[i].image.length;
+          reflections[i] = { ...reflections[i], image: '' };
+          imagesCleared++;
+        }
+      }
+      
+      // Also clear any other localStorage data that might be taking space
+      try {
+        // Clear backup if it exists (we'll recreate it)
+        localStorage.removeItem('reflections_backup');
+        
+        // Clear any other app data
+        const keysToCheck = ['lastQuotaError', 'dailyUsage', 'failedDeletions'];
+        keysToCheck.forEach(key => {
+          if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Save the cleaned reflections
+        saveReflectionsToLocalStorageSafely();
+        
+        const spaceSavedKB = Math.round(spaceSaved / 1024);
+        alert(`✅ Aggressive cleanup completed!\n\n• Cleared ${imagesCleared} images\n• Removed backup data\n• Cleared app cache\n• Saved ~${spaceSavedKB} KB\n\nYour ${originalCount} journals are preserved with only the 2 most recent keeping their images.`);
+        
+      } catch (e) {
+        alert(`❌ Error during cleanup: ${e.message}\n\nTry exporting your journals first as a backup.`);
       }
     }
 
