@@ -738,6 +738,7 @@
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
+          <button id="migrate-to-cloud-btn" onclick="manualMigrateToCloud()" style="display: none;">Migrate to Cloud</button>
   </div>
   <script>
     // Firebase configuration
@@ -1554,6 +1555,151 @@ Need help? Check the console for any error messages.`;
       }
     }
 
+    // Manual migration function to move all current journals to Firebase
+    async function manualMigrateToCloud() {
+      if (!currentUser) {
+        alert('❌ Please sign in first to migrate your journals to cloud storage.');
+        return;
+      }
+
+      try {
+        // Collect all journals from various sources
+        const allJournals = [];
+        
+        // 1. Get journals from main localStorage
+        const mainReflections = localStorage.getItem('reflections');
+        if (mainReflections) {
+          try {
+            const parsed = JSON.parse(mainReflections);
+            if (Array.isArray(parsed)) {
+              allJournals.push(...parsed);
+              console.log(`Found ${parsed.length} journals in main storage`);
+            }
+          } catch (e) {
+            console.warn('Could not parse main reflections:', e);
+          }
+        }
+
+        // 2. Get journals from all backup sources
+        const backupKeys = [
+          'reflections_backup_1',
+          'reflections_backup_2', 
+          'reflections_emergency',
+          'reflections_backup'
+        ];
+        
+        // Check for timestamped backups
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('reflections_backup_') && !backupKeys.includes(key)) {
+            backupKeys.push(key);
+          }
+        }
+
+        for (const backupKey of backupKeys) {
+          const backup = localStorage.getItem(backupKey);
+          if (backup) {
+            try {
+              const parsed = JSON.parse(backup);
+              if (Array.isArray(parsed)) {
+                // Add journals that aren't already in the main list
+                parsed.forEach(backupJournal => {
+                  const exists = allJournals.some(journal => 
+                    journal.title === backupJournal.title && 
+                    journal.date === backupJournal.date
+                  );
+                  if (!exists) {
+                    allJournals.push(backupJournal);
+                  }
+                });
+                console.log(`Found additional journals in ${backupKey}`);
+              }
+            } catch (e) {
+              console.warn(`Could not parse backup ${backupKey}:`, e);
+            }
+          }
+        }
+
+        if (allJournals.length === 0) {
+          alert('📝 No journals found to migrate.\n\nYour journals may already be in cloud storage, or you may not have any journals yet.');
+          return;
+        }
+
+        // Show confirmation dialog
+        const confirmMessage = `🔄 Migrate to Cloud Storage\n\nFound ${allJournals.length} journals to migrate to Firebase cloud storage.\n\nThis will:\n• Upload all journals to cloud storage\n• Clear local storage to free up space\n• Make your journals accessible from any device\n\nContinue with migration?`;
+        
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        // Show progress
+        alert(`🔄 Starting Migration...\n\nMigrating ${allJournals.length} journals to Firebase cloud storage...\n\nThis may take a moment. Please don't close the app.`);
+
+        let migratedCount = 0;
+        let errorCount = 0;
+
+        // Upload each journal to Firebase
+        for (const journal of allJournals) {
+          const reflectionData = {
+            userId: currentUser.id,
+            title: journal.title || 'Untitled',
+            reflection: journal.reflection || '',
+            date: journal.date || journal.createdAt || new Date().toISOString(),
+            image: journal.image || null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          try {
+            await db.collection('reflections').add(reflectionData);
+            migratedCount++;
+            console.log(`✅ Migrated: ${journal.title}`);
+          } catch (error) {
+            errorCount++;
+            console.error(`❌ Failed to migrate: ${journal.title}`, error);
+          }
+        }
+
+        // Clear localStorage after successful migration
+        if (migratedCount > 0) {
+          try {
+            // Keep only essential data
+            const keysToKeep = ['offline_cache', 'theme', 'lastQuotaError'];
+            const keysToRemove = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && !keysToKeep.includes(key) && !key.startsWith('image_backup_')) {
+                keysToRemove.push(key);
+              }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            console.log(`Cleared ${keysToRemove.length} localStorage keys`);
+          } catch (e) {
+            console.warn('Could not clear localStorage:', e);
+          }
+        }
+
+        // Reload reflections from Firebase
+        await loadReflections();
+
+        // Show results
+        let resultMessage = `✅ Migration Complete!\n\nSuccessfully migrated ${migratedCount} journals to Firebase cloud storage.`;
+        
+        if (errorCount > 0) {
+          resultMessage += `\n\n⚠️ ${errorCount} journals failed to migrate (check console for details).`;
+        }
+
+        resultMessage += `\n\n• Your journals are now safely stored in the cloud\n• No more storage quota issues\n• Access your journals from any device\n• Your data is automatically backed up\n• Browser storage has been cleared to free up space`;
+
+        alert(resultMessage);
+
+      } catch (error) {
+        console.error('Migration error:', error);
+        alert(`❌ Migration Failed\n\nError: ${error.message}\n\nPlease try again or check the console for details.`);
+      }
+    }
+
     // Migrate existing local data to user account
     async function migrateLocalData() {
       if (!currentUser) {
@@ -2266,7 +2412,7 @@ Need help? Check the console for any error messages.`;
           reflections = parsed.reflections;
           saveReflectionsToLocalStorageSafely();
           alert(`✅ Restored ${reflections.length} journals from backup: ${selectedKey}\n\nYour journals have been restored successfully!`);
-          refreshHistoryDisplay();
+        refreshHistoryDisplay();
         } else {
           alert('❌ Selected backup is corrupted or empty.');
         }
@@ -3037,11 +3183,13 @@ Need help? Check the console for any error messages.`;
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
+        document.getElementById('migrate-to-cloud-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
+        document.getElementById('migrate-to-cloud-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
       
@@ -3219,7 +3367,7 @@ Need help? Check the console for any error messages.`;
               await migrateLocalData();
               await loadReflections();
             } else {
-              showMainScreen();
+            showMainScreen();
               
               // Migrate local data to Firebase first, then load
               await migrateLocalData();
