@@ -1185,9 +1185,25 @@
           return;
         }
         
-        // Sign in with Google
+        // Sign in with Google - try popup first, fallback to redirect if needed
         const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await auth.signInWithPopup(provider);
+        let result;
+        
+        try {
+          // Try popup first (preferred for better UX)
+          result = await auth.signInWithPopup(provider);
+        } catch (popupError) {
+          // If popup fails due to sessionStorage issues, try redirect
+          if (popupError.message.includes('sessionStorage') || 
+              popupError.message.includes('Unable to process request') ||
+              popupError.message.includes('missing initial state')) {
+            console.log('Popup failed due to sessionStorage, trying redirect...');
+            await auth.signInWithRedirect(provider);
+            return; // Redirect will handle the rest
+          } else {
+            throw popupError; // Re-throw other errors
+          }
+        }
         
         // User signed in successfully
         currentUser = {
@@ -1218,6 +1234,10 @@
           errorMessage += 'Domain not authorized. Please add localhost to Firebase authorized domains.';
         } else if (error.code === 'auth/operation-not-allowed') {
           errorMessage += 'Google sign-in not enabled. Please enable it in Firebase console.';
+        } else if (error.message.includes('sessionStorage') || 
+                   error.message.includes('Unable to process request') ||
+                   error.message.includes('missing initial state')) {
+          errorMessage += 'Browser storage issue. Please try refreshing the page or use a different browser.';
         } else {
           errorMessage += error.message;
         }
@@ -2736,7 +2756,18 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     // Initialize Firebase Auth
     async function initFirebaseAuth() {
       try {
-        // Check for existing session
+        // Check for redirect result first (in case user just came back from redirect)
+        try {
+          const result = await auth.getRedirectResult();
+          if (result.user) {
+            console.log('User signed in via redirect:', result.user);
+            // The onAuthStateChanged will handle the rest
+          }
+        } catch (redirectError) {
+          console.log('No redirect result or error:', redirectError);
+        }
+        
+        // Check for existing session with error handling
         auth.onAuthStateChanged((user) => {
           if (user) {
             // User is signed in
@@ -2767,6 +2798,16 @@ Continue journaling - your spiritual journey is safe! 🌟`;
           } else {
             // User is signed out
             console.log('No Firebase user signed in');
+            showAuthScreen();
+          }
+        }, (error) => {
+          console.error('Auth state change error:', error);
+          // Handle sessionStorage errors gracefully
+          if (error.code === 'auth/storage-unsupported' || 
+              error.message.includes('sessionStorage') ||
+              error.message.includes('Unable to process request') ||
+              error.message.includes('missing initial state')) {
+            console.log('SessionStorage issue detected, showing auth screen');
             showAuthScreen();
           }
         });
