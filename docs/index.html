@@ -786,30 +786,6 @@
       }
     }
     
-    function initializeSupabase() {
-      if (typeof window.supabase === 'undefined') {
-        console.error('Supabase library not loaded');
-        return false;
-      }
-      
-      const supabaseUrl = 'https://ccdbajqwlwgduilomlmq.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZGJhanF3bHdnZHVpbG9tbG1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM0ODIsImV4cCI6MjA3MTk4OTQ4Mn0.Aa9mHZOgL1-EZjn1r_AYbharWttMhVV5zL19x0abnvU';
-      
-      try {
-        supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true
-          }
-        });
-        console.log('Supabase client initialized successfully');
-        return true;
-      } catch (error) {
-        console.error('Failed to initialize Supabase client:', error);
-        return false;
-      }
-    }
 
     let recognition;
     let reflections = [];
@@ -962,132 +938,26 @@
 
     // Handle user signup
     async function handleSignup() {
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value.trim();
       const message = document.getElementById('auth-message');
-      
-      if (!email || !password) {
-        message.textContent = 'Please enter both email and password.';
-        message.style.display = 'block';
-        return;
-      }
-      
-      if (password.length < 6) {
-        message.textContent = 'Password must be at least 6 characters long.';
-        message.style.display = 'block';
-        return;
-      }
-      
-      try {
-        message.textContent = 'Creating account...';
-        message.style.display = 'block';
-        
-        const { data, error } = await supabase.auth.signUp({
-          email: email,
-          password: password,
-          options: {
-            emailRedirectTo: `${window.location.origin}${window.location.pathname}`
-          }
-        });
-        
-        if (error) {
-          console.error('Signup error details:', error);
-          message.textContent = `Error: ${error.message}`;
-          return;
-        }
-        
-        console.log('Signup response:', data);
-        
-        if (data.user && !data.user.email_confirmed_at) {
-          message.textContent = 'Account created! Please check your email (including spam folder) to confirm your account.';
-          message.style.color = 'var(--accent-primary)';
-          message.style.fontSize = '0.9rem';
-        } else {
-          message.textContent = 'Account created successfully!';
-          message.style.color = 'var(--accent-primary)';
-          // Auto-login if email confirmation is not required
-          currentUser = data.user;
-          showMainScreen();
-          await loadReflections();
-        }
-        
-      } catch (err) {
-        console.error('Signup error:', err);
-        message.textContent = 'An error occurred. Please try again.';
-      }
+      message.textContent = 'Email/password signup is not available. Please use Google Sign-In instead.';
+      message.style.display = 'block';
+      message.style.color = '#ff6b6b';
     }
 
     // Handle user login
     async function handleLogin() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value.trim();
       const message = document.getElementById('auth-message');
-      
-      if (!email || !password) {
-        message.textContent = 'Please enter both email and password.';
-        message.style.display = 'block';
-        return;
-      }
-      
-      try {
-        message.textContent = 'Signing in...';
-        message.style.display = 'block';
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-        
-        if (error) {
-          message.textContent = `Error: ${error.message}`;
-          return;
-        }
-        
-        currentUser = data.user;
-        message.textContent = 'Signed in successfully!';
-        message.style.color = 'var(--accent-primary)';
-        
-        // Show main screen and load reflections
-        showMainScreen();
-        await loadReflections();
-        
-      } catch (err) {
-        console.error('Login error:', err);
-        message.textContent = 'An error occurred. Please try again.';
-      }
+      message.textContent = 'Email/password login is not available. Please use Google Sign-In instead.';
+      message.style.display = 'block';
+      message.style.color = '#ff6b6b';
     }
 
     // Handle forgot password
     async function handleForgotPassword() {
-      const email = document.getElementById('login-email').value.trim();
       const message = document.getElementById('auth-message');
-      
-      if (!email) {
-        message.textContent = 'Please enter your email address first.';
-        message.style.display = 'block';
-        return;
-      }
-      
-      try {
-        message.textContent = 'Sending password reset email...';
-        message.style.display = 'block';
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}${window.location.pathname}`
-        });
-        
-        if (error) {
-          message.textContent = `Error: ${error.message}`;
-          return;
-        }
-        
-        message.textContent = 'Password reset email sent! Check your inbox.';
-        message.style.color = 'var(--accent-primary)';
-        
-      } catch (err) {
-        console.error('Password reset error:', err);
-        message.textContent = 'An error occurred. Please try again.';
-      }
+      message.textContent = 'Password reset is not available. Please use Google Sign-In instead.';
+      message.style.display = 'block';
+      message.style.color = '#ff6b6b';
     }
 
     // OAuth functions removed - focusing on working authentication methods
@@ -1372,36 +1242,7 @@ Need help? Check the console for any error messages.`;
       alert('✨ Clerk Setup:\n\n1. Go to https://clerk.com\n2. Create a free account\n3. Create a new application\n4. Copy the publishable key\n5. Add it to your app\n\nClerk has beautiful pre-built components!');
     }
 
-    function setupSupabase() {
-      alert('🐘 Supabase Setup:\n\nYou\'re already using Supabase!\n\nTo fix email issues:\n1. Go to Authentication → Settings\n2. Turn OFF "Enable email confirmations"\n3. Users can sign in immediately\n\nOr configure SMTP for email sending.');
-    }
 
-    function showQuotaInfo() {
-      const quotaInfo = `📊 Firebase Quota Information:
-
-🆓 FREE TIER LIMITS:
-• 50,000 reads per day
-• 20,000 writes per day
-• 1GB storage
-• 10GB bandwidth
-
-⚠️ QUOTA EXCEEDED?
-Your data is SAFE! It's saved locally and will sync when quota resets.
-
-💡 SOLUTIONS:
-1. Wait for daily quota reset (usually midnight UTC)
-2. Upgrade to Firebase Blaze plan ($25/month)
-3. Continue using app - data syncs automatically when quota resets
-
-✅ YOUR DATA IS PROTECTED:
-• All journals saved locally
-• Automatic sync when quota resets
-• No data loss
-
-Continue journaling - your spiritual journey is safe! 🌟`;
-      
-      alert(quotaInfo);
-    }
 
     // Handle sign out
     async function handleSignOut() {
@@ -1409,12 +1250,6 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         if (currentUser && currentUser.isFirebase && auth) {
           // Firebase sign out - this will clear the session and allow account switching
           await auth.signOut();
-        } else if (currentUser && currentUser.isSupabase && supabase) {
-          // Supabase sign out
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            console.error('Sign out error:', error);
-          }
         }
         
         // Clear all user data
@@ -1451,8 +1286,8 @@ Continue journaling - your spiritual journey is safe! 🌟`;
     async function migrateLocalData() {
       if (!currentUser) {
         console.log('No user logged in for migration');
-          return;
-        }
+        return;
+      }
 
       try {
         // Check for existing local reflections
@@ -1468,12 +1303,11 @@ Continue journaling - your spiritual journey is safe! 🌟`;
           return;
         }
 
-        console.log('Migrating', localData.length, 'local reflections to user account');
+        console.log('Migrating', localData.length, 'local reflections to Firebase');
 
-        // Upload each local reflection to the database
+        // Upload each local reflection to Firebase
         for (const reflection of localData) {
           const reflectionData = {
-            user_id: currentUser.id,
             title: reflection.title,
             reflection: reflection.reflection,
             date: reflection.date,
@@ -1481,15 +1315,11 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             created_at: reflection.created_at || new Date().toISOString()
           };
 
-          const { data, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select();
-
-          if (error) {
-            console.error('Error migrating reflection:', error);
-        } else {
+          try {
+            await db.collection('reflections').add(reflectionData);
             console.log('Successfully migrated reflection:', reflection.title);
+          } catch (error) {
+            console.error('Error migrating reflection:', error);
           }
         }
 
@@ -1824,114 +1654,6 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       }
     }
 
-    async function syncReflections() {
-      if (!user) {
-        alert('Please log in to sync reflections.');
-        return;
-      }
-      
-      try {
-        console.log('Starting cloud sync...');
-        
-        // Get local reflections
-        const localReflections = localStorage.getItem('reflections');
-        const localData = localReflections ? JSON.parse(localReflections) : [];
-        console.log('Local reflections:', localData.length);
-        
-        // Create a unique cloud user ID based on email
-        const cloudUserId = 'cloud_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
-        console.log('Cloud user ID:', cloudUserId);
-        
-        // Get cloud reflections using the cloud user ID
-        const { data: dbData, error: dbError } = await supabase
-          .from('reflections')
-          .select('*')
-          .eq('user_id', cloudUserId)
-          .order('created_at', { ascending: false });
-        
-        if (dbError) {
-          console.error('Database error:', dbError);
-          alert('Connection error. Please check your internet connection.');
-          return;
-        }
-        
-        const dbReflections = dbData || [];
-        console.log('Cloud reflections:', dbReflections.length);
-        
-        // Upload local reflections that don't exist in cloud
-        let uploadedCount = 0;
-        for (const localReflection of localData) {
-          const existsInCloud = dbReflections.some(dbReflection => 
-            dbReflection.title === localReflection.title && 
-            dbReflection.date === localReflection.date &&
-            dbReflection.reflection === localReflection.reflection
-          );
-          
-          if (!existsInCloud) {
-            console.log('Uploading:', localReflection.title);
-            const { error } = await supabase
-              .from('reflections')
-              .insert([{
-                user_id: cloudUserId,
-                title: localReflection.title,
-                reflection: localReflection.reflection,
-                date: localReflection.date,
-                image: localReflection.image,
-                created_at: localReflection.created_at || new Date().toISOString()
-              }]);
-            
-            if (!error) {
-              uploadedCount++;
-              console.log('Successfully uploaded:', localReflection.title);
-            } else {
-              console.error('Failed to upload:', localReflection.title, error);
-            }
-          }
-        }
-        
-        // Download cloud reflections that don't exist locally
-        let downloadedCount = 0;
-        for (const dbReflection of dbReflections) {
-          const existsLocally = localData.some(localReflection => 
-            localReflection.title === dbReflection.title && 
-            localReflection.date === dbReflection.date &&
-            localReflection.reflection === dbReflection.reflection
-          );
-          
-          if (!existsLocally) {
-            console.log('Downloading:', dbReflection.title);
-            localData.push(dbReflection);
-            downloadedCount++;
-          }
-        }
-        
-        // Update local storage and display
-        reflections = localData;
-        localStorage.setItem('reflections', JSON.stringify(reflections));
-        refreshHistoryDisplay();
-        
-        // Show results
-        let message = 'Sync completed!\n';
-        if (uploadedCount > 0) {
-          message += `📤 Uploaded ${uploadedCount} reflections\n`;
-        }
-        if (downloadedCount > 0) {
-          message += `📥 Downloaded ${downloadedCount} reflections\n`;
-        }
-        if (uploadedCount === 0 && downloadedCount === 0) {
-          message += '✨ All reflections are in sync!';
-        }
-        
-        message += `\n\n💡 To access on other devices:\n1. Open the app on other device\n2. Sign up with email: ${user.email}\n3. Click "🔄 Sync" to download your journals`;
-        
-        alert(message);
-        console.log('Sync completed successfully');
-        
-      } catch (err) {
-        console.error('Sync error:', err);
-        alert('Sync failed. Please try again.');
-      }
-    }
 
     function refreshHistoryDisplay() {
       console.log('Refreshing history display with', reflections.length, 'reflections');
@@ -2649,78 +2371,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
 
 
 
-    // Test Supabase connection
-    async function testSupabaseConnection() {
-      try {
-        // Test basic auth connection instead of database table
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Supabase connection test failed:', error);
-          return false;
-        }
-        console.log('Supabase connection successful');
-        return true;
-      } catch (err) {
-        console.error('Supabase connection error:', err);
-        return false;
-      }
-    }
 
-    // Test email configuration
-    async function testEmailConfig() {
-      const message = document.getElementById('auth-message');
-      
-      try {
-        message.textContent = 'Testing email configuration...';
-        message.style.display = 'block';
-        
-        // Test with a dummy email to see if email confirmation is enabled
-        const testEmail = 'test@example.com';
-        
-        const { data, error } = await supabase.auth.signUp({
-          email: testEmail,
-          password: 'testpassword123',
-          options: {
-            emailRedirectTo: `${window.location.origin}${window.location.pathname}`
-          }
-        });
-        
-        if (error) {
-          console.error('Email test error:', error);
-          
-          let errorMessage = `Email Configuration Test:\n\n`;
-          
-          if (error.message.includes('email confirmation')) {
-            errorMessage += `✅ Email confirmation is ENABLED\n`;
-            errorMessage += `❌ But emails are not being sent\n\n`;
-            errorMessage += `SOLUTION:\n`;
-            errorMessage += `1. Go to Supabase Dashboard\n`;
-            errorMessage += `2. Authentication → Settings\n`;
-            errorMessage += `3. Configure SMTP settings\n`;
-            errorMessage += `4. Or disable email confirmation temporarily`;
-          } else if (error.message.includes('already registered')) {
-            errorMessage += `✅ Email system is working\n`;
-            errorMessage += `✅ Email confirmation is enabled\n`;
-            errorMessage += `The test email already exists (this is good!)`;
-          } else {
-            errorMessage += `Error: ${error.message}`;
-          }
-          
-          alert(errorMessage);
-          return;
-        }
-        
-        if (data.user && !data.user.email_confirmed_at) {
-          alert(`✅ Email Configuration Test:\n\nEmail confirmation is ENABLED\nEmails should be sent to: ${testEmail}\n\nCheck your email (including spam folder)`);
-        } else {
-          alert(`✅ Email Configuration Test:\n\nEmail confirmation is DISABLED\nUsers can sign in immediately without email verification`);
-        }
-        
-      } catch (err) {
-        console.error('Email test error:', err);
-        alert(`Email Test Error: ${err.message}`);
-      }
-    }
 
 
     // Initialize auth state - Firebase only
