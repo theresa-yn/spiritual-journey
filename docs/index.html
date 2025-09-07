@@ -738,6 +738,7 @@
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
           <button id="quota-info-btn" onclick="showQuotaInfo()" style="display: none;">Quota Info</button>
+          <button id="test-connection-btn" onclick="testConnection()" style="display: none;">Test Connection</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
         </div>
   <script>
@@ -2198,6 +2199,53 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         quotaStatus.style.display = 'none';
       }
     }
+    
+    // Function to test Firebase connection and detect upgrade status
+    async function testFirebaseConnection() {
+      try {
+        if (!db) {
+          console.log('Firebase not initialized');
+          return false;
+        }
+        
+        // Try a simple read operation to test connection
+        const testDoc = await db.collection('test').doc('connection').get();
+        console.log('Firebase connection test successful');
+        return true;
+      } catch (error) {
+        console.log('Firebase connection test failed:', error);
+        if (error.code === 'resource-exhausted') {
+          console.log('Quota still exceeded - upgrade may not be active yet');
+        }
+        return false;
+      }
+    }
+    
+    // Test connection function for user
+    async function testConnection() {
+      const button = document.getElementById('test-connection-btn');
+      const originalText = button.textContent;
+      
+      button.textContent = 'Testing...';
+      button.disabled = true;
+      
+      try {
+        const isConnected = await testFirebaseConnection();
+        
+        if (isConnected) {
+          alert('✅ Connection Test Successful!\n\nFirebase is working properly. The quota issue may be resolved.');
+          // Clear quota error if connection works
+          localStorage.removeItem('lastQuotaError');
+        } else {
+          alert('❌ Connection Test Failed\n\nFirebase quota is still exceeded. The Blaze upgrade may still be processing.\n\nTry again in 10-15 minutes.');
+        }
+      } catch (error) {
+        alert(`⚠️ Connection Test Error\n\nError: ${error.message}\n\nThis might indicate the upgrade is still processing.`);
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
 
     // Theme switching functions
     function toggleTheme() {
@@ -2493,12 +2541,14 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
         document.getElementById('quota-info-btn').style.display = 'block';
+        document.getElementById('test-connection-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
         document.getElementById('quota-info-btn').style.display = 'none';
+        document.getElementById('test-connection-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
@@ -2546,6 +2596,13 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         message += `• Check for auto-refresh loops\n`;
         message += `• Monitor user activity patterns\n\n`;
       }
+      
+      message += `🔍 Troubleshooting (Blaze Upgrade):\n`;
+      message += `• Clear browser cache completely\n`;
+      message += `• Check Firebase Console billing status\n`;
+      message += `• Wait 10-15 min for upgrade propagation\n`;
+      message += `• Try incognito/private browsing mode\n`;
+      message += `• Force refresh (Ctrl+F5 or Cmd+Shift+R)\n\n`;
       
       message += `💡 Solutions:\n`;
       message += `• Wait for daily reset\n`;
