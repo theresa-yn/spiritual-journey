@@ -1367,13 +1367,13 @@ Need help? Check the console for any error messages.`;
             userId: currentUser.id
           });
           
-          // Handle specific error types
+          // Handle specific error types (only show quota when Firestore explicitly reports it)
           let errorMessage = '';
-          if (error.code === 'resource-exhausted' || error.message.includes('quota')) {
-            // Store quota error timestamp
+          if (error && (error.code === 'resource-exhausted' || error.code === 'permission-denied:RESOURCE_EXHAUSTED')) {
+            // Store quota error timestamp only for explicit quota errors
             localStorage.setItem('lastQuotaError', Date.now().toString());
             
-            errorMessage = `📊 Firebase Quota Issue\n\nThere's a temporary quota issue. This might be due to:\n\n• Firebase upgrade still processing (wait 10-15 minutes)\n• Browser cache needs clearing\n• Billing setup in progress\n\n✅ Your journals are still saved locally and will sync when resolved.\n\n💡 Solutions:\n• Clear browser cache and refresh\n• Wait 10-15 minutes for upgrade to complete\n• Check Firebase Console billing status\n• Continue using (your data is safe locally)\n\n🔄 Your reflection has been saved locally and will sync automatically when resolved.`;
+            errorMessage = `📊 Firebase Quota Exceeded\n\nYour Firebase quota has been reached.\n\n✅ Your journals are saved locally and will sync when quota resets.\n\n💡 Tip: If you just upgraded, wait a bit for propagation.`;
           } else if (error.code === 'permission-denied') {
             errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`;
           } else if (error.code === 'unavailable') {
@@ -1486,10 +1486,10 @@ Need help? Check the console for any error messages.`;
           saveButton.disabled = false;
           saveButton.textContent = 'Save Reflection';
           
-          // Handle specific error types
+          // Handle specific error types (only show quota when Firestore explicitly reports it)
           let errorMessage = '';
-          if (error.code === 'resource-exhausted' || error.message.includes('quota')) {
-            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached.\n\n✅ Your journal has been saved locally and will sync when quota resets.\n\n💡 Your data is safe! Continue journaling - it will sync later.`;
+          if (error && (error.code === 'resource-exhausted' || error.code === 'permission-denied:RESOURCE_EXHAUSTED')) {
+            errorMessage = `📊 Firebase Quota Exceeded\n\nYour Firebase quota has been reached.\n\n✅ Your journal has been saved locally and will sync when quota resets.`;
           } else if (error.code === 'permission-denied') {
             errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journal has been saved locally and will sync when fixed.`;
           } else if (error.code === 'unavailable') {
