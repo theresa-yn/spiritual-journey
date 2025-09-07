@@ -739,6 +739,7 @@
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
           <button id="quota-info-btn" onclick="showQuotaInfo()" style="display: none;">Quota Info</button>
           <button id="test-connection-btn" onclick="testConnection()" style="display: none;">Test Connection</button>
+          <button id="reset-quota-btn" onclick="resetUserQuotaState()" style="display: none;">Reset Quota State</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
         </div>
   <script>
@@ -1968,6 +1969,21 @@ Need help? Check the console for any error messages.`;
         button.disabled = false;
       }
     }
+    
+    // Reset user quota state function
+    function resetUserQuotaState() {
+      // Clear all quota-related localStorage
+      localStorage.removeItem('lastQuotaError');
+      localStorage.removeItem('failedDeletions');
+      
+      // Clear daily usage counters
+      const today = new Date().toDateString();
+      localStorage.removeItem(`reads_${today}`);
+      localStorage.removeItem(`writes_${today}`);
+      localStorage.removeItem(`deletes_${today}`);
+      
+      alert('✅ User quota state reset!\n\nAll quota error tracking has been cleared. Try using the app again.');
+    }
 
     // Theme switching functions
     function toggleTheme() {
@@ -2264,6 +2280,7 @@ Need help? Check the console for any error messages.`;
         document.getElementById('past-reflections-btn').style.display = 'block';
         document.getElementById('quota-info-btn').style.display = 'block';
         document.getElementById('test-connection-btn').style.display = 'block';
+        document.getElementById('reset-quota-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
@@ -2271,6 +2288,7 @@ Need help? Check the console for any error messages.`;
         document.getElementById('past-reflections-btn').style.display = 'none';
         document.getElementById('quota-info-btn').style.display = 'none';
         document.getElementById('test-connection-btn').style.display = 'none';
+        document.getElementById('reset-quota-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
