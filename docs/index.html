@@ -919,7 +919,13 @@
 
     // Safely persist reflections to localStorage with comprehensive protection
     function saveReflectionsToLocalStorageSafely(protectIndex = null) {
-      // Always create backups before any save operation
+      // If user is signed in to Firebase, don't save to localStorage to avoid quota issues
+      if (currentUser && currentUser.isFirebase) {
+        console.log('User is signed in to Firebase, skipping localStorage save to avoid quota issues');
+        return true;
+      }
+      
+      // Always create backups before any save operation (only for non-Firebase users)
       createMultipleBackups();
       
       try {
@@ -1599,8 +1605,27 @@ Need help? Check the console for any error messages.`;
         await loadReflections();
         console.log('Data migration completed');
         
+        // Clear localStorage to free up space now that data is in Firebase
+        try {
+          // Keep only essential data, clear the rest
+          const keysToKeep = ['offline_cache', 'theme', 'lastQuotaError'];
+          const keysToRemove = [];
+          
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && !keysToKeep.includes(key) && !key.startsWith('image_backup_')) {
+              keysToRemove.push(key);
+            }
+          }
+          
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          console.log(`Cleared ${keysToRemove.length} localStorage keys to free up space`);
+        } catch (e) {
+          console.warn('Could not clear localStorage:', e);
+        }
+        
         // Show success message
-        alert(`✅ Cloud Sync Complete!\n\nSuccessfully migrated ${localData.length} journals to Firebase cloud storage.\n\n• Your journals are now safely stored in the cloud\n• No more storage quota issues\n• Access your journals from any device\n• Your data is automatically backed up`);
+        alert(`✅ Cloud Sync Complete!\n\nSuccessfully migrated ${localData.length} journals to Firebase cloud storage.\n\n• Your journals are now safely stored in the cloud\n• No more storage quota issues\n• Access your journals from any device\n• Your data is automatically backed up\n• Browser storage has been cleared to free up space`);
 
       } catch (err) {
         console.error('Error during data migration:', err);
@@ -1692,10 +1717,22 @@ Need help? Check the console for any error messages.`;
           
           console.log('Loaded', reflections.length, 'reflections from Firebase');
           
-          // Also save to localStorage for offline access (protect newest index 0)
-          saveReflectionsToLocalStorageSafely(0);
-          // Create a backup
-          backupReflections();
+          // For Firebase users, only keep minimal data in localStorage for offline access
+          // Don't save full reflections to avoid quota issues
+          try {
+            // Only save a minimal offline cache (last 3 reflections without images)
+            const offlineCache = reflections.slice(0, 3).map(reflection => ({
+              id: reflection.id,
+              title: reflection.title,
+              date: reflection.date,
+              // Don't include images or full text to save space
+            }));
+            localStorage.setItem('offline_cache', JSON.stringify(offlineCache));
+            console.log('Created minimal offline cache');
+          } catch (e) {
+            console.warn('Could not create offline cache:', e);
+            // Don't show error to user - Firebase is primary storage
+          }
           return;
         } catch (error) {
           console.error('Error loading Firebase reflections:', error);
@@ -2240,6 +2277,12 @@ Need help? Check the console for any error messages.`;
 
     // Proactive storage monitoring
     function checkStorageHealth() {
+      // If user is signed in to Firebase, don't check localStorage quota
+      if (currentUser && currentUser.isFirebase) {
+        console.log('User is signed in to Firebase, skipping localStorage quota check');
+        return 0; // No quota issues for Firebase users
+      }
+      
       try {
         // Test if we can still write to localStorage
         const testData = 'storage_test_' + Date.now();
