@@ -791,7 +791,6 @@
     let editingIndex = null;
     let user = null;
     let currentTheme = 'dark'; // Default theme
-    let lastQuoteIndex = -1; // Track last quote to avoid repetition
 
     // Backup reflections to a secondary key with timestamp
     function backupReflections() {
@@ -911,6 +910,13 @@
 
     // Create shuffled quotes array
     const quotes = shuffleArray(originalQuotes);
+    
+    // Set initial quote immediately after quotes array is created
+    let lastQuoteIndex = 0;
+    if (document.getElementById('quote')) {
+      document.getElementById('quote').textContent = quotes[0];
+    }
+    
     const originalJournalQuestions = [
       "What moment today felt like a gift from the universe?",
       "How did you find peace in a challenging situation?",
@@ -926,11 +932,6 @@
       return journalQuestions[Math.floor(Math.random() * journalQuestions.length)];
     }
 
-    function setInitialQuote() {
-      // Set the first quote from the shuffled array
-      document.getElementById('quote').textContent = quotes[0];
-      lastQuoteIndex = 0;
-    }
 
     function newQuote() {
       let randomIndex;
@@ -2512,9 +2513,6 @@ Need help? Check the console for any error messages.`;
       
       setInterval(updateDateTime, 1000);
       updateDateTime();
-      
-      // Set initial quote from shuffled array
-      setInitialQuote();
       
       // Auto-retry any failed deletions
       await autoRetryFailedDeletions();
