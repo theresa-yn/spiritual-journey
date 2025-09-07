@@ -1570,15 +1570,21 @@ Need help? Check the console for any error messages.`;
         }
 
         console.log('Migrating', localData.length, 'local reflections to Firebase');
+        
+        // Show user that migration is happening
+        if (localData.length > 0) {
+          alert(`🔄 Syncing to Cloud Storage\n\nMigrating ${localData.length} journals to Firebase cloud storage...\n\nThis may take a moment. Your data is safe!`);
+        }
 
         // Upload each local reflection to Firebase
         for (const reflection of localData) {
           const reflectionData = {
+            userId: currentUser.id, // Add userId for Firebase
             title: reflection.title,
             reflection: reflection.reflection,
             date: reflection.date,
             image: reflection.image,
-            created_at: reflection.created_at || new Date().toISOString()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp() // Use proper Firebase timestamp
           };
 
           try {
@@ -1592,6 +1598,9 @@ Need help? Check the console for any error messages.`;
         // Reload reflections from database
         await loadReflections();
         console.log('Data migration completed');
+        
+        // Show success message
+        alert(`✅ Cloud Sync Complete!\n\nSuccessfully migrated ${localData.length} journals to Firebase cloud storage.\n\n• Your journals are now safely stored in the cloud\n• No more storage quota issues\n• Access your journals from any device\n• Your data is automatically backed up`);
 
       } catch (err) {
         console.error('Error during data migration:', err);
@@ -3140,7 +3149,7 @@ Need help? Check the console for any error messages.`;
         }
         
         // Check for existing session with error handling
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
           if (user) {
             // User is signed in
             currentUser = {
@@ -3162,10 +3171,16 @@ Need help? Check the console for any error messages.`;
               document.getElementById('auth-screen').classList.add('hidden');
               document.getElementById('main-screen').classList.remove('hidden');
               document.getElementById('sign-out-btn').style.display = 'block';
-              loadReflections();
+              
+              // Migrate local data to Firebase first, then load
+              await migrateLocalData();
+              await loadReflections();
             } else {
-            showMainScreen();
-            loadReflections();
+              showMainScreen();
+              
+              // Migrate local data to Firebase first, then load
+              await migrateLocalData();
+              await loadReflections();
             }
           } else {
             // User is signed out
