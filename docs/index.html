@@ -808,16 +808,18 @@
     }
 
     // Safely persist reflections to localStorage, pruning if needed
-    function saveReflectionsToLocalStorageSafely() {
+    // protectIndex: the reflection index whose image/content must NOT be stripped
+    function saveReflectionsToLocalStorageSafely(protectIndex = null) {
       try {
         localStorage.setItem('reflections', JSON.stringify(reflections));
         return true;
       } catch (e) {
         const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22 || String(e).toLowerCase().includes('quota'));
         if (!isQuota) return false;
-        // Strip one image from newest-first
+        // Strip images from OLDEST first, avoid protected index
         if (Array.isArray(reflections)) {
-          for (let i = 0; i < reflections.length; i++) {
+          for (let i = reflections.length - 1; i >= 0; i--) {
+            if (protectIndex !== null && i === protectIndex) continue;
             if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
               reflections[i] = { ...reflections[i], image: '' };
               break;
@@ -825,12 +827,17 @@
           }
         }
         try {
-          saveReflectionsToLocalStorageSafely();
+          localStorage.setItem('reflections', JSON.stringify(reflections));
           return true;
         } catch (e2) {
           let attempts = 0;
           while (attempts < 10 && Array.isArray(reflections) && reflections.length > 0) {
-            reflections.pop();
+            // prune oldest entries, but never prune the protected one (if it's the oldest and there is more than one, remove second-oldest)
+            if (protectIndex !== null && reflections.length - 1 === protectIndex && reflections.length > 1) {
+              reflections.splice(reflections.length - 2, 1);
+            } else {
+              reflections.pop();
+            }
             attempts++;
             try {
               localStorage.setItem('reflections', JSON.stringify(reflections));
@@ -1405,8 +1412,8 @@ Need help? Check the console for any error messages.`;
           
           console.log('Loaded', reflections.length, 'reflections from Firebase');
           
-          // Also save to localStorage for offline access
-          saveReflectionsToLocalStorageSafely();
+          // Also save to localStorage for offline access (protect newest index 0)
+          saveReflectionsToLocalStorageSafely(0);
           // Create a backup
           backupReflections();
           return;
