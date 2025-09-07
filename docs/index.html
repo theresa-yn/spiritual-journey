@@ -664,6 +664,7 @@
   <div id="main-screen" class="content hidden screen-transition">
     <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
+    <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
     <div id="quote" class="prompt">The wound is the place where the light enters you. – Rumi</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
     <h2>My Spiritual Journey</h2>
@@ -736,6 +737,7 @@
         <div id="options-menu" class="options-menu">
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
+          <button id="quota-info-btn" onclick="showQuotaInfo()" style="display: none;">Quota Info</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
         </div>
   <script>
@@ -1516,7 +1518,10 @@ Continue journaling - your spiritual journey is safe! 🌟`;
           // Handle specific error types
           let errorMessage = '';
           if (error.code === 'resource-exhausted' || error.message.includes('quota')) {
-            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached. This is normal for active users.\n\n✅ Your journals are still saved locally and will sync when quota resets.\n\n💡 Solutions:\n• Wait for quota to reset (usually daily)\n• Upgrade to Firebase paid plan\n• Continue using local storage (your data is safe)`;
+            // Store quota error timestamp
+            localStorage.setItem('lastQuotaError', Date.now().toString());
+            
+            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached. This is normal for active users.\n\n✅ Your journals are still saved locally and will sync when quota resets.\n\n💡 Solutions:\n• Wait for quota to reset (usually daily)\n• Upgrade to Firebase paid plan\n• Continue using local storage (your data is safe)\n\n🔄 Your reflection has been saved locally and will sync automatically when quota resets.`;
           } else if (error.code === 'permission-denied') {
             errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`;
           } else if (error.code === 'unavailable') {
@@ -2116,16 +2121,46 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       }
     }
 
-    // Auto-retry failed deletions on page load
+    // Auto-retry failed deletions on page load (only if quota allows)
     async function autoRetryFailedDeletions() {
       try {
         const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
         if (failedDeletions.length > 0) {
           console.log('Found', failedDeletions.length, 'failed deletions, attempting auto-retry');
-          await retryFailedDeletions();
+          // Only retry if we haven't hit quota recently
+          const lastQuotaError = localStorage.getItem('lastQuotaError');
+          const now = Date.now();
+          if (!lastQuotaError || (now - parseInt(lastQuotaError)) > 3600000) { // 1 hour
+            await retryFailedDeletions();
+          } else {
+            console.log('Skipping auto-retry due to recent quota error');
+          }
         }
       } catch (err) {
         console.error('Error in auto-retry:', err);
+      }
+    }
+
+    // Check and display quota status
+    function checkQuotaStatus() {
+      const lastQuotaError = localStorage.getItem('lastQuotaError');
+      const quotaStatus = document.getElementById('quota-status');
+      
+      if (lastQuotaError) {
+        const now = Date.now();
+        const timeSinceError = now - parseInt(lastQuotaError);
+        const hoursSinceError = Math.floor(timeSinceError / 3600000);
+        
+        if (hoursSinceError < 24) {
+          quotaStatus.textContent = `📊 Firebase quota exceeded ${hoursSinceError}h ago. Your data is saved locally and will sync when quota resets.`;
+          quotaStatus.style.display = 'block';
+        } else {
+          // Quota should have reset, hide the message
+          quotaStatus.style.display = 'none';
+          localStorage.removeItem('lastQuotaError');
+        }
+      } else {
+        quotaStatus.style.display = 'none';
       }
     }
 
@@ -2422,16 +2457,51 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       if (currentUser) {
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
+        document.getElementById('quota-info-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
+        document.getElementById('quota-info-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
       
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function showQuotaInfo() {
+      const lastQuotaError = localStorage.getItem('lastQuotaError');
+      const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
+      
+      let message = '📊 Firebase Quota Information\n\n';
+      
+      if (lastQuotaError) {
+        const now = Date.now();
+        const timeSinceError = now - parseInt(lastQuotaError);
+        const hoursSinceError = Math.floor(timeSinceError / 3600000);
+        const minutesSinceError = Math.floor((timeSinceError % 3600000) / 60000);
+        
+        message += `⏰ Last quota exceeded: ${hoursSinceError}h ${minutesSinceError}m ago\n`;
+        message += `🔄 Quota resets: Usually every 24 hours\n\n`;
+      } else {
+        message += `✅ No recent quota issues\n\n`;
+      }
+      
+      message += `📈 Current Status:\n`;
+      message += `• Free tier: 50,000 reads/day\n`;
+      message += `• Free tier: 20,000 writes/day\n`;
+      message += `• Failed syncs: ${failedDeletions.length}\n\n`;
+      
+      message += `💡 Solutions:\n`;
+      message += `• Wait for daily reset\n`;
+      message += `• Upgrade to paid plan\n`;
+      message += `• Continue using (data saved locally)\n\n`;
+      
+      message += `✅ Your data is always safe in local storage!`;
+      
+      alert(message);
     }
 
     function copyShareLink() {
@@ -2625,6 +2695,9 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       
       // Auto-retry any failed deletions
       await autoRetryFailedDeletions();
+      
+      // Check quota status
+      checkQuotaStatus();
     }
     
     // Initialize Firebase Auth
