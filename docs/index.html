@@ -733,6 +733,7 @@
       <button class="button" onclick="goBack()">Back</button>
       <button class="button" onclick="debugReflections()" style="background: var(--accent-secondary);">Debug Journals</button>
       <button class="button" onclick="checkLocalStorage()" style="background: var(--accent-tertiary);">Check Storage</button>
+      <button class="button" onclick="clearOldImages()" style="background: var(--accent-primary);">Clear Old Images</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -816,36 +817,56 @@
       } catch (e) {
         const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22 || String(e).toLowerCase().includes('quota'));
         if (!isQuota) return false;
-        // Strip images from OLDEST first, avoid protected index
+        
+        console.warn('localStorage quota exceeded, attempting to free space...');
+        
+        // First, try stripping images from OLDEST entries (keep newest images)
         if (Array.isArray(reflections)) {
           for (let i = reflections.length - 1; i >= 0; i--) {
             if (protectIndex !== null && i === protectIndex) continue;
             if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
+              console.log(`Stripping image from reflection ${i}: ${reflections[i].title}`);
               reflections[i] = { ...reflections[i], image: '' };
               break;
             }
           }
         }
+        
         try {
           localStorage.setItem('reflections', JSON.stringify(reflections));
+          console.log('Successfully saved after stripping images');
           return true;
         } catch (e2) {
+          console.warn('Still quota exceeded after stripping images, pruning oldest entries...');
+          
+          // If still failing, we need to prune entries
+          // But instead of automatically deleting, let's be more conservative
           let attempts = 0;
-          while (attempts < 10 && Array.isArray(reflections) && reflections.length > 0) {
-            // prune oldest entries, but never prune the protected one (if it's the oldest and there is more than one, remove second-oldest)
-            if (protectIndex !== null && reflections.length - 1 === protectIndex && reflections.length > 1) {
-              reflections.splice(reflections.length - 2, 1);
-            } else {
-              reflections.pop();
+          const maxPruning = Math.min(3, Math.floor(reflections.length / 2)); // Never prune more than half
+          
+          while (attempts < maxPruning && Array.isArray(reflections) && reflections.length > 1) {
+            // Find the oldest entry that's not protected
+            let oldestIndex = reflections.length - 1;
+            if (protectIndex !== null && oldestIndex === protectIndex && reflections.length > 1) {
+              oldestIndex = reflections.length - 2;
             }
+            
+            const removedReflection = reflections.splice(oldestIndex, 1)[0];
+            console.warn(`Pruned oldest reflection: "${removedReflection.title}" (${removedReflection.date || removedReflection.createdAt})`);
+            
             attempts++;
             try {
               localStorage.setItem('reflections', JSON.stringify(reflections));
-              return true;
+              console.log(`Successfully saved after pruning ${attempts} entries`);
+        return true;
             } catch (_) {
               // keep pruning
             }
           }
+          
+          // If we still can't save, show a warning to the user
+          console.error('Unable to save reflections even after pruning. Storage may be severely limited.');
+          alert(`⚠️ Storage Warning\n\nYour browser storage is nearly full. Some older journals may not be saved.\n\nConsider:\n• Clearing browser cache\n• Signing in to sync to cloud storage\n• Exporting your journals`);
         return false;
         }
       }
@@ -1834,7 +1855,7 @@ Need help? Check the console for any error messages.`;
         } catch (e) {
           storageInfo += `Main storage: Error parsing - ${e.message}\n`;
         }
-      } else {
+            } else {
         storageInfo += 'Main storage: Empty\n';
       }
       
@@ -1851,11 +1872,42 @@ Need help? Check the console for any error messages.`;
         } catch (e) {
           storageInfo += `\nBackup storage: Error parsing - ${e.message}\n`;
         }
-      } else {
+            } else {
         storageInfo += '\nBackup storage: Empty\n';
       }
       
       alert(storageInfo);
+    }
+
+    function clearOldImages() {
+      if (!reflections || reflections.length === 0) {
+        alert('No journals to process.');
+        return;
+      }
+      
+      let imagesCleared = 0;
+      let spaceSaved = 0;
+      
+      // Clear images from all but the 3 most recent journals
+      for (let i = 3; i < reflections.length; i++) {
+        if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
+          spaceSaved += reflections[i].image.length;
+          reflections[i] = { ...reflections[i], image: '' };
+          imagesCleared++;
+        }
+      }
+      
+      if (imagesCleared > 0) {
+        try {
+          saveReflectionsToLocalStorageSafely();
+          const spaceSavedKB = Math.round(spaceSaved / 1024);
+          alert(`✅ Cleared ${imagesCleared} old images\n\nSaved approximately ${spaceSavedKB} KB of storage space.\n\nYour journals are preserved, only images were removed.`);
+        } catch (e) {
+          alert(`❌ Error saving changes: ${e.message}`);
+        }
+      } else {
+        alert('No old images found to clear.\n\nOnly the 3 most recent journals keep their images.');
+      }
     }
 
     function clearBrowserCache() {
