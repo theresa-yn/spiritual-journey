@@ -1523,7 +1523,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             // Store quota error timestamp
             localStorage.setItem('lastQuotaError', Date.now().toString());
             
-            errorMessage = `📊 Firebase Quota Exceeded\n\nYour free Firebase quota has been reached. This is normal for active users.\n\n✅ Your journals are still saved locally and will sync when quota resets.\n\n💡 Solutions:\n• Wait for quota to reset (usually daily)\n• Upgrade to Firebase paid plan\n• Continue using local storage (your data is safe)\n\n🔄 Your reflection has been saved locally and will sync automatically when quota resets.`;
+            errorMessage = `📊 Firebase Quota Issue\n\nThere's a temporary quota issue. This might be due to:\n\n• Firebase upgrade still processing (wait 10-15 minutes)\n• Browser cache needs clearing\n• Billing setup in progress\n\n✅ Your journals are still saved locally and will sync when resolved.\n\n💡 Solutions:\n• Clear browser cache and refresh\n• Wait 10-15 minutes for upgrade to complete\n• Check Firebase Console billing status\n• Continue using (your data is safe locally)\n\n🔄 Your reflection has been saved locally and will sync automatically when resolved.`;
           } else if (error.code === 'permission-denied') {
             errorMessage = `🔒 Permission Denied\n\nThere's an issue with database permissions.\n\n✅ Your journals are saved locally and will sync when fixed.`;
           } else if (error.code === 'unavailable') {
