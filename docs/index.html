@@ -737,6 +737,7 @@
       <button class="button" onclick="exportJournals()" style="background: var(--accent-secondary);">Export Journals</button>
       <button class="button" onclick="aggressiveCleanup()" style="background: #dc2626; color: white;">Free More Space</button>
       <button class="button" onclick="restoreFromBackup()" style="background: #059669; color: white;">Restore Backup</button>
+      <button class="button" onclick="smartImageManagement()" style="background: #7c3aed; color: white;">Smart Image Management</button>
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
@@ -811,6 +812,66 @@
       }
     }
 
+    // Smart image management system
+    function createImageBackups() {
+      try {
+        const imageBackups = {};
+        let backupCount = 0;
+        
+        // Create separate image backups for each reflection with images
+        reflections.forEach((reflection, index) => {
+          if (reflection.image && reflection.image.length > 0) {
+            const imageKey = `image_backup_${index}_${reflection.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'untitled'}`;
+            try {
+              localStorage.setItem(imageKey, reflection.image);
+              imageBackups[index] = imageKey;
+              backupCount++;
+            } catch (e) {
+              console.warn(`Failed to backup image for reflection ${index}:`, e);
+            }
+          }
+        });
+        
+        // Store image backup mapping
+        if (backupCount > 0) {
+          localStorage.setItem('image_backup_mapping', JSON.stringify(imageBackups));
+          console.log(`Created ${backupCount} image backups`);
+        }
+        
+        return backupCount;
+      } catch (e) {
+        console.error('Failed to create image backups:', e);
+        return 0;
+      }
+    }
+
+    function restoreImagesFromBackups() {
+      try {
+        const mapping = localStorage.getItem('image_backup_mapping');
+        if (!mapping) return 0;
+        
+        const imageBackups = JSON.parse(mapping);
+        let restoredCount = 0;
+        
+        Object.entries(imageBackups).forEach(([index, imageKey]) => {
+          const imageData = localStorage.getItem(imageKey);
+          if (imageData && reflections[index]) {
+            reflections[index].image = imageData;
+            restoredCount++;
+          }
+        });
+        
+        if (restoredCount > 0) {
+          console.log(`Restored ${restoredCount} images from backups`);
+        }
+        
+        return restoredCount;
+      } catch (e) {
+        console.error('Failed to restore images from backups:', e);
+        return 0;
+      }
+    }
+
     // Comprehensive data protection system
     function createMultipleBackups() {
       try {
@@ -840,7 +901,10 @@
           }
         });
         
-        console.log(`Created ${successCount}/${backupKeys.length} backups`);
+        // Also create image backups
+        const imageBackupCount = createImageBackups();
+        
+        console.log(`Created ${successCount}/${backupKeys.length} backups and ${imageBackupCount} image backups`);
         return successCount > 0;
       } catch (e) {
         console.error('Failed to create backups:', e);
@@ -862,16 +926,37 @@
         
         console.warn('localStorage quota exceeded, implementing data protection strategy...');
         
-        // Strategy 1: Strip ALL images except the most recent 3
+        // Strategy 1: Compress images instead of removing them
         if (Array.isArray(reflections)) {
-          let imagesStripped = 0;
-          for (let i = 3; i < reflections.length; i++) {
-            if (reflections[i] && reflections[i].image && reflections[i].image.length > 0) {
-              reflections[i] = { ...reflections[i], image: '' };
-              imagesStripped++;
+          let imagesCompressed = 0;
+          for (let i = 0; i < reflections.length; i++) {
+            if (reflections[i] && reflections[i].image && reflections[i].image.length > 100000) { // Only compress large images (>100KB)
+              try {
+                // Compress image by reducing quality
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                  // Reduce size by 50%
+                  canvas.width = img.width * 0.5;
+                  canvas.height = img.height * 0.5;
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                  
+                  // Convert to lower quality JPEG
+                  const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                  reflections[i].image = compressedImage;
+                  imagesCompressed++;
+                  console.log(`Compressed large image for reflection ${i}: ${reflections[i].title}`);
+                };
+                
+                img.src = reflections[i].image;
+              } catch (e) {
+                console.warn(`Failed to compress image for reflection ${i}:`, e);
+              }
             }
           }
-          console.log(`Stripped ${imagesStripped} images from old reflections`);
+          console.log(`Compressed ${imagesCompressed} large images`);
         }
         
         try {
@@ -1548,6 +1633,13 @@ Need help? Check the console for any error messages.`;
               if (parsed && Array.isArray(parsed.reflections)) {
                 reflections = parsed.reflections;
                 console.log(`Restored from backup ${backupKey} with`, reflections.length, 'reflections');
+                
+                // Try to restore images from image backups
+                const restoredImages = restoreImagesFromBackups();
+                if (restoredImages > 0) {
+                  console.log(`Also restored ${restoredImages} images from image backups`);
+                }
+                
                 return;
               }
             } catch (e) {
@@ -2005,7 +2097,8 @@ Need help? Check the console for any error messages.`;
           title: journal.title || 'Untitled',
           content: journal.reflection || '',
           date: journal.date || journal.createdAt || 'No date',
-          hasImage: !!(journal.image && journal.image.length > 0)
+          hasImage: !!(journal.image && journal.image.length > 0),
+          image: journal.image || null // Include the actual image data
         }))
       };
       
@@ -2157,6 +2250,80 @@ Need help? Check the console for any error messages.`;
         console.error('Storage health check failed:', e);
         alert(`🚨 Storage Error\n\nUnable to write to browser storage. This may cause data loss.\n\nPlease:\n1. Export your journals immediately\n2. Clear browser cache\n3. Sign in to sync to cloud storage`);
         return -1;
+      }
+    }
+
+    function smartImageManagement() {
+      if (!reflections || reflections.length === 0) {
+        alert('No journals to process.');
+        return;
+      }
+      
+      let totalImages = 0;
+      let largeImages = 0;
+      let totalImageSize = 0;
+      let compressedCount = 0;
+      
+      // Analyze current images
+      reflections.forEach((reflection, index) => {
+        if (reflection.image && reflection.image.length > 0) {
+          totalImages++;
+          totalImageSize += reflection.image.length;
+          if (reflection.image.length > 100000) { // >100KB
+            largeImages++;
+          }
+        }
+      });
+      
+      const totalSizeMB = Math.round(totalImageSize / (1024 * 1024) * 100) / 100;
+      
+      if (totalImages === 0) {
+        alert('No images found in your journals.');
+        return;
+      }
+      
+      const action = confirm(`📸 Image Analysis:\n\n• Total images: ${totalImages}\n• Large images (>100KB): ${largeImages}\n• Total image size: ${totalSizeMB} MB\n\nWould you like to:\n• Compress large images (keeps all images, reduces size)\n• Cancel (keep everything as is)`);
+      
+      if (action) {
+        // Compress large images
+        reflections.forEach((reflection, index) => {
+          if (reflection.image && reflection.image.length > 100000) {
+            try {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const img = new Image();
+              
+              img.onload = function() {
+                // Reduce size by 60% and quality to 80%
+                canvas.width = img.width * 0.6;
+                canvas.height = img.height * 0.6;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+                const originalSize = reflection.image.length;
+                const newSize = compressedImage.length;
+                const saved = Math.round((originalSize - newSize) / 1024);
+                
+                reflection.image = compressedImage;
+                compressedCount++;
+                
+                console.log(`Compressed image for "${reflection.title}": saved ${saved} KB`);
+              };
+              
+              img.src = reflection.image;
+            } catch (e) {
+              console.warn(`Failed to compress image for reflection ${index}:`, e);
+            }
+          }
+        });
+        
+        // Save the compressed reflections
+        try {
+          saveReflectionsToLocalStorageSafely();
+          alert(`✅ Smart Image Management Complete!\n\n• Compressed ${compressedCount} large images\n• All images preserved\n• Reduced storage usage\n• Images are now optimized for better performance`);
+        } catch (e) {
+          alert(`❌ Error saving compressed images: ${e.message}`);
+        }
       }
     }
 
