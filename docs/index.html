@@ -1497,6 +1497,8 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             .orderBy('createdAt', 'desc')
             .get();
           
+          trackDatabaseOperation('reads');
+          
           reflections = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -1595,12 +1597,14 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             // Update existing reflection
             console.log('📝 Updating existing reflection');
             await db.collection('reflections').doc(reflections[editingIndex].id).update(reflectionData);
+            trackDatabaseOperation('writes');
             reflections[editingIndex] = { ...reflections[editingIndex], ...reflectionData };
             console.log('✅ Reflection updated successfully');
           } else {
             // Add new reflection
             console.log('📝 Adding new reflection');
             const docRef = await db.collection('reflections').add(reflectionData);
+            trackDatabaseOperation('writes');
             reflections.unshift({ id: docRef.id, ...reflectionData });
             console.log('✅ Reflection added successfully with ID:', docRef.id);
           }
@@ -2034,6 +2038,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
             try {
               console.log('Attempting Firebase deletion for ID:', deletedReflection.id);
               await db.collection('reflections').doc(deletedReflection.id).delete();
+              trackDatabaseOperation('deletes');
               console.log('Firebase deletion successful');
             } catch (dbErr) {
               console.error('Firebase deletion failed:', dbErr);
@@ -2091,6 +2096,7 @@ Continue journaling - your spiritual journey is safe! 🌟`;
         for (const failedDeletion of failedDeletions) {
           try {
             await db.collection('reflections').doc(failedDeletion.id).delete();
+            trackDatabaseOperation('deletes');
             console.log('Successfully deleted ID:', failedDeletion.id);
             successCount++;
           } catch (err) {
@@ -2139,6 +2145,15 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       } catch (err) {
         console.error('Error in auto-retry:', err);
       }
+    }
+
+    // Track database operations for quota management
+    function trackDatabaseOperation(operation) {
+      const today = new Date().toDateString();
+      const key = `${operation}_${today}`;
+      const current = parseInt(localStorage.getItem(key) || '0');
+      localStorage.setItem(key, (current + 1).toString());
+      console.log(`📊 Database ${operation}: ${current + 1} today`);
     }
 
     // Check and display quota status
@@ -2475,6 +2490,12 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       const lastQuotaError = localStorage.getItem('lastQuotaError');
       const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
       
+      // Get usage statistics
+      const today = new Date().toDateString();
+      const todayReads = parseInt(localStorage.getItem(`reads_${today}`) || '0');
+      const todayWrites = parseInt(localStorage.getItem(`writes_${today}`) || '0');
+      const todayDeletes = parseInt(localStorage.getItem(`deletes_${today}`) || '0');
+      
       let message = '📊 Firebase Quota Information\n\n';
       
       if (lastQuotaError) {
@@ -2493,6 +2514,18 @@ Continue journaling - your spiritual journey is safe! 🌟`;
       message += `• Free tier: 50,000 reads/day\n`;
       message += `• Free tier: 20,000 writes/day\n`;
       message += `• Failed syncs: ${failedDeletions.length}\n\n`;
+      
+      message += `📊 Today's Usage:\n`;
+      message += `• Reads: ${todayReads}/50,000 (${((todayReads/50000)*100).toFixed(1)}%)\n`;
+      message += `• Writes: ${todayWrites}/20,000 (${((todayWrites/20000)*100).toFixed(1)}%)\n`;
+      message += `• Deletes: ${todayDeletes}/20,000 (${((todayDeletes/20000)*100).toFixed(1)}%)\n\n`;
+      
+      if (todayReads > 1000 || todayWrites > 500) {
+        message += `⚠️ High usage detected!\n`;
+        message += `• Consider optimizing app behavior\n`;
+        message += `• Check for auto-refresh loops\n`;
+        message += `• Monitor user activity patterns\n\n`;
+      }
       
       message += `💡 Solutions:\n`;
       message += `• Wait for daily reset\n`;
