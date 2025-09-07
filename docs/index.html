@@ -737,7 +737,6 @@
         <div id="options-menu" class="options-menu">
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
-          <button id="reset-quota-btn" onclick="resetUserQuotaState()" style="display: none;">Reset Quota State</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
         </div>
   <script>
@@ -2340,13 +2339,11 @@ Need help? Check the console for any error messages.`;
       if (currentUser) {
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
-        document.getElementById('reset-quota-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
-        document.getElementById('reset-quota-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
