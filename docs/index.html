@@ -1942,31 +1942,6 @@ Need help? Check the console for any error messages.`;
       }
     }
     
-    // Test connection function for user
-    async function testConnection() {
-      const button = document.getElementById('test-connection-btn');
-      const originalText = button.textContent;
-      
-      button.textContent = 'Testing...';
-      button.disabled = true;
-      
-      try {
-        const isConnected = await testFirebaseConnection();
-        
-        if (isConnected) {
-          alert('✅ Connection Test Successful!\n\nFirebase is working properly. The quota issue may be resolved.');
-          // Clear quota error if connection works
-          localStorage.removeItem('lastQuotaError');
-        } else {
-          alert('❌ Connection Test Failed\n\nFirebase quota is still exceeded. The Blaze upgrade may still be processing.\n\nTry again in 10-15 minutes.');
-        }
-      } catch (error) {
-        alert(`⚠️ Connection Test Error\n\nError: ${error.message}\n\nThis might indicate the upgrade is still processing.`);
-      } finally {
-        button.textContent = originalText;
-        button.disabled = false;
-      }
-    }
     
     // Reset user quota state function
     function resetUserQuotaState() {
@@ -2290,63 +2265,6 @@ Need help? Check the console for any error messages.`;
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 
-    function showQuotaInfo() {
-      const lastQuotaError = localStorage.getItem('lastQuotaError');
-      const failedDeletions = JSON.parse(localStorage.getItem('failedDeletions') || '[]');
-      
-      // Get usage statistics
-      const today = new Date().toDateString();
-      const todayReads = parseInt(localStorage.getItem(`reads_${today}`) || '0');
-      const todayWrites = parseInt(localStorage.getItem(`writes_${today}`) || '0');
-      const todayDeletes = parseInt(localStorage.getItem(`deletes_${today}`) || '0');
-      
-      let message = '📊 Firebase Quota Information\n\n';
-      
-      if (lastQuotaError) {
-        const now = Date.now();
-        const timeSinceError = now - parseInt(lastQuotaError);
-        const hoursSinceError = Math.floor(timeSinceError / 3600000);
-        const minutesSinceError = Math.floor((timeSinceError % 3600000) / 60000);
-        
-        message += `⏰ Last quota exceeded: ${hoursSinceError}h ${minutesSinceError}m ago\n`;
-        message += `🔄 Quota resets: Usually every 24 hours\n\n`;
-      } else {
-        message += `✅ No recent quota issues\n\n`;
-      }
-      
-      message += `📈 Current Status:\n`;
-      message += `• Free tier: 50,000 reads/day\n`;
-      message += `• Free tier: 20,000 writes/day\n`;
-      message += `• Failed syncs: ${failedDeletions.length}\n\n`;
-      
-      message += `📊 Today's Usage:\n`;
-      message += `• Reads: ${todayReads}/50,000 (${((todayReads/50000)*100).toFixed(1)}%)\n`;
-      message += `• Writes: ${todayWrites}/20,000 (${((todayWrites/20000)*100).toFixed(1)}%)\n`;
-      message += `• Deletes: ${todayDeletes}/20,000 (${((todayDeletes/20000)*100).toFixed(1)}%)\n\n`;
-      
-      if (todayReads > 1000 || todayWrites > 500) {
-        message += `⚠️ High usage detected!\n`;
-        message += `• Consider optimizing app behavior\n`;
-        message += `• Check for auto-refresh loops\n`;
-        message += `• Monitor user activity patterns\n\n`;
-      }
-      
-      message += `🔍 Troubleshooting (Blaze Upgrade):\n`;
-      message += `• Clear browser cache completely\n`;
-      message += `• Check Firebase Console billing status\n`;
-      message += `• Wait 10-15 min for upgrade propagation\n`;
-      message += `• Try incognito/private browsing mode\n`;
-      message += `• Force refresh (Ctrl+F5 or Cmd+Shift+R)\n\n`;
-      
-      message += `💡 Solutions:\n`;
-      message += `• Wait for daily reset\n`;
-      message += `• Upgrade to paid plan\n`;
-      message += `• Continue using (data saved locally)\n\n`;
-      
-      message += `✅ Your data is always safe in local storage!`;
-      
-      alert(message);
-    }
 
     function copyShareLink() {
       let userId = localStorage.getItem('sharedUserId');
