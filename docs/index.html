@@ -667,8 +667,8 @@
     <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
     <div id="quote" class="prompt">Loading inspiration...</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
-    <h2>My Spiritual Journey</h2>
-    <p>Tap the plus button to start your journey</p>
+          <h2>My Spiritual Journey</h2>
+      <p>Tap the plus button to start your journey</p>
   </div>
   <!-- Authentication screens removed - no signup/login required -->
   <!-- Entry Screen -->
@@ -684,7 +684,7 @@
         </button>
         <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Photos
-        </label>
+      </label>
         <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Camera
         </label>
@@ -734,11 +734,11 @@
     </div>
   </div>
   <div class="floating-plus" onclick="toggleOptionsMenu()">+</div>
-        <div id="options-menu" class="options-menu">
+  <div id="options-menu" class="options-menu">
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
-        </div>
+  </div>
   <script>
     // Firebase configuration
     const firebaseConfig = {
@@ -769,7 +769,7 @@
         
         // Check if already initialized
         if (firebase.apps.length === 0) {
-          firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         }
         
         // Initialize Firebase Auth and Firestore
@@ -844,7 +844,7 @@
               // keep pruning
             }
           }
-          return false;
+        return false;
         }
       }
     }
@@ -1039,7 +1039,7 @@
     async function handleSignup() {
       const message = document.getElementById('auth-message');
       message.textContent = 'Email/password signup is not available. Please use Google Sign-In instead.';
-      message.style.display = 'block';
+        message.style.display = 'block';
       message.style.color = '#ff6b6b';
     }
 
@@ -1047,7 +1047,7 @@
     async function handleLogin() {
       const message = document.getElementById('auth-message');
       message.textContent = 'Email/password login is not available. Please use Google Sign-In instead.';
-      message.style.display = 'block';
+        message.style.display = 'block';
       message.style.color = '#ff6b6b';
     }
 
@@ -1055,7 +1055,7 @@
     async function handleForgotPassword() {
       const message = document.getElementById('auth-message');
       message.textContent = 'Password reset is not available. Please use Google Sign-In instead.';
-      message.style.display = 'block';
+        message.style.display = 'block';
       message.style.color = '#ff6b6b';
     }
 
@@ -1384,8 +1384,8 @@ Need help? Check the console for any error messages.`;
     async function migrateLocalData() {
       if (!currentUser) {
         console.log('No user logged in for migration');
-        return;
-      }
+          return;
+        }
 
       try {
         // Check for existing local reflections
@@ -1432,8 +1432,29 @@ Need help? Check the console for any error messages.`;
 
     async function loadReflections() {
       if (!currentUser) {
-        console.log('No user logged in');
+        console.log('No user logged in, loading from localStorage');
+        // Load from localStorage when no user is signed in
+        let localReflections = localStorage.getItem('reflections');
+        if (!localReflections) {
+          const backup = localStorage.getItem('reflections_backup');
+          if (backup) {
+            try {
+              const parsed = JSON.parse(backup);
+              if (parsed && Array.isArray(parsed.reflections)) {
+                reflections = parsed.reflections;
+                console.log('Restored from backup with', reflections.length, 'reflections');
+                return;
+              }
+            } catch (e) {
+              console.warn('Failed to parse backup:', e);
+            }
+          }
         reflections = [];
+          console.log('No local data available');
+          return;
+        }
+        reflections = JSON.parse(localReflections);
+        console.log('Loaded', reflections.length, 'reflections from localStorage');
         return;
       }
         
@@ -1523,16 +1544,34 @@ Need help? Check the console for any error messages.`;
     }
 
     async function saveReflections() {
-      if (!currentUser) {
-        console.log('No user logged in');
-        alert('Please sign in to save your reflection.');
-        return;
-      }
-      
       // Get form data
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('entry-date').textContent;
+      
+      if (!currentUser) {
+        console.log('No user logged in, saving to localStorage only');
+        // Save to localStorage when no user is signed in
+        const localData = {
+          title,
+          reflection,
+          date,
+          image: currentImage || '',
+          createdAt: new Date().toISOString()
+        };
+        
+        if (editingIndex !== null && reflections[editingIndex]) {
+          reflections[editingIndex] = localData;
+        } else {
+          reflections.unshift(localData);
+        }
+        
+        saveReflectionsToLocalStorageSafely();
+        currentImage = "";
+        editingIndex = null;
+        goBack();
+        return;
+      }
       
       // Debug logging
       console.log('💾 Saving reflection with data:', {
@@ -2241,25 +2280,25 @@ Need help? Check the console for any error messages.`;
               // Set the compressed image source
               preview.src = compressedDataUrl;
               currentImage = compressedDataUrl;
-              
-              // Hide loading and show image
-              loading.style.display = 'none';
-              preview.style.display = 'block';
+            
+            // Hide loading and show image
+            loading.style.display = 'none';
+            preview.style.display = 'block';
               
               // Check if save button should be enabled
               checkSaveEnabled();
-              
-              // Add a small delay to ensure the image loads
-              setTimeout(() => {
-                if (preview.complete && preview.naturalHeight !== 0) {
-                  console.log('✅ Image preview loaded successfully:', file.name);
-                  console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
+            
+            // Add a small delay to ensure the image loads
+            setTimeout(() => {
+              if (preview.complete && preview.naturalHeight !== 0) {
+                console.log('✅ Image preview loaded successfully:', file.name);
+                console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
                   console.log('💾 Original size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
                   console.log('💾 Compressed size:', (compressedDataUrl.length / 1024 / 1024).toFixed(2), 'MB');
-                } else {
-                  console.log('⏳ Image preview loading...');
-                }
-              }, 100);
+              } else {
+                console.log('⏳ Image preview loading...');
+              }
+            }, 100);
             });
           } catch (error) {
             console.error('Error processing image:', error);
@@ -2495,12 +2534,12 @@ Need help? Check the console for any error messages.`;
       // Try to initialize Firebase with retry
       let firebaseInitialized = false;
       for (let i = 0; i < 3; i++) {
-        if (initializeFirebase()) {
+      if (initializeFirebase()) {
           firebaseInitialized = true;
-          console.log('Firebase initialized successfully');
-          await initFirebaseAuth();
+        console.log('Firebase initialized successfully');
+        await initFirebaseAuth();
           break;
-        } else {
+      } else {
           console.log(`Firebase initialization attempt ${i + 1} failed, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
         }
@@ -2560,8 +2599,8 @@ Need help? Check the console for any error messages.`;
               document.getElementById('sign-out-btn').style.display = 'block';
               loadReflections();
             } else {
-              showMainScreen();
-              loadReflections();
+            showMainScreen();
+            loadReflections();
             }
           } else {
             // User is signed out
