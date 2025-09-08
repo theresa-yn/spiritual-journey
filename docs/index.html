@@ -738,7 +738,6 @@
           <button id="start-journaling-btn" onclick="showEntryScreen()" style="display: none;">Start Journaling</button>
           <button id="past-reflections-btn" onclick="showHistory()" style="display: none;">Past Reflections</button>
           <button id="home-btn" onclick="goToHome()" style="display: none;">Home</button>
-          <button id="migrate-to-cloud-btn" onclick="manualMigrateToCloud()" style="display: none;">Migrate to Cloud</button>
   </div>
   <script>
     // Firebase configuration
@@ -3183,13 +3182,11 @@ Need help? Check the console for any error messages.`;
         document.getElementById('start-journaling-btn').style.display = 'block';
         document.getElementById('past-reflections-btn').style.display = 'block';
         document.getElementById('home-btn').style.display = 'block';
-        document.getElementById('migrate-to-cloud-btn').style.display = 'block';
         console.log('User is signed in, showing buttons');
       } else {
         document.getElementById('start-journaling-btn').style.display = 'none';
         document.getElementById('past-reflections-btn').style.display = 'none';
         document.getElementById('home-btn').style.display = 'none';
-        document.getElementById('migrate-to-cloud-btn').style.display = 'none';
         console.log('User is not signed in, hiding buttons');
       }
       
