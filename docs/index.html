@@ -2006,18 +2006,18 @@ Need help? Check the console for any error messages.`;
         } else {
           // Add new reflection
           console.log('📝 Adding new reflection');
-          const reflectionData = {
-            userId: currentUser.id,
-            title,
-            reflection,
-            date,
+        const reflectionData = {
+          userId: currentUser.id,
+          title,
+          reflection,
+          date,
             image: currentImage || '', // Ensure image is always a string
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          };
-          
-          const docRef = await db.collection('reflections').add(reflectionData);
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+            const docRef = await db.collection('reflections').add(reflectionData);
           trackDatabaseOperation('writes');
-          reflections.unshift({ id: docRef.id, ...reflectionData });
+            reflections.unshift({ id: docRef.id, ...reflectionData });
           console.log('✅ Reflection added successfully with ID:', docRef.id);
         }
         
@@ -2219,6 +2219,64 @@ Need help? Check the console for any error messages.`;
 
     function reviewReflection(index) {
       alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
+    }
+
+    async function removeImageFromReflection(index) {
+      try {
+        const item = reflections[index];
+        if (!item) return;
+
+        // Confirm action
+        if (!confirm('Remove the image from this journal? This cannot be undone.')) return;
+
+        // Remove from local data first
+        item.image = '';
+
+        // Remove any image backup for this index
+        try {
+          const mappingStr = localStorage.getItem('image_backup_mapping');
+          if (mappingStr) {
+            const mapping = JSON.parse(mappingStr);
+            const backupInfo = mapping[index];
+            if (backupInfo) {
+              const imageKey = typeof backupInfo === 'string' ? backupInfo : backupInfo.key;
+              if (imageKey) {
+                localStorage.removeItem(imageKey);
+              }
+              delete mapping[index];
+              localStorage.setItem('image_backup_mapping', JSON.stringify(mapping));
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to remove image backup:', e);
+        }
+
+        // Persist locally for offline users
+        if (!currentUser || !currentUser.isFirebase) {
+          saveReflectionsToLocalStorageSafely();
+          refreshHistoryDisplay();
+          return;
+        }
+
+        // Update in Firebase for signed-in users
+        try {
+          if (item.id) {
+            await db.collection('reflections').doc(item.id).update({ image: '' });
+            trackDatabaseOperation('writes');
+          }
+        } catch (e) {
+          console.error('Failed to update Firebase image removal:', e);
+          alert('Could not update cloud copy right now. The image was removed locally and will sync later.');
+        }
+
+        // Refresh list
+        await loadReflections();
+        refreshHistoryDisplay();
+        alert('Image removed from this journal.');
+      } catch (error) {
+        console.error('Error removing image:', error);
+        alert('Failed to remove image. Please try again.');
+      }
     }
 
     function debugReflections() {
@@ -2666,6 +2724,7 @@ Need help? Check the console for any error messages.`;
           <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${item.image ? `<img src="${item.image}">` : ""}
           <div class="button-group">
+            ${item.image ? `<button class="button" onclick="removeImageFromReflection(${index})">Remove Image</button>` : ""}
             <button class="button" onclick="editReflection(${index})">Edit</button>
             <button class="button" onclick="reviewReflection(${index})">Review</button>
             <button class="button" onclick="deleteReflection(${index})" onmouseover="console.log('Delete button hovered, index:', ${index})">Delete</button>
