@@ -1984,36 +1984,48 @@ Need help? Check the console for any error messages.`;
       if (currentUser.isFirebase) {
         console.log('Saving reflection for Firebase user');
         
-        const reflectionData = {
-          userId: currentUser.id,
-          title,
-          reflection,
-          date,
-          image: currentImage || '', // Ensure image is always a string
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
+        if (editingIndex !== null && reflections[editingIndex]) {
+          // Update existing reflection - preserve original date and createdAt
+          console.log('📝 Updating existing reflection');
+          const updateData = {
+            userId: currentUser.id,
+            title,
+            reflection,
+            date, // Keep the original date from the form
+            image: currentImage || '', // Ensure image is always a string
+            // Don't update createdAt - preserve original creation time
+          };
+          
+          await db.collection('reflections').doc(reflections[editingIndex].id).update(updateData);
+          trackDatabaseOperation('writes');
+          reflections[editingIndex] = { ...reflections[editingIndex], ...updateData };
+          console.log('✅ Reflection updated successfully');
+          
+          // Reload reflections to ensure proper sorting (newest on top)
+          await loadReflections();
+        } else {
+          // Add new reflection
+          console.log('📝 Adding new reflection');
+          const reflectionData = {
+            userId: currentUser.id,
+            title,
+            reflection,
+            date,
+            image: currentImage || '', // Ensure image is always a string
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          
+          const docRef = await db.collection('reflections').add(reflectionData);
+          trackDatabaseOperation('writes');
+          reflections.unshift({ id: docRef.id, ...reflectionData });
+          console.log('✅ Reflection added successfully with ID:', docRef.id);
+        }
         
         try {
           // Disable save button during save process
           const saveButton = document.getElementById('save');
           saveButton.disabled = true;
           saveButton.textContent = 'Saving...';
-          
-          if (editingIndex !== null && reflections[editingIndex]) {
-            // Update existing reflection
-            console.log('📝 Updating existing reflection');
-            await db.collection('reflections').doc(reflections[editingIndex].id).update(reflectionData);
-            trackDatabaseOperation('writes');
-            reflections[editingIndex] = { ...reflections[editingIndex], ...reflectionData };
-            console.log('✅ Reflection updated successfully');
-          } else {
-            // Add new reflection
-            console.log('📝 Adding new reflection');
-            const docRef = await db.collection('reflections').add(reflectionData);
-            trackDatabaseOperation('writes');
-            reflections.unshift({ id: docRef.id, ...reflectionData });
-            console.log('✅ Reflection added successfully with ID:', docRef.id);
-          }
           
           // Also save to localStorage for offline access
           saveReflectionsToLocalStorageSafely();
@@ -2100,8 +2112,16 @@ Need help? Check the console for any error messages.`;
       currentImage = "";
       editingIndex = index;
       if (index !== null && reflections[index]) {
+        // Editing existing reflection - preserve original date
         document.getElementById('title').value = reflections[index].title;
         document.getElementById('reflection').value = reflections[index].reflection;
+        
+        // Set the original date from the reflection
+        const originalDate = reflections[index].date;
+        if (originalDate) {
+          document.getElementById('entry-date').textContent = originalDate;
+        }
+        
         if (reflections[index].image) {
           const preview = document.getElementById('preview-image');
           const container = document.getElementById('image-preview-container');
@@ -2113,6 +2133,20 @@ Need help? Check the console for any error messages.`;
           preview.style.display = 'block';
           currentImage = reflections[index].image;
         }
+      } else {
+        // Creating new reflection - set current date
+        const now = new Date();
+        const entryOptions = {
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        };
+        const formattedDate = now.toLocaleDateString('en-US', entryOptions);
+        document.getElementById('entry-date').textContent = formattedDate;
       }
       // Ensure save button is properly enabled/disabled
       checkSaveEnabled();
