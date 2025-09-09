@@ -2750,8 +2750,8 @@ Need help? Check the console for any error messages.`;
         
         // Create images HTML
         const imagesHtml = allImages.length > 0 
-          ? `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0;">
-               ${allImages.map(img => `<img src="${img}" style="width: 100%; height: auto; border-radius: 8px;">`).join('')}
+          ? `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 120px)); gap: 8px; margin: 10px 0;">
+               ${allImages.map(img => `<img src="${img}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px;">`).join('')}
              </div>`
           : '';
         
