@@ -3168,74 +3168,89 @@ Need help? Check the console for any error messages.`;
       console.log('Event:', event);
       console.log('Files:', event.target.files);
       
-      const file = event.target.files[0];
-      if (file) {
-        console.log('✅ File selected successfully');
-        console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
+      const files = Array.from(event.target.files || []);
+      const container = document.getElementById('image-preview-container');
+      const loading = document.getElementById('image-loading');
+      const thumbs = document.getElementById('image-thumbs');
+      
+      if (!files.length) {
+        console.log('❌ No file selected');
+        if (thumbs) thumbs.innerHTML = '';
+        container.style.display = 'none';
+        alert('No file selected. Please try again.');
+          return;
+        }
         
-        // Accept any file type and size - compression will handle large files
-        console.log('📁 File accepted:', {
-          name: file.name,
-          type: file.type,
-          size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
-        });
-        
-        const reader = new FileReader();
-        const container = document.getElementById('image-preview-container');
-        const loading = document.getElementById('image-loading');
-        const preview = document.getElementById('preview-image');
-        
-        // Show loading indicator
+      console.log(`✅ ${files.length} file(s) selected`);
+      
+      // Show loading UI
         container.style.display = 'block';
         loading.style.display = 'block';
-        preview.style.display = 'none';
-        
+      if (thumbs) thumbs.innerHTML = '';
+      
+      // Reset current images
+      currentImages = [];
+      let processed = 0;
+      
+      files.forEach((file, fileIdx) => {
+        console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
+        const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            // Compress the image before storing
+            // Compress each image before storing
             compressImage(e.target.result, (compressedDataUrl) => {
-              // Set the compressed image source
-              preview.src = compressedDataUrl;
-              currentImage = compressedDataUrl;
-            
-            // Hide loading and show image
-            loading.style.display = 'none';
-            preview.style.display = 'block';
+              currentImages.push(compressedDataUrl);
               
-              // Check if save button should be enabled
-              checkSaveEnabled();
-            
-            // Add a small delay to ensure the image loads
-            setTimeout(() => {
-              if (preview.complete && preview.naturalHeight !== 0) {
-                console.log('✅ Image preview loaded successfully:', file.name);
-                console.log('📏 Image dimensions:', preview.naturalWidth, 'x', preview.naturalHeight);
-                  console.log('💾 Original size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-                  console.log('💾 Compressed size:', (compressedDataUrl.length / 1024 / 1024).toFixed(2), 'MB');
-              } else {
-                console.log('⏳ Image preview loading...');
+              // Render thumbnail
+              if (thumbs) {
+                const wrap = document.createElement('div');
+                wrap.style.position = 'relative';
+                const img = document.createElement('img');
+                img.src = compressedDataUrl;
+                img.className = 'preview';
+                img.style.width = '100%';
+                img.style.height = 'auto';
+                const rm = document.createElement('button');
+                rm.className = 'button';
+                rm.textContent = '×';
+                rm.style.position = 'absolute';
+                rm.style.top = '4px';
+                rm.style.right = '4px';
+                rm.style.padding = '2px 6px';
+                const idx = currentImages.length - 1;
+                rm.onclick = () => removeImageAt(idx);
+                wrap.appendChild(img);
+                wrap.appendChild(rm);
+                thumbs.appendChild(wrap);
               }
-            }, 100);
+              
+              processed++;
+              if (processed === files.length) {
+                loading.style.display = 'none';
+                checkSaveEnabled();
+              }
             });
           } catch (error) {
             console.error('Error processing image:', error);
+            processed++;
+            if (processed === files.length) {
+              loading.style.display = 'none';
+            }
             alert('Error processing the file. Please try a different file.\n\nThe app supports any image format and will automatically compress large files.');
-            container.style.display = 'none';
           }
         };
         
         reader.onerror = () => {
-          alert('Error reading the file. Please try again.\n\nThis might happen if:\n• The file is corrupted\n• The file format is not supported\n• There\'s insufficient memory\n• The file is too large for your device\n\nTry selecting a different file or a smaller image.');
           console.error('FileReader error:', reader.error);
-          container.style.display = 'none';
+          processed++;
+          if (processed === files.length) {
+            loading.style.display = 'none';
+          }
+          alert('Failed to read the file. Please try again.');
         };
         
-        // Read the file
         reader.readAsDataURL(file);
-      } else {
-        console.log('❌ No file selected');
-        alert('No file selected. Please try again.');
-      }
+      });
     }
 
     function compressImage(dataUrl, callback) {
@@ -3253,7 +3268,7 @@ Need help? Check the console for any error messages.`;
             height = (height * maxSize) / width;
             width = maxSize;
           }
-        } else {
+      } else {
           if (height > maxSize) {
             width = (width * maxSize) / height;
             height = maxSize;
