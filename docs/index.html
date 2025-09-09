@@ -393,6 +393,12 @@
       margin: 10px 0;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       object-fit: cover;
+      background: transparent !important;
+    }
+    
+    /* Ensure grid images have transparent backgrounds */
+    .history-item div[style*="grid-template-columns"] img {
+      background: transparent !important;
     }
     #current-date {
       font-size: 1.1rem;
@@ -2754,7 +2760,7 @@ Need help? Check the console for any error messages.`;
         // Create images HTML
         const imagesHtml = allImages.length > 0 
           ? `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 120px)); gap: 8px; margin: 10px 0;">
-               ${allImages.map(img => `<img src="${img}" style="width: 100%; height: 80px; object-fit: contain; border-radius: 6px; background: transparent;">`).join('')}
+               ${allImages.map(img => `<img src="${img}" style="width: 100%; height: 80px; object-fit: contain; border-radius: 6px; background: transparent !important;">`).join('')}
              </div>`
           : '';
         
