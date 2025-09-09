@@ -1975,8 +1975,15 @@ Need help? Check the console for any error messages.`;
         
         saveReflectionsToLocalStorageSafely();
         currentImages = [];
-        editingIndex = null;
-        goBack();
+        
+        // If editing an existing reflection, go back to past reflections page
+        if (editingIndex !== null) {
+          editingIndex = null;
+          goBackToPastReflections();
+        } else {
+          editingIndex = null;
+          goBack();
+        }
         return;
       }
       
@@ -2042,13 +2049,19 @@ Need help? Check the console for any error messages.`;
           
           // Clear form and go back
           currentImages = [];
-          editingIndex = null;
           
           // Reset save button
           saveButton.disabled = false;
           saveButton.textContent = 'Save Reflection';
           
+          // If editing an existing reflection, go back to past reflections page
+          if (editingIndex !== null) {
+            editingIndex = null;
+            goBackToPastReflections();
+          } else {
+          editingIndex = null;
           goBack();
+          }
           return;
         } catch (error) {
           console.error('Error saving to Firebase:', error);
@@ -2099,8 +2112,15 @@ Need help? Check the console for any error messages.`;
           
           localStorage.setItem('reflections', JSON.stringify(reflections));
           currentImages = [];
+          
+          // If editing an existing reflection, go back to past reflections page
+          if (editingIndex !== null) {
+            editingIndex = null;
+            goBackToPastReflections();
+          } else {
           editingIndex = null;
           goBack();
+          }
           return;
         }
       }
@@ -2224,6 +2244,23 @@ Need help? Check the console for any error messages.`;
       // This function is called from the back button on main screen
       // It's essentially the same as goBack() but more explicit
       goBack();
+    }
+    
+    function goBackToPastReflections() {
+      // Go back to past reflections page after saving
+      document.getElementById('entry-screen').classList.add('hidden');
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('history-screen').classList.remove('hidden');
+      document.getElementById('options-menu').style.display = 'none';
+      
+      // Show the back button on main screen when viewing history
+      document.getElementById('back-to-inspire-btn').style.display = 'block';
+      
+      // Reset editing state
+      editingIndex = null;
+      
+      // Refresh the history display
+      refreshHistoryDisplay();
     }
     
     function goToHome() {
