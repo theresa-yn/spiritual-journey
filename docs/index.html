@@ -702,7 +702,7 @@
       <input type="file" 
              accept="image/*,image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif" 
              id="image-input" 
-             multiple="false"
+             multiple
              style="display: none;"
              webkitdirectory="false"
              directory="false"
@@ -721,8 +721,8 @@
         <div id="image-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
           📸 Loading image...
         </div>
-        <img id="preview-image" class="preview" src="" alt="Preview">
-        <button type="button" class="button" onclick="removeImage()" style="margin-top: 10px;">Remove Photo</button>
+        <div id="image-thumbs" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;"></div>
+        <button type="button" class="button" onclick="removeAllImages()" style="margin-top: 10px;">Remove All Photos</button>
       </div>
     </div>
   </div>
@@ -788,7 +788,7 @@
 
     let recognition;
     let reflections = [];
-    let currentImage = "";
+    let currentImages = [];
     let editingIndex = null;
     let user = null;
     let currentTheme = 'dark'; // Default theme
@@ -1068,7 +1068,7 @@
       "Rejoice always, pray without ceasing, give thanks in all circumstances. — 1 Thessalonians 5:16–18",
       "The fruit of the Spirit is love, joy, peace, patience, kindness, generosity, faithfulness, gentleness, and self-control. — Galatians 5:22–23",
       "You learn to speak by speaking, to study by studying, to run by running, to work by working; and just so, you learn to love by loving. — St. Francis de Sales",
-      "Holiness consists simply in doing God’s will, and being just what God wants us to be. — St. Thérèse of Lisieux",
+      "Holiness consists simply in doing God's will, and being just what God wants us to be. — St. Thérèse of Lisieux",
       "Joy is prayer; joy is strength; joy is love; joy is a net of love by which you can catch souls. — St. Teresa of Calcutta",
       "A gentle word, a kind look, a good-natured smile can work wonders and accomplish miracles. — William Hazlitt"
     ];
@@ -1955,7 +1955,8 @@ Need help? Check the console for any error messages.`;
           title,
           reflection,
           date,
-          image: currentImage || '',
+          images: Array.isArray(currentImages) ? currentImages.slice() : [],
+          image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
           createdAt: new Date().toISOString()
         };
         
@@ -1966,7 +1967,7 @@ Need help? Check the console for any error messages.`;
         }
         
         saveReflectionsToLocalStorageSafely();
-        currentImage = "";
+        currentImages = [];
         editingIndex = null;
         goBack();
         return;
@@ -1976,8 +1977,7 @@ Need help? Check the console for any error messages.`;
       console.log('💾 Saving reflection with data:', {
         title: title,
         reflection: reflection,
-        hasImage: !!currentImage,
-        imageLength: currentImage ? currentImage.length : 0,
+        imageCount: Array.isArray(currentImages) ? currentImages.length : 0,
         date: date
       });
       
@@ -1993,7 +1993,8 @@ Need help? Check the console for any error messages.`;
             title,
             reflection,
             date, // Keep the original date from the form
-            image: currentImage || '', // Ensure image is always a string
+            images: Array.isArray(currentImages) ? currentImages.slice() : [],
+            image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
             // Don't update createdAt - preserve original creation time
           };
           
@@ -2012,7 +2013,8 @@ Need help? Check the console for any error messages.`;
           title,
           reflection,
           date,
-            image: currentImage || '', // Ensure image is always a string
+            images: Array.isArray(currentImages) ? currentImages.slice() : [],
+            image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
@@ -2032,7 +2034,7 @@ Need help? Check the console for any error messages.`;
           saveReflectionsToLocalStorageSafely();
           
           // Clear form and go back
-          currentImage = "";
+          currentImages = [];
           editingIndex = null;
           
           // Reset save button
@@ -2073,7 +2075,12 @@ Need help? Check the console for any error messages.`;
           // Fallback to localStorage
           const localData = {
             id: 'firebase_fallback_' + Date.now(),
-            ...reflectionData,
+            userId: currentUser.id,
+            title,
+            reflection,
+            date,
+            images: Array.isArray(currentImages) ? currentImages.slice() : [],
+            image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
             createdAt: new Date().toISOString()
           };
           
@@ -2084,7 +2091,7 @@ Need help? Check the console for any error messages.`;
           }
           
           localStorage.setItem('reflections', JSON.stringify(reflections));
-          currentImage = "";
+          currentImages = [];
           editingIndex = null;
           goBack();
           return;
@@ -2110,7 +2117,9 @@ Need help? Check the console for any error messages.`;
       document.getElementById('reflection').value = '';
       document.getElementById('image-input').value = '';
       document.getElementById('image-preview-container').style.display = 'none';
-      currentImage = "";
+      const thumbs = document.getElementById('image-thumbs');
+      if (thumbs) thumbs.innerHTML = '';
+      currentImages = [];
       editingIndex = index;
       if (index !== null && reflections[index]) {
         // Editing existing reflection - preserve original date
@@ -2123,16 +2132,38 @@ Need help? Check the console for any error messages.`;
           document.getElementById('entry-date').textContent = originalDate;
         }
         
-        if (reflections[index].image) {
-          const preview = document.getElementById('preview-image');
           const container = document.getElementById('image-preview-container');
           const loading = document.getElementById('image-loading');
+        const thumbs = document.getElementById('image-thumbs');
           
-          preview.src = reflections[index].image;
+        const imagesArray = reflections[index].images && Array.isArray(reflections[index].images)
+          ? reflections[index].images
+          : (reflections[index].image ? [reflections[index].image] : []);
+        if (imagesArray.length > 0) {
           container.style.display = 'block';
           loading.style.display = 'none';
-          preview.style.display = 'block';
-          currentImage = reflections[index].image;
+          thumbs.innerHTML = '';
+          currentImages = imagesArray.slice();
+          imagesArray.forEach((src, i) => {
+            const wrap = document.createElement('div');
+            wrap.style.position = 'relative';
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'preview';
+            img.style.width = '100%';
+            img.style.height = 'auto';
+            const rm = document.createElement('button');
+            rm.className = 'button';
+            rm.textContent = '×';
+            rm.style.position = 'absolute';
+            rm.style.top = '4px';
+            rm.style.right = '4px';
+            rm.style.padding = '2px 6px';
+            rm.onclick = () => removeImageAt(i);
+            wrap.appendChild(img);
+            wrap.appendChild(rm);
+            thumbs.appendChild(wrap);
+          });
         }
       } else {
         // Creating new reflection - set current date
@@ -2227,13 +2258,11 @@ Need help? Check the console for any error messages.`;
         const item = reflections[index];
         if (!item) return;
 
-        // Confirm action
         if (!confirm('Remove the image from this journal? This cannot be undone.')) return;
 
-        // Remove from local data first
         item.image = '';
+        item.images = [];
 
-        // Remove any image backup for this index
         try {
           const mappingStr = localStorage.getItem('image_backup_mapping');
           if (mappingStr) {
@@ -2252,17 +2281,15 @@ Need help? Check the console for any error messages.`;
           console.warn('Failed to remove image backup:', e);
         }
 
-        // Persist locally for offline users
         if (!currentUser || !currentUser.isFirebase) {
           saveReflectionsToLocalStorageSafely();
           refreshHistoryDisplay();
           return;
         }
 
-        // Update in Firebase for signed-in users
         try {
           if (item.id) {
-            await db.collection('reflections').doc(item.id).update({ image: '' });
+            await db.collection('reflections').doc(item.id).update({ image: '', images: [] });
             trackDatabaseOperation('writes');
           }
         } catch (e) {
@@ -2270,7 +2297,6 @@ Need help? Check the console for any error messages.`;
           alert('Could not update cloud copy right now. The image was removed locally and will sync later.');
         }
 
-        // Refresh list
         await loadReflections();
         refreshHistoryDisplay();
         alert('Image removed from this journal.');
@@ -3116,7 +3142,7 @@ Need help? Check the console for any error messages.`;
     function canSave() {
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
-      const hasImage = currentImage && currentImage.trim() !== '';
+      const hasImage = Array.isArray(currentImages) && currentImages.length > 0 && currentImages.some(img => img && img.trim() !== '');
       
       const canSaveResult = !!(title && (reflection || hasImage));
       
@@ -3125,7 +3151,7 @@ Need help? Check the console for any error messages.`;
         title: title,
         reflection: reflection,
         hasImage: hasImage,
-        currentImageLength: currentImage ? currentImage.length : 0,
+        currentImageCount: Array.isArray(currentImages) ? currentImages.length : 0,
         canSave: canSaveResult
       });
       
@@ -3281,23 +3307,54 @@ Need help? Check the console for any error messages.`;
       img.src = dataUrl;
     }
 
-    function removeImage() {
+    function removeAllImages() {
       const container = document.getElementById('image-preview-container');
       const loading = document.getElementById('image-loading');
-      const preview = document.getElementById('preview-image');
+      const thumbs = document.getElementById('image-thumbs');
       const galleryInput = document.getElementById('image-input');
       const cameraInput = document.getElementById('camera-input');
       
       container.style.display = 'none';
       loading.style.display = 'none';
-      preview.style.display = 'block';
-      preview.src = '';
+      if (thumbs) thumbs.innerHTML = '';
       galleryInput.value = '';
       cameraInput.value = '';
-      currentImage = '';
-      console.log('Image removed');
+      currentImages = [];
+      console.log('All images removed');
       
-      // Check if save button should be enabled
+      checkSaveEnabled();
+    }
+
+    function removeImageAt(idx) {
+      if (!Array.isArray(currentImages)) currentImages = [];
+      currentImages.splice(idx, 1);
+      const thumbs = document.getElementById('image-thumbs');
+      if (thumbs) {
+        thumbs.innerHTML = '';
+        currentImages.forEach((src, i) => {
+          const wrap = document.createElement('div');
+          wrap.style.position = 'relative';
+          const img = document.createElement('img');
+          img.src = src;
+          img.className = 'preview';
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          const rm = document.createElement('button');
+          rm.className = 'button';
+          rm.textContent = '×';
+          rm.style.position = 'absolute';
+          rm.style.top = '4px';
+          rm.style.right = '4px';
+          rm.style.padding = '2px 6px';
+          rm.onclick = () => removeImageAt(i);
+          wrap.appendChild(img);
+          wrap.appendChild(rm);
+          thumbs.appendChild(wrap);
+        });
+      }
+      if (currentImages.length === 0) {
+        document.getElementById('image-preview-container').style.display = 'none';
+      }
       checkSaveEnabled();
     }
 
