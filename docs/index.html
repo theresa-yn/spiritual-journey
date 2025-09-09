@@ -665,6 +665,7 @@
     <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
+    <div id="firebase-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem;"></div>
     <div id="quote" class="prompt">Loading inspiration...</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
           <h2>My Spiritual Journey</h2>
@@ -2943,6 +2944,44 @@ Need help? Check the console for any error messages.`;
         quotaStatus.style.display = 'none';
       }
     }
+
+    // Check and display Firebase connection status
+    async function checkFirebaseStatus() {
+      const statusElement = document.getElementById('firebase-status');
+      
+      if (!currentUser || !currentUser.isFirebase) {
+        statusElement.style.display = 'none';
+        return;
+      }
+
+      try {
+        // Test Firebase connection by trying to read from Firestore
+        const testQuery = await db.collection('reflections')
+          .where('userId', '==', currentUser.id)
+          .limit(1)
+          .get();
+        
+        const journalCount = await db.collection('reflections')
+          .where('userId', '==', currentUser.id)
+          .get();
+        
+        statusElement.innerHTML = `☁️ <strong>Cloud Storage Active</strong><br>
+        ✅ Connected to Firebase<br>
+        📝 ${journalCount.size} journals saved in cloud<br>
+        🔄 Auto-sync enabled`;
+        statusElement.style.color = 'var(--accent-primary)';
+        statusElement.style.display = 'block';
+        
+      } catch (error) {
+        console.error('Firebase status check failed:', error);
+        statusElement.innerHTML = `⚠️ <strong>Cloud Storage Issue</strong><br>
+        ❌ Firebase connection problem<br>
+        💾 Journals saved locally only<br>
+        🔄 Will sync when connection restored`;
+        statusElement.style.color = 'var(--warning-color, #ff6b6b)';
+        statusElement.style.display = 'block';
+      }
+    }
     
     // Function to test Firebase connection and detect upgrade status
     async function testFirebaseConnection() {
@@ -3413,6 +3452,9 @@ Need help? Check the console for any error messages.`;
       
       // Check storage health
       checkStorageHealth();
+      
+      // Check Firebase status
+      checkFirebaseStatus();
     }
     
     // Initialize Firebase Auth
@@ -3456,12 +3498,14 @@ Need help? Check the console for any error messages.`;
               // Migrate local data to Firebase first, then load
               await migrateLocalData();
               await loadReflections();
+              await checkFirebaseStatus();
             } else {
             showMainScreen();
               
               // Migrate local data to Firebase first, then load
               await migrateLocalData();
               await loadReflections();
+              await checkFirebaseStatus();
             }
           } else {
             // User is signed out
