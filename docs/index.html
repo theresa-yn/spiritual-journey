@@ -3184,13 +3184,37 @@ Need help? Check the console for any error messages.`;
       console.log(`✅ ${files.length} file(s) selected`);
       
       // Show loading UI
-        container.style.display = 'block';
-        loading.style.display = 'block';
-      if (thumbs) thumbs.innerHTML = '';
+      container.style.display = 'block';
+      loading.style.display = 'block';
       
-      // Reset current images
-      currentImages = [];
+      // Add to existing images (don't replace)
+      if (!Array.isArray(currentImages)) currentImages = [];
       let processed = 0;
+      
+      // Render existing images first
+      if (thumbs) {
+        thumbs.innerHTML = '';
+        currentImages.forEach((src, i) => {
+          const wrap = document.createElement('div');
+          wrap.style.position = 'relative';
+          const img = document.createElement('img');
+          img.src = src;
+          img.className = 'preview';
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          const rm = document.createElement('button');
+          rm.className = 'button';
+          rm.textContent = '×';
+          rm.style.position = 'absolute';
+          rm.style.top = '4px';
+          rm.style.right = '4px';
+          rm.style.padding = '2px 6px';
+          rm.onclick = () => removeImageAt(i);
+          wrap.appendChild(img);
+          wrap.appendChild(rm);
+          thumbs.appendChild(wrap);
+        });
+      }
       
       files.forEach((file, fileIdx) => {
         console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size, 'bytes');
@@ -3343,6 +3367,8 @@ Need help? Check the console for any error messages.`;
     function removeImageAt(idx) {
       if (!Array.isArray(currentImages)) currentImages = [];
       currentImages.splice(idx, 1);
+      
+      // Re-render all thumbnails with correct indices
       const thumbs = document.getElementById('image-thumbs');
       if (thumbs) {
         thumbs.innerHTML = '';
@@ -3367,6 +3393,7 @@ Need help? Check the console for any error messages.`;
           thumbs.appendChild(wrap);
         });
       }
+      
       if (currentImages.length === 0) {
         document.getElementById('image-preview-container').style.display = 'none';
       }
