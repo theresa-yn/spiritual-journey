@@ -1097,13 +1097,15 @@
       "How did you find peace in a challenging situation?",
       "What inspires your soul to create today?",
       "What is one thing you're grateful for right now?",
-      "What vision for your future feels most alive?"
+      "What vision for your future feels most alive?",
+      "Where did I notice God’s presence today?"
     ];
 
     // Create shuffled journal questions array
     const journalQuestions = shuffleArray(originalJournalQuestions);
 
     function getRandomQuestion() {
+      // Always return a random question to ensure variety
       return journalQuestions[Math.floor(Math.random() * journalQuestions.length)];
     }
 
@@ -2179,6 +2181,8 @@ Need help? Check the console for any error messages.`;
         };
         const formattedDate = now.toLocaleDateString('en-US', entryOptions);
         document.getElementById('entry-date').textContent = formattedDate;
+        // Show a random question every time the user opens Start Journaling
+        newQuestion();
       }
       // Ensure save button is properly enabled/disabled
       checkSaveEnabled();
