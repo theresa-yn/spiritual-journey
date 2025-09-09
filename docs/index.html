@@ -665,7 +665,6 @@
     <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
-    <div id="firebase-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem;"></div>
     <div id="quote" class="prompt">Loading inspiration...</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
           <h2>My Spiritual Journey</h2>
@@ -3568,8 +3567,6 @@ Need help? Check the console for any error messages.`;
       // Check storage health
       checkStorageHealth();
       
-      // Check Firebase status
-      checkFirebaseStatus();
     }
     
     // Initialize Firebase Auth
@@ -3613,14 +3610,12 @@ Need help? Check the console for any error messages.`;
               // Migrate local data to Firebase first, then load
               await migrateLocalData();
               await loadReflections();
-              await checkFirebaseStatus();
             } else {
             showMainScreen();
               
               // Migrate local data to Firebase first, then load
               await migrateLocalData();
               await loadReflections();
-              await checkFirebaseStatus();
             }
           } else {
             // User is signed out
