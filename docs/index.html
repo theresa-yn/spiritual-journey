@@ -705,7 +705,7 @@
         <button type="button" class="toolbar-button" onclick="startVoiceRecognition()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Voice
         </button>
-        <button type="button" class="toolbar-button" id="save" disabled style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: not-allowed; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
+        <button type="button" class="toolbar-button" id="save" onclick="saveReflection()" disabled style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: not-allowed; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Save
         </button>
         <button type="button" class="toolbar-button" onclick="goBack()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
@@ -3264,7 +3264,19 @@ Need help? Check the console for any error messages.`;
 
     async function saveReflection() {
       console.log('💾 Save button clicked!');
-      await saveReflections();
+      console.log('💾 Current state:', {
+        title: document.getElementById('title').value.trim(),
+        reflection: document.getElementById('reflection').value.trim(),
+        currentImages: Array.isArray(currentImages) ? currentImages.length : 0
+      });
+      
+      try {
+        await saveReflections();
+        console.log('💾 saveReflections completed successfully');
+      } catch (error) {
+        console.error('💾 Error in saveReflections:', error);
+        alert('Error saving reflection: ' + error.message);
+      }
     }
     
     // Test function to manually enable save button
@@ -3272,7 +3284,24 @@ Need help? Check the console for any error messages.`;
       const saveButton = document.getElementById('save');
       if (saveButton) {
         saveButton.disabled = false;
+        saveButton.style.cursor = 'pointer';
         console.log('🧪 Test: Save button manually enabled');
+        console.log('🧪 Save button state:', {
+          disabled: saveButton.disabled,
+          cursor: saveButton.style.cursor,
+          onclick: saveButton.onclick
+        });
+      }
+    }
+    
+    // Force enable save button - call this from console if needed
+    function forceEnableSave() {
+      const saveButton = document.getElementById('save');
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.style.cursor = 'pointer';
+        saveButton.style.background = 'var(--button-gradient)';
+        console.log('🔧 Force enabled save button');
       }
     }
 
