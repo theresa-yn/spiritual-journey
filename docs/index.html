@@ -697,7 +697,7 @@
           New
         </button>
         <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
-          Photos <span id="photo-counter" style="margin-left: 4px; font-size: 0.8rem; opacity: 0.8;">(0)</span>
+          Photos
       </label>
         <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Camera
@@ -3202,30 +3202,35 @@ Need help? Check the console for any error messages.`;
     }
 
     function updatePhotoCounter() {
-      const counter = document.getElementById('photo-counter');
-      if (counter) {
-        const currentCount = Array.isArray(currentImages) ? currentImages.length : 0;
-        counter.textContent = `(${currentCount})`;
-        
-        // Reset any color styling (no more limit warnings)
-        counter.style.color = '';
-        counter.style.fontWeight = '';
-        
-        // Also check if save button should be enabled
-        const title = document.getElementById('title').value.trim();
-        const hasImages = currentCount > 0;
-        if (title && hasImages) {
-          const saveButton = document.getElementById('save');
-          if (saveButton && saveButton.disabled) {
-            saveButton.disabled = false;
-            console.log('🔧 Photo counter: Force-enabled save button');
-          }
+      // Check if save button should be enabled when photos change
+      const currentCount = Array.isArray(currentImages) ? currentImages.length : 0;
+      const title = document.getElementById('title').value.trim();
+      const hasImages = currentCount > 0;
+      
+      if (title && hasImages) {
+        const saveButton = document.getElementById('save');
+        if (saveButton && saveButton.disabled) {
+          saveButton.disabled = false;
+          console.log('🔧 Photo update: Force-enabled save button');
         }
       }
     }
 
     function checkSaveEnabled() {
-      document.getElementById('save').disabled = !canSave();
+      const canSaveResult = canSave();
+      const saveButton = document.getElementById('save');
+      
+      console.log('🔧 checkSaveEnabled called:', {
+        canSave: canSaveResult,
+        saveButtonExists: !!saveButton,
+        currentDisabled: saveButton ? saveButton.disabled : 'N/A'
+      });
+      
+      if (saveButton) {
+        saveButton.disabled = !canSaveResult;
+        console.log('🔧 Save button disabled set to:', !canSaveResult);
+      }
+      
       updatePhotoCounter(); // Update photo counter whenever we check save status
     }
 
@@ -3258,7 +3263,17 @@ Need help? Check the console for any error messages.`;
     }
 
     async function saveReflection() {
+      console.log('💾 Save button clicked!');
       await saveReflections();
+    }
+    
+    // Test function to manually enable save button
+    function testSaveButton() {
+      const saveButton = document.getElementById('save');
+      if (saveButton) {
+        saveButton.disabled = false;
+        console.log('🧪 Test: Save button manually enabled');
+      }
     }
 
     function previewImage(event) {
