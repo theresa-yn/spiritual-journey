@@ -3216,6 +3216,17 @@ Need help? Check the console for any error messages.`;
           counter.style.color = '';
           counter.style.fontWeight = '';
         }
+        
+        // Also check if save button should be enabled
+        const title = document.getElementById('title').value.trim();
+        const hasImages = currentCount > 0;
+        if (title && hasImages) {
+          const saveButton = document.getElementById('save');
+          if (saveButton && saveButton.disabled) {
+            saveButton.disabled = false;
+            console.log('🔧 Photo counter: Force-enabled save button');
+          }
+        }
       }
     }
 
@@ -3227,7 +3238,9 @@ Need help? Check the console for any error messages.`;
     function canSave() {
       const title = document.getElementById('title').value.trim();
       const reflection = document.getElementById('reflection').value.trim();
-      const hasImage = Array.isArray(currentImages) && currentImages.length > 0 && currentImages.some(img => img && img.trim() !== '');
+      
+      // Simplified image check - just check if we have any images
+      const hasImage = Array.isArray(currentImages) && currentImages.length > 0;
       
       const canSaveResult = !!(title && (reflection || hasImage));
       
@@ -3240,7 +3253,10 @@ Need help? Check the console for any error messages.`;
         currentImages: currentImages,
         canSave: canSaveResult,
         titleLength: title.length,
-        reflectionLength: reflection.length
+        reflectionLength: reflection.length,
+        titleExists: !!title,
+        reflectionExists: !!reflection,
+        imageExists: hasImage
       });
       
       // Can save if there's a title and either reflection text OR an image
@@ -3377,7 +3393,18 @@ Need help? Check the console for any error messages.`;
                   title: document.getElementById('title').value.trim(),
                   reflection: document.getElementById('reflection').value.trim()
                 });
+                
+                // Force update save button state
                 checkSaveEnabled();
+                
+                // Additional check to ensure save button is enabled if we have title and images
+                const title = document.getElementById('title').value.trim();
+                const hasImages = Array.isArray(currentImages) && currentImages.length > 0;
+                if (title && hasImages) {
+                  const saveButton = document.getElementById('save');
+                  saveButton.disabled = false;
+                  console.log('🔧 Force-enabled save button due to title + images');
+                }
               }
             });
           } catch (error) {
