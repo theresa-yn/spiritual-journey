@@ -38,6 +38,202 @@
       --button-hover: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
     }
 
+    /* Elegant Modal System */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-container {
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      max-width: 90vw;
+      max-height: 80vh;
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-overlay.show .modal-container {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      padding: 24px 24px 16px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .modal-content {
+      padding: 20px 24px;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.5;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+
+    .modal-content p {
+      margin: 0 0 12px 0;
+    }
+
+    .modal-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-actions {
+      padding: 16px 24px 24px 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-button {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 48px;
+    }
+
+    .modal-button-primary {
+      background: var(--button-gradient);
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .modal-button-primary:hover {
+      background: var(--button-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .modal-button-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-button-secondary:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* Sky Theme Modal */
+    [data-theme="sky"] .modal-container {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(2, 132, 199, 0.2);
+    }
+
+    [data-theme="sky"] .modal-header {
+      border-bottom: 1px solid rgba(2, 132, 199, 0.2);
+    }
+
+    [data-theme="sky"] .modal-close {
+      color: var(--text-muted);
+    }
+
+    [data-theme="sky"] .modal-close:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 480px) {
+      .modal-container {
+        margin: 10px;
+        max-width: calc(100vw - 20px);
+        border-radius: 16px;
+      }
+
+      .modal-header {
+        padding: 20px 20px 12px 20px;
+      }
+
+      .modal-icon {
+        font-size: 40px;
+        margin-bottom: 8px;
+      }
+
+      .modal-title {
+        font-size: 18px;
+      }
+
+      .modal-content {
+        padding: 16px 20px;
+        font-size: 15px;
+      }
+
+      .modal-actions {
+        padding: 12px 20px 20px 20px;
+        flex-direction: column;
+      }
+
+      .modal-button {
+        font-size: 15px;
+        padding: 12px 16px;
+      }
+    }
+
     /* Sky Theme */
     [data-theme="sky"] {
       --bg-primary: #e0f2fe;
@@ -594,8 +790,24 @@
 
 
   </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- Elegant Modal System -->
+    <div id="modal-overlay" class="modal-overlay">
+      <div class="modal-container">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal-header">
+          <span class="modal-icon" id="modal-icon">📱</span>
+          <h3 class="modal-title" id="modal-title">Message</h3>
+        </div>
+        <div class="modal-content" id="modal-content">
+          <p>Content goes here</p>
+        </div>
+        <div class="modal-actions" id="modal-actions">
+          <button class="modal-button modal-button-primary" id="modal-primary-btn" onclick="closeModal()">OK</button>
+        </div>
+      </div>
+    </div>
   <!-- Animated Stars Background -->
   <div class="stars">
     <div class="star"></div>
@@ -805,6 +1017,179 @@
     let editingIndex = null;
     let user = null;
     let currentTheme = 'dark'; // Default theme
+
+    // Elegant Modal System
+    function showModal(options = {}) {
+      const {
+        icon = '📱',
+        title = 'Message',
+        content = 'Content goes here',
+        primaryText = 'OK',
+        secondaryText = null,
+        onPrimary = null,
+        onSecondary = null,
+        onClose = null
+      } = options;
+
+      const modal = document.getElementById('modal-overlay');
+      const modalIcon = document.getElementById('modal-icon');
+      const modalTitle = document.getElementById('modal-title');
+      const modalContent = document.getElementById('modal-content');
+      const modalActions = document.getElementById('modal-actions');
+      const primaryBtn = document.getElementById('modal-primary-btn');
+
+      // Set content
+      modalIcon.textContent = icon;
+      modalTitle.textContent = title;
+      
+      // Handle content (string or HTML)
+      if (typeof content === 'string') {
+        modalContent.innerHTML = content.split('\n').map(line => 
+          line.trim() ? `<p>${line}</p>` : ''
+        ).join('');
+      } else {
+        modalContent.innerHTML = content;
+      }
+
+      // Set up buttons
+      modalActions.innerHTML = '';
+      
+      if (secondaryText) {
+        const secondaryBtn = document.createElement('button');
+        secondaryBtn.className = 'modal-button modal-button-secondary';
+        secondaryBtn.textContent = secondaryText;
+        secondaryBtn.onclick = () => {
+          if (onSecondary) onSecondary();
+          closeModal();
+        };
+        modalActions.appendChild(secondaryBtn);
+      }
+
+      const primaryButton = document.createElement('button');
+      primaryButton.className = 'modal-button modal-button-primary';
+      primaryButton.textContent = primaryText;
+      primaryButton.onclick = () => {
+        if (onPrimary) onPrimary();
+        closeModal();
+      };
+      modalActions.appendChild(primaryButton);
+
+      // Show modal
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+
+      // Store close callback
+      modal._onClose = onClose;
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal-overlay');
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+      
+      if (modal._onClose) {
+        modal._onClose();
+        modal._onClose = null;
+      }
+    }
+
+    // Enhanced alert function
+    function showAlert(message, options = {}) {
+      const lines = message.split('\n');
+      const firstLine = lines[0];
+      const restLines = lines.slice(1).join('\n');
+
+      // Auto-detect icon and title from message
+      let icon = '📱';
+      let title = 'Message';
+      
+      if (firstLine.includes('✅')) {
+        icon = '✅';
+        title = 'Success';
+      } else if (firstLine.includes('❌')) {
+        icon = '❌';
+        title = 'Error';
+      } else if (firstLine.includes('⚠️')) {
+        icon = '⚠️';
+        title = 'Warning';
+      } else if (firstLine.includes('📊')) {
+        icon = '📊';
+        title = 'Information';
+      } else if (firstLine.includes('🔒')) {
+        icon = '🔒';
+        title = 'Security';
+      } else if (firstLine.includes('🌐')) {
+        icon = '🌐';
+        title = 'Connection';
+      } else if (firstLine.includes('🔄')) {
+        icon = '🔄';
+        title = 'Processing';
+      } else if (firstLine.includes('📝')) {
+        icon = '📝';
+        title = 'Journal';
+      } else if (firstLine.includes('📸')) {
+        icon = '📸';
+        title = 'Photos';
+      } else if (firstLine.includes('📏')) {
+        icon = '📏';
+        title = 'Size Limit';
+      }
+
+      showModal({
+        icon,
+        title,
+        content: restLines || firstLine,
+        ...options
+      });
+    }
+
+    // Enhanced confirm function
+    function showConfirm(message, options = {}) {
+      const lines = message.split('\n');
+      const firstLine = lines[0];
+      const restLines = lines.slice(1).join('\n');
+
+      // Auto-detect icon and title
+      let icon = '❓';
+      let title = 'Confirm';
+      
+      if (firstLine.includes('🔄')) {
+        icon = '🔄';
+        title = 'Migration';
+      } else if (firstLine.includes('🗑️')) {
+        icon = '🗑️';
+        title = 'Delete';
+      } else if (firstLine.includes('📸')) {
+        icon = '📸';
+        title = 'Photos';
+      }
+
+      return new Promise((resolve) => {
+        showModal({
+          icon,
+          title,
+          content: restLines || firstLine,
+          primaryText: 'Yes',
+          secondaryText: 'Cancel',
+          onPrimary: () => resolve(true),
+          onSecondary: () => resolve(false)
+        });
+      });
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-overlay') {
+        closeModal();
+      }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
 
     // Backup reflections to a secondary key with timestamp
     function backupReflections() {
@@ -1965,7 +2350,7 @@ Need help? Check the console for any error messages.`;
       
       if (!currentUser) {
         console.log('No user logged in, Firebase-only saving requires authentication');
-        alert('Please sign in to save your journal entries to the cloud.');
+        showAlert('🔒 Please sign in to save your journal entries to the cloud.');
         return;
       }
       
@@ -1980,7 +2365,7 @@ Need help? Check the console for any error messages.`;
       // Check document size before saving
       const estimatedSize = estimateDocumentSize(title, reflection, currentImages);
       if (estimatedSize > 1048576) { // 1MB limit
-        alert(`📏 Document Too Large\n\nYour journal entry is ${Math.round(estimatedSize / 1024)}KB, which exceeds Firebase's 1MB limit.\n\nPlease:\n• Remove some photos\n• Shorten your text\n• Try again`);
+        showAlert(`📏 Document Too Large\n\nYour journal entry is ${Math.round(estimatedSize / 1024)}KB, which exceeds Firebase's 1MB limit.\n\nPlease:\n• Remove some photos\n• Shorten your text\n• Try again`);
         return;
       }
       
@@ -2081,7 +2466,7 @@ Need help? Check the console for any error messages.`;
           }
           
           // Show user-friendly error message
-          alert(errorMessage);
+          showAlert(errorMessage);
           
           // Firebase-only: No localStorage fallback
           console.log('💾 Firebase save failed, no fallback to localStorage');
@@ -3325,7 +3710,7 @@ Need help? Check the console for any error messages.`;
       const maxPhotos = 5; // Limit to 5 photos to stay under 1MB
       
       if (currentPhotoCount >= maxPhotos) {
-        alert(`📸 Photo Limit Reached\n\nYou can only add up to ${maxPhotos} photos per entry to stay within Firebase's size limits.\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease remove a photo first if you want to add a new one.`);
+        showAlert(`📸 Photo Limit Reached\n\nYou can only add up to ${maxPhotos} photos per entry to stay within Firebase's size limits.\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease remove a photo first if you want to add a new one.`);
         // Clear the file input
         event.target.value = '';
         return;
@@ -3334,7 +3719,7 @@ Need help? Check the console for any error messages.`;
       // Check if adding these files would exceed the limit
       if (currentPhotoCount + files.length > maxPhotos) {
         const remainingSlots = maxPhotos - currentPhotoCount;
-        alert(`📸 Photo Limit Exceeded\n\nYou can only add ${remainingSlots} more photo(s).\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease select only ${remainingSlots} photo(s) or remove some existing photos first.`);
+        showAlert(`📸 Photo Limit Exceeded\n\nYou can only add ${remainingSlots} more photo(s).\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease select only ${remainingSlots} photo(s) or remove some existing photos first.`);
         // Clear the file input
         event.target.value = '';
         return;
