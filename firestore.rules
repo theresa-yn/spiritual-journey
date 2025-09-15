@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Journal entries - only accessible by the user who created them
+    match /reflections/{docId} {
+      // Allow creation only if user is authenticated and userId matches
+      allow create: if request.auth != null 
+                    && request.auth.uid == request.resource.data.userId;
+      
+      // Allow read, update, delete only by the document owner
+      allow read, update, delete: if request.auth != null 
+                                  && request.auth.uid == resource.data.userId;
+    }
+    
+    // Deny any list operations (prevents admins from listing all documents)
+    match /reflections/{document=**} {
+      allow list: if false;
+    }
+    
+    // Deny access to any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
