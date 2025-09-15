@@ -697,7 +697,7 @@
           New
         </button>
         <label for="image-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
-          Photos
+          Photos <span id="photo-counter" style="margin-left: 4px; font-size: 0.8rem; opacity: 0.8;">(0/2)</span>
       </label>
         <label for="camera-input" class="toolbar-button" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
           Camera
@@ -3201,8 +3201,27 @@ Need help? Check the console for any error messages.`;
       box.selectionStart = box.selectionEnd = box.value.length;
     }
 
+    function updatePhotoCounter() {
+      const counter = document.getElementById('photo-counter');
+      if (counter) {
+        const currentCount = Array.isArray(currentImages) ? currentImages.length : 0;
+        const maxPhotos = 2;
+        counter.textContent = `(${currentCount}/${maxPhotos})`;
+        
+        // Change color when limit is reached
+        if (currentCount >= maxPhotos) {
+          counter.style.color = '#ff6b6b';
+          counter.style.fontWeight = 'bold';
+        } else {
+          counter.style.color = '';
+          counter.style.fontWeight = '';
+        }
+      }
+    }
+
     function checkSaveEnabled() {
       document.getElementById('save').disabled = !canSave();
+      updatePhotoCounter(); // Update photo counter whenever we check save status
     }
 
     function canSave() {
@@ -3247,7 +3266,28 @@ Need help? Check the console for any error messages.`;
           return;
         }
         
-      console.log(`✅ ${files.length} file(s) selected`);
+      // Check photo limit (maximum 2 photos)
+      if (!Array.isArray(currentImages)) currentImages = [];
+      const currentPhotoCount = currentImages.length;
+      const maxPhotos = 2;
+      
+      if (currentPhotoCount >= maxPhotos) {
+        alert(`📸 Photo Limit Reached\n\nYou can only add up to ${maxPhotos} photos per entry.\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease remove a photo first if you want to add a new one.`);
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+      
+      // Check if adding these files would exceed the limit
+      if (currentPhotoCount + files.length > maxPhotos) {
+        const remainingSlots = maxPhotos - currentPhotoCount;
+        alert(`📸 Photo Limit Exceeded\n\nYou can only add ${remainingSlots} more photo(s).\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease select only ${remainingSlots} photo(s) or remove some existing photos first.`);
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+        
+      console.log(`✅ ${files.length} file(s) selected (${currentPhotoCount}/${maxPhotos} photos used)`);
       
       // Show loading UI
       container.style.display = 'block';
@@ -3463,7 +3503,7 @@ Need help? Check the console for any error messages.`;
       if (currentImages.length === 0) {
         document.getElementById('image-preview-container').style.display = 'none';
       }
-      checkSaveEnabled();
+      checkSaveEnabled(); // This will also update the photo counter
     }
 
     function toggleOptionsMenu() {
@@ -3617,6 +3657,9 @@ Need help? Check the console for any error messages.`;
       
       // Check storage health
       checkStorageHealth();
+      
+      // Initialize photo counter
+      updatePhotoCounter();
       
     }
     
