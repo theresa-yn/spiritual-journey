@@ -1976,9 +1976,13 @@ Need help? Check the console for any error messages.`;
         };
         
         if (editingIndex !== null && reflections[editingIndex]) {
+          console.log('💾 Updating existing reflection at index:', editingIndex);
           reflections[editingIndex] = localData;
         } else {
+          console.log('💾 Adding new reflection to localStorage (unshift)');
+          console.log('💾 Reflections count before unshift:', reflections.length);
           reflections.unshift(localData);
+          console.log('💾 Reflections count after unshift:', reflections.length);
         }
         
         saveReflectionsToLocalStorageSafely();
@@ -2042,7 +2046,10 @@ Need help? Check the console for any error messages.`;
         
             const docRef = await db.collection('reflections').add(reflectionData);
           trackDatabaseOperation('writes');
+          console.log('💾 Adding new reflection to Firebase array (unshift)');
+          console.log('💾 Reflections count before Firebase unshift:', reflections.length);
             reflections.unshift({ id: docRef.id, ...reflectionData });
+          console.log('💾 Reflections count after Firebase unshift:', reflections.length);
           console.log('✅ Reflection added successfully with ID:', docRef.id);
         }
         
@@ -2113,9 +2120,13 @@ Need help? Check the console for any error messages.`;
           };
           
           if (editingIndex !== null && reflections[editingIndex]) {
+            console.log('💾 Firebase fallback: Updating existing reflection at index:', editingIndex);
             reflections[editingIndex] = localData;
           } else {
+            console.log('💾 Firebase fallback: Adding new reflection (unshift)');
+            console.log('💾 Reflections count before Firebase fallback unshift:', reflections.length);
             reflections.unshift(localData);
+            console.log('💾 Reflections count after Firebase fallback unshift:', reflections.length);
           }
           
           localStorage.setItem('reflections', JSON.stringify(reflections));
@@ -3276,12 +3287,16 @@ Need help? Check the console for any error messages.`;
       console.log('💾 Current state:', {
         title: document.getElementById('title').value.trim(),
         reflection: document.getElementById('reflection').value.trim(),
-        currentImages: Array.isArray(currentImages) ? currentImages.length : 0
+        currentImages: Array.isArray(currentImages) ? currentImages.length : 0,
+        currentUser: currentUser ? 'logged in' : 'not logged in',
+        editingIndex: editingIndex,
+        reflectionsCount: reflections.length
       });
       
       try {
         await saveReflections();
         console.log('💾 saveReflections completed successfully');
+        console.log('💾 Final reflections count:', reflections.length);
       } catch (error) {
         console.error('💾 Error in saveReflections:', error);
         alert('Error saving reflection: ' + error.message);
