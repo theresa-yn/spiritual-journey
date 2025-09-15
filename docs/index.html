@@ -1754,6 +1754,15 @@
         
         // Sign in with Google - try popup first, fallback to redirect if needed
         const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // Configure provider to help with browser compatibility
+        provider.addScope('email');
+        provider.addScope('profile');
+        provider.setCustomParameters({
+          'prompt': 'select_account',
+          'hd': '' // Allow any domain
+        });
+        
         let result;
         
         try {
@@ -1796,16 +1805,16 @@
             return;
           }
           
-          // If popup fails due to sessionStorage issues, try redirect
-          if (popupError.message.includes('sessionStorage') || 
-              popupError.message.includes('Unable to process request') ||
-              popupError.message.includes('missing initial state')) {
-            console.log('Popup failed due to sessionStorage, trying redirect...');
-            message.textContent = 'Trying alternative sign-in method...';
+          // If popup fails, try redirect as fallback
+          console.log('Popup failed, trying redirect method...');
+          message.textContent = 'Trying alternative sign-in method...';
+          
+          try {
             await auth.signInWithRedirect(provider);
             return; // Redirect will handle the rest
-          } else {
-            throw popupError; // Re-throw other errors
+          } catch (redirectError) {
+            console.error('Both popup and redirect failed:', redirectError);
+            throw redirectError;
           }
         }
         
