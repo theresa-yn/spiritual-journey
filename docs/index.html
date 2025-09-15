@@ -1964,38 +1964,8 @@ Need help? Check the console for any error messages.`;
       const date = document.getElementById('entry-date').textContent;
       
       if (!currentUser) {
-        console.log('No user logged in, saving to localStorage only');
-        // Save to localStorage when no user is signed in
-        const localData = {
-          title,
-          reflection,
-          date,
-          images: Array.isArray(currentImages) ? currentImages.slice() : [],
-          image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
-          createdAt: new Date().toISOString()
-        };
-        
-        if (editingIndex !== null && reflections[editingIndex]) {
-          console.log('💾 Updating existing reflection at index:', editingIndex);
-          reflections[editingIndex] = localData;
-        } else {
-          console.log('💾 Adding new reflection to localStorage (unshift)');
-          console.log('💾 Reflections count before unshift:', reflections.length);
-          reflections.unshift(localData);
-          console.log('💾 Reflections count after unshift:', reflections.length);
-        }
-        
-        saveReflectionsToLocalStorageSafely();
-        currentImages = [];
-        
-        // If editing an existing reflection, go back to past reflections page
-        if (editingIndex !== null) {
-          editingIndex = null;
-          goBackToPastReflections();
-        } else {
-          editingIndex = null;
-          goBack();
-        }
+        console.log('No user logged in, Firebase-only saving requires authentication');
+        alert('Please sign in to save your journal entries to the cloud.');
         return;
       }
       
@@ -2059,8 +2029,7 @@ Need help? Check the console for any error messages.`;
           saveButton.disabled = true;
           saveButton.textContent = 'Saving...';
           
-          // Also save to localStorage for offline access
-          saveReflectionsToLocalStorageSafely();
+          // Firebase-only saving (no localStorage fallback)
           
           // Clear form and go back
           currentImages = [];
@@ -2107,39 +2076,8 @@ Need help? Check the console for any error messages.`;
           // Show user-friendly error message
           alert(errorMessage);
           
-          // Fallback to localStorage
-          const localData = {
-            id: 'firebase_fallback_' + Date.now(),
-            userId: currentUser.id,
-            title,
-            reflection,
-            date,
-            images: Array.isArray(currentImages) ? currentImages.slice() : [],
-            image: (Array.isArray(currentImages) && currentImages[0]) ? currentImages[0] : '',
-            createdAt: new Date().toISOString()
-          };
-          
-          if (editingIndex !== null && reflections[editingIndex]) {
-            console.log('💾 Firebase fallback: Updating existing reflection at index:', editingIndex);
-            reflections[editingIndex] = localData;
-          } else {
-            console.log('💾 Firebase fallback: Adding new reflection (unshift)');
-            console.log('💾 Reflections count before Firebase fallback unshift:', reflections.length);
-            reflections.unshift(localData);
-            console.log('💾 Reflections count after Firebase fallback unshift:', reflections.length);
-          }
-          
-          localStorage.setItem('reflections', JSON.stringify(reflections));
-          currentImages = [];
-          
-          // If editing an existing reflection, go back to past reflections page
-          if (editingIndex !== null) {
-            editingIndex = null;
-            goBackToPastReflections();
-          } else {
-          editingIndex = null;
-          goBack();
-          }
+          // Firebase-only: No localStorage fallback
+          console.log('💾 Firebase save failed, no fallback to localStorage');
           return;
         }
       }
