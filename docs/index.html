@@ -3237,7 +3237,10 @@ Need help? Check the console for any error messages.`;
         reflection: reflection,
         hasImage: hasImage,
         currentImageCount: Array.isArray(currentImages) ? currentImages.length : 0,
-        canSave: canSaveResult
+        currentImages: currentImages,
+        canSave: canSaveResult,
+        titleLength: title.length,
+        reflectionLength: reflection.length
       });
       
       // Can save if there's a title and either reflection text OR an image
@@ -3297,6 +3300,12 @@ Need help? Check the console for any error messages.`;
       if (!Array.isArray(currentImages)) currentImages = [];
       let processed = 0;
       
+      console.log('📷 Starting image processing:', {
+        filesToProcess: files.length,
+        currentImages: currentImages.length,
+        maxPhotos: 2
+      });
+      
       // Render existing images first
       if (thumbs) {
         thumbs.innerHTML = '';
@@ -3331,6 +3340,12 @@ Need help? Check the console for any error messages.`;
             compressImage(e.target.result, (compressedDataUrl) => {
               currentImages.push(compressedDataUrl);
               
+              console.log('📷 Image processed and added:', {
+                currentImagesCount: currentImages.length,
+                processed: processed + 1,
+                totalFiles: files.length
+              });
+              
               // Render thumbnail
               if (thumbs) {
                 const wrap = document.createElement('div');
@@ -3357,6 +3372,11 @@ Need help? Check the console for any error messages.`;
               processed++;
               if (processed === files.length) {
                 loading.style.display = 'none';
+                console.log('📷 All images processed, checking save enabled:', {
+                  currentImagesCount: currentImages.length,
+                  title: document.getElementById('title').value.trim(),
+                  reflection: document.getElementById('reflection').value.trim()
+                });
                 checkSaveEnabled();
               }
             });
