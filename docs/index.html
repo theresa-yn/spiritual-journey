@@ -1791,21 +1791,7 @@
           if (popupError.message.includes('disallowed_useragent') || 
               popupError.message.includes('Access blocked') ||
               popupError.message.includes('Use secure browsers')) {
-            message.innerHTML = `
-              <div style="text-align: left; max-width: 400px; margin: 0 auto;">
-                <strong>Browser Security Issue</strong><br><br>
-                Your browser is being blocked by Google's security policies.<br><br>
-                <strong>Try these solutions:</strong><br>
-                • Use Chrome, Firefox, or Safari<br>
-                • Disable ad blockers temporarily<br>
-                • Try incognito/private mode<br>
-                • Clear browser cache and cookies<br><br>
-                <strong>Alternative:</strong> Access the app directly at:<br>
-                <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">
-                  spiritual-journey-e3330.firebaseapp.com
-                </code>
-              </div>
-            `;
+            message.textContent = 'Authentication blocked by browser security. Please try a different browser or access method.';
             message.style.color = '#ff6b6b';
             return;
           }
