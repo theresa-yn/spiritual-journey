@@ -1977,6 +1977,13 @@ Need help? Check the console for any error messages.`;
         date: date
       });
       
+      // Check document size before saving
+      const estimatedSize = estimateDocumentSize(title, reflection, currentImages);
+      if (estimatedSize > 1048576) { // 1MB limit
+        alert(`📏 Document Too Large\n\nYour journal entry is ${Math.round(estimatedSize / 1024)}KB, which exceeds Firebase's 1MB limit.\n\nPlease:\n• Remove some photos\n• Shorten your text\n• Try again`);
+        return;
+      }
+      
       // Handle Firebase mode
       if (currentUser.isFirebase) {
         console.log('Saving reflection for Firebase user');
@@ -3214,6 +3221,31 @@ Need help? Check the console for any error messages.`;
     // Prevent double-saving
     let isSaving = false;
     
+    // Function to estimate document size for Firebase
+    function estimateDocumentSize(title, reflection, images) {
+      const baseSize = JSON.stringify({
+        title: title || '',
+        reflection: reflection || '',
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }).length;
+      
+      const imagesSize = Array.isArray(images) ? 
+        images.reduce((total, img) => total + (img ? img.length : 0), 0) : 0;
+      
+      const totalSize = baseSize + imagesSize;
+      
+      console.log('📏 Document size estimate:', {
+        baseSize: baseSize,
+        imagesSize: imagesSize,
+        totalSize: totalSize,
+        maxAllowed: 1048576, // 1MB
+        withinLimit: totalSize < 1048576
+      });
+      
+      return totalSize;
+    }
+    
     async function saveReflection() {
       if (isSaving) {
         console.log('💾 Save already in progress, ignoring duplicate click');
@@ -3290,8 +3322,25 @@ Need help? Check the console for any error messages.`;
       // Initialize currentImages array if needed
       if (!Array.isArray(currentImages)) currentImages = [];
       const currentPhotoCount = currentImages.length;
+      const maxPhotos = 5; // Limit to 5 photos to stay under 1MB
+      
+      if (currentPhotoCount >= maxPhotos) {
+        alert(`📸 Photo Limit Reached\n\nYou can only add up to ${maxPhotos} photos per entry to stay within Firebase's size limits.\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease remove a photo first if you want to add a new one.`);
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+      
+      // Check if adding these files would exceed the limit
+      if (currentPhotoCount + files.length > maxPhotos) {
+        const remainingSlots = maxPhotos - currentPhotoCount;
+        alert(`📸 Photo Limit Exceeded\n\nYou can only add ${remainingSlots} more photo(s).\n\nCurrent photos: ${currentPhotoCount}/${maxPhotos}\n\nPlease select only ${remainingSlots} photo(s) or remove some existing photos first.`);
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
         
-      console.log(`✅ ${files.length} file(s) selected (${currentPhotoCount} photos currently)`);
+      console.log(`✅ ${files.length} file(s) selected (${currentPhotoCount}/${maxPhotos} photos used)`);
       
       // Show loading UI
       container.style.display = 'block';
@@ -3420,9 +3469,10 @@ Need help? Check the console for any error messages.`;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Calculate new dimensions (max 1200px width/height for better quality)
+        // More aggressive compression for Firebase (max 800px, target 200KB per image)
         let { width, height } = img;
-        const maxSize = 1200;
+        const maxSize = 800; // Reduced from 1200
+        const targetSize = 200000; // 200KB target per image
         
         if (width > height) {
           if (width > maxSize) {
@@ -3443,33 +3493,34 @@ Need help? Check the console for any error messages.`;
         // Draw and compress
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Try different quality levels to get under 1MB
-        let quality = 0.9;
+        // Start with lower quality for Firebase
+        let quality = 0.6; // Reduced from 0.9
         let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         
         // If still too large, reduce quality further
-        while (compressedDataUrl.length > 1000000 && quality > 0.1) { // 1MB limit
+        while (compressedDataUrl.length > targetSize && quality > 0.1) {
           quality -= 0.1;
           compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         }
         
         // If still too large, reduce dimensions progressively
-        if (compressedDataUrl.length > 1000000) {
-          let scaleFactor = 0.8;
-          while (compressedDataUrl.length > 1000000 && scaleFactor > 0.3) {
+        if (compressedDataUrl.length > targetSize) {
+          let scaleFactor = 0.7; // Start smaller
+          while (compressedDataUrl.length > targetSize && scaleFactor > 0.2) {
             canvas.width = width * scaleFactor;
             canvas.height = height * scaleFactor;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5); // Lower quality
             scaleFactor -= 0.1;
           }
         }
         
-        console.log('🔄 Image compressed:', {
+        console.log('🔄 Image compressed for Firebase:', {
           original: dataUrl.length,
           compressed: compressedDataUrl.length,
-          reduction: ((1 - compressedDataUrl.length / dataUrl.length) * 100).toFixed(1) + '%'
+          reduction: ((1 - compressedDataUrl.length / dataUrl.length) * 100).toFixed(1) + '%',
+          target: targetSize
         });
         
         callback(compressedDataUrl);
