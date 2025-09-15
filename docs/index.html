@@ -902,6 +902,14 @@
       
       <p style="font-size: 0.9rem; color: var(--text-muted); margin: 20px 0;">One-click sign-in with your Google account</p>
       
+      <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 12px; margin: 15px 0; font-size: 0.85rem; color: var(--text-secondary);">
+        <strong>⚠️ Having trouble signing in?</strong><br>
+        If you see "Access blocked" errors, try:<br>
+        • Using Chrome, Firefox, or Safari<br>
+        • Disabling ad blockers temporarily<br>
+        • Accessing directly at: <code style="background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px;">spiritual-journey-e3330.firebaseapp.com</code>
+      </div>
+      
       
     </div>
     
@@ -1760,11 +1768,62 @@
           // Try popup first (preferred for better UX)
           result = await auth.signInWithPopup(provider);
         } catch (popupError) {
+          console.error('Popup authentication error:', popupError);
+          
+          // Handle specific error cases
+          if (popupError.code === 'auth/popup-blocked') {
+            message.textContent = 'Popup blocked by browser. Please allow popups and try again.';
+            message.style.color = '#ff6b6b';
+            return;
+          }
+          
+          if (popupError.code === 'auth/popup-closed-by-user') {
+            message.textContent = 'Sign-in cancelled. Please try again.';
+            message.style.color = '#fbbf24';
+            return;
+          }
+          
+          if (popupError.code === 'auth/operation-not-allowed') {
+            message.textContent = 'Google sign-in is not enabled. Please contact support.';
+            message.style.color = '#ff6b6b';
+            return;
+          }
+          
+          if (popupError.code === 'auth/unauthorized-domain') {
+            message.textContent = 'Domain not authorized. Please access from the correct URL.';
+            message.style.color = '#ff6b6b';
+            return;
+          }
+          
+          // Handle the specific "disallowed_useragent" error
+          if (popupError.message.includes('disallowed_useragent') || 
+              popupError.message.includes('Access blocked') ||
+              popupError.message.includes('Use secure browsers')) {
+            message.innerHTML = `
+              <div style="text-align: left; max-width: 400px; margin: 0 auto;">
+                <strong>Browser Security Issue</strong><br><br>
+                Your browser is being blocked by Google's security policies.<br><br>
+                <strong>Try these solutions:</strong><br>
+                • Use Chrome, Firefox, or Safari<br>
+                • Disable ad blockers temporarily<br>
+                • Try incognito/private mode<br>
+                • Clear browser cache and cookies<br><br>
+                <strong>Alternative:</strong> Access the app directly at:<br>
+                <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">
+                  spiritual-journey-e3330.firebaseapp.com
+                </code>
+              </div>
+            `;
+            message.style.color = '#ff6b6b';
+            return;
+          }
+          
           // If popup fails due to sessionStorage issues, try redirect
           if (popupError.message.includes('sessionStorage') || 
               popupError.message.includes('Unable to process request') ||
               popupError.message.includes('missing initial state')) {
             console.log('Popup failed due to sessionStorage, trying redirect...');
+            message.textContent = 'Trying alternative sign-in method...';
             await auth.signInWithRedirect(provider);
             return; // Redirect will handle the rest
           } else {
