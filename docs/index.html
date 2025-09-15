@@ -3262,7 +3262,16 @@ Need help? Check the console for any error messages.`;
       return canSaveResult;
     }
 
+    // Prevent double-saving
+    let isSaving = false;
+    
     async function saveReflection() {
+      if (isSaving) {
+        console.log('💾 Save already in progress, ignoring duplicate click');
+        return;
+      }
+      
+      isSaving = true;
       console.log('💾 Save button clicked!');
       console.log('💾 Current state:', {
         title: document.getElementById('title').value.trim(),
@@ -3276,6 +3285,8 @@ Need help? Check the console for any error messages.`;
       } catch (error) {
         console.error('💾 Error in saveReflections:', error);
         alert('Error saving reflection: ' + error.message);
+      } finally {
+        isSaving = false;
       }
     }
     
@@ -3646,7 +3657,7 @@ Need help? Check the console for any error messages.`;
     // Event listeners
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
-    document.getElementById('save').addEventListener('click', saveReflection);
+    // Note: Save button uses onclick attribute instead of event listener to avoid double-triggering
     // Add event listeners for both gallery and camera inputs
     document.getElementById('image-input').addEventListener('change', previewImage);
     document.getElementById('camera-input').addEventListener('change', previewImage);
