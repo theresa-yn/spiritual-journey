@@ -1806,8 +1806,26 @@
             return;
           }
           
-          // If popup fails, try redirect as fallback
-          console.log('Popup failed, trying redirect method...');
+          // Handle session storage issues
+          if (popupError.message.includes('missing initial state') || 
+              popupError.message.includes('sessionStorage') ||
+              popupError.message.includes('Unable to process request')) {
+            console.log('Session storage issue detected, using redirect method...');
+            message.textContent = 'Using secure sign-in method...';
+            
+            try {
+              await auth.signInWithRedirect(provider);
+              return; // Redirect will handle the rest
+            } catch (redirectError) {
+              console.error('Redirect also failed:', redirectError);
+              message.textContent = 'Sign-in failed. Please try refreshing the page and signing in again.';
+              message.style.color = '#ff6b6b';
+              return;
+            }
+          }
+          
+          // For any other popup errors, try redirect as fallback
+          console.log('Popup failed with unknown error, trying redirect method...');
           message.textContent = 'Trying alternative sign-in method...';
           
           try {
@@ -1815,7 +1833,9 @@
             return; // Redirect will handle the rest
           } catch (redirectError) {
             console.error('Both popup and redirect failed:', redirectError);
-            throw redirectError;
+            message.textContent = 'Sign-in failed. Please try refreshing the page and signing in again.';
+            message.style.color = '#ff6b6b';
+            return;
           }
         }
         
@@ -4156,6 +4176,38 @@ Need help? Check the console for any error messages.`;
       cameraInput.click();
     });
 
+    // Handle redirect authentication result
+    async function handleRedirectResult() {
+      try {
+        const result = await auth.getRedirectResult();
+        if (result.user) {
+          console.log('✅ Redirect authentication successful');
+          currentUser = {
+            id: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName,
+            isFirebase: true
+          };
+          
+          // Show success message
+          const message = document.getElementById('auth-message');
+          message.textContent = 'Successfully signed in!';
+          message.style.color = '#4ade80';
+          message.style.display = 'block';
+          
+          // Hide auth screen and show main screen
+          setTimeout(() => {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            message.style.display = 'none';
+            loadReflections();
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Redirect authentication error:', error);
+      }
+    }
+
     // Load reflections and initialize auth on page load
     async function initializeApp() {
       console.log('Initializing app...');
@@ -4170,6 +4222,9 @@ Need help? Check the console for any error messages.`;
           firebaseInitialized = true;
         console.log('Firebase initialized successfully');
         await initFirebaseAuth();
+        
+        // Check for redirect authentication result
+        await handleRedirectResult();
           break;
       } else {
           console.log(`Firebase initialization attempt ${i + 1} failed, retrying...`);
