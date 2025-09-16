@@ -1041,6 +1041,15 @@
     let user = null;
     let currentTheme = 'dark'; // Default theme
 
+    // Helper function to safely access currentUser properties
+    function getCurrentUserId() {
+      return currentUser && currentUser.id ? currentUser.id : null;
+    }
+
+    function isFirebaseUser() {
+      return currentUser && currentUser.isFirebase === true;
+    }
+
     // Elegant Modal System
     function showModal(options = {}) {
       const {
@@ -1912,8 +1921,14 @@ Next Steps:
     }
 
     async function debugFirebaseData() {
-      if (!currentUser || !currentUser.isFirebase) {
-        alert('Please sign in with Google first to debug data.');
+      if (!isFirebaseUser()) {
+        showAlert('🔒 Please sign in with Google first to debug data.');
+        return;
+      }
+      
+      const userId = getCurrentUserId();
+      if (!userId) {
+        showAlert('❌ User ID not available. Please sign in again.');
         return;
       }
 
@@ -1923,7 +1938,7 @@ Next Steps:
         
         // Test Firestore connection
         const testRef = db.collection('reflections');
-        const snapshot = await testRef.where('userId', '==', currentUser.id).get();
+        const snapshot = await testRef.where('userId', '==', userId).get();
         
         console.log('Firestore Query Results:', {
           totalDocs: snapshot.size,
@@ -1939,7 +1954,7 @@ Next Steps:
         
         const debugInfo = `🔍 Firebase Data Debug:
 
-User ID: ${currentUser.id}
+User ID: ${userId}
 User Email: ${currentUser.email}
 
 Firestore Results:
@@ -2130,7 +2145,7 @@ Need help? Check the console for any error messages.`;
         // Upload each journal to Firebase
         for (const journal of allJournals) {
           const reflectionData = {
-            userId: currentUser.id,
+            userId: getCurrentUserId(),
             title: journal.title || 'Untitled',
             reflection: journal.reflection || '',
             date: journal.date || journal.createdAt || new Date().toISOString(),
@@ -2220,7 +2235,7 @@ Need help? Check the console for any error messages.`;
         // Upload each local reflection to Firebase
         for (const reflection of localData) {
           const reflectionData = {
-            userId: currentUser.id, // Add userId for Firebase
+            userId: getCurrentUserId(), // Add userId for Firebase
             title: reflection.title,
             reflection: reflection.reflection,
             date: reflection.date,
@@ -2335,11 +2350,16 @@ Need help? Check the console for any error messages.`;
       }
         
       // Handle Firebase mode
-      if (currentUser.isFirebase) {
-        console.log('Loading reflections for Firebase user:', currentUser.id);
+      if (isFirebaseUser()) {
+        const userId = getCurrentUserId();
+        if (!userId) {
+          console.error('Firebase user detected but no user ID available');
+          return;
+        }
+        console.log('Loading reflections for Firebase user:', userId);
         try {
           const snapshot = await db.collection('reflections')
-            .where('userId', '==', currentUser.id)
+            .where('userId', '==', userId)
             .orderBy('createdAt', 'desc')
             .get();
           
@@ -2374,7 +2394,7 @@ Need help? Check the console for any error messages.`;
           console.error('Error details:', {
             code: error.code,
             message: error.message,
-            userId: currentUser.id
+            userId: getCurrentUserId()
           });
           
           // Decide how to surface this error
@@ -2437,7 +2457,7 @@ Need help? Check the console for any error messages.`;
       const reflection = document.getElementById('reflection').value.trim();
       const date = document.getElementById('entry-date').textContent;
       
-      if (!currentUser) {
+      if (!currentUser || !getCurrentUserId()) {
         console.log('No user logged in, Firebase-only saving requires authentication');
         showAlert('🔒 Please sign in to save your journal entries to the cloud.');
         return;
@@ -2459,14 +2479,14 @@ Need help? Check the console for any error messages.`;
       }
       
       // Handle Firebase mode
-      if (currentUser.isFirebase) {
+      if (isFirebaseUser()) {
         console.log('Saving reflection for Firebase user');
         
         if (editingIndex !== null && reflections[editingIndex]) {
           // Update existing reflection - preserve original date and createdAt
           console.log('📝 Updating existing reflection');
           const updateData = {
-            userId: currentUser.id,
+            userId: getCurrentUserId(),
             title,
             reflection,
             date, // Keep the original date from the form
@@ -2486,7 +2506,7 @@ Need help? Check the console for any error messages.`;
           // Add new reflection
           console.log('📝 Adding new reflection');
         const reflectionData = {
-          userId: currentUser.id,
+          userId: getCurrentUserId(),
           title,
           reflection,
           date,
@@ -2533,7 +2553,7 @@ Need help? Check the console for any error messages.`;
           console.error('Error details:', {
             code: error.code,
             message: error.message,
-            userId: currentUser.id,
+            userId: getCurrentUserId(),
             reflectionData: reflectionData
           });
           
@@ -3478,13 +3498,20 @@ Need help? Check the console for any error messages.`;
 
       try {
         // Test Firebase connection by trying to read from Firestore
+        const userId = getCurrentUserId();
+        if (!userId) {
+          statusElement.textContent = '❌ User ID not available';
+          statusElement.style.color = '#ff6b6b';
+          return;
+        }
+        
         const testQuery = await db.collection('reflections')
-          .where('userId', '==', currentUser.id)
+          .where('userId', '==', userId)
           .limit(1)
           .get();
         
         const journalCount = await db.collection('reflections')
-          .where('userId', '==', currentUser.id)
+          .where('userId', '==', userId)
           .get();
         
         statusElement.innerHTML = `☁️ <strong>Cloud Storage Active</strong><br>
