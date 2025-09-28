@@ -9,8 +9,12 @@
   <meta name="application-name" content="Heartnotes">
   <meta name="apple-mobile-web-app-title" content="Heartnotes">
   <meta name="msapplication-TileColor" content="#0f0f23">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-orientations" content="portrait">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Heartnotes</title>
   <!-- CI/CD Working! -->
   <!-- Firebase SDK -->
@@ -263,10 +267,19 @@
       color: var(--text-primary);
       text-align: center;
       min-height: 100vh;
+      min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
-      position: relative;
+      /* PWA specific styles */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      overscroll-behavior: none;
       transition: all 0.3s ease;
     }
     
@@ -358,6 +371,11 @@
       padding: 80px 8px 20px 8px;
       position: relative;
       z-index: 1;
+      /* PWA specific styles */
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .prompt, h2, p {
       margin: 10px 0;
@@ -4526,6 +4544,41 @@ Need help? Check the console for any error messages.`;
           .catch(err => console.log('Service Worker registration failed', err));
       });
     }
+
+    // PWA specific behaviors
+    window.addEventListener('load', () => {
+      // Prevent browser navigation gestures
+      if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('Running in PWA standalone mode');
+        
+        // Prevent pull-to-refresh
+        document.body.style.overscrollBehavior = 'none';
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+          const now = (new Date()).getTime();
+          if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+          }
+          lastTouchEnd = now;
+        }, false);
+        
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+        });
+      }
+    });
+
+    // Prevent browser back/forward navigation
+    window.addEventListener('popstate', function(event) {
+      // Prevent going back to previous page
+      history.pushState(null, null, location.href);
+    });
+
+    // Push initial state to prevent back navigation
+    history.pushState(null, null, location.href);
   </script>
 </body>
 </html>
