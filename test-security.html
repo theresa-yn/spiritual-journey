@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Rules Test</title>
+</head>
+<body>
+    <h1>Firestore Security Rules Test</h1>
+    <div id="results"></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase config (same as your app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq",
+            authDomain: "spiritual-journey-e3330.firebaseapp.com",
+            projectId: "spiritual-journey-e3330",
+            storageBucket: "spiritual-journey-e3330.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message) {
+            resultsDiv.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+        
+        async function testSecurityRules() {
+            log('🔒 Testing Firestore Security Rules...');
+            
+            // Test 1: Try to list all documents (should fail)
+            log('Test 1: Trying to list all reflections (should fail)...');
+            try {
+                const snapshot = await db.collection('reflections').get();
+                log('❌ SECURITY ISSUE: Able to list all documents!');
+            } catch (error) {
+                log('✅ GOOD: Cannot list all documents - ' + error.message);
+            }
+            
+            // Test 2: Try to access without authentication (should fail)
+            log('Test 2: Trying to access without authentication (should fail)...');
+            try {
+                await auth.signOut();
+                const snapshot = await db.collection('reflections').limit(1).get();
+                log('❌ SECURITY ISSUE: Able to access without authentication!');
+            } catch (error) {
+                log('✅ GOOD: Cannot access without authentication - ' + error.message);
+            }
+            
+            // Test 3: Sign in and try to access own data (should work)
+            log('Test 3: Signing in and accessing own data (should work)...');
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                log('✅ Signed in as: ' + user.email);
+                
+                const snapshot = await db.collection('reflections')
+                    .where('userId', '==', user.uid)
+                    .limit(1)
+                    .get();
+                log('✅ GOOD: Can access own data - found ' + snapshot.size + ' documents');
+            } catch (error) {
+                log('❌ ERROR: Cannot access own data - ' + error.message);
+            }
+            
+            log('🔒 Security test complete!');
+        }
+        
+        // Run test when page loads
+        testSecurityRules();
+    </script>
+</body>
+</html>
