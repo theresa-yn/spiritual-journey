@@ -2932,7 +2932,25 @@ Need help? Check the console for any error messages.`;
     }
 
     function reviewReflection(index) {
-      alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
+      const reflection = reflections[index];
+      const formattedReflection = (reflection.reflection || 'No content').replace(/\n/g, '<br>');
+      
+      showModal({
+        icon: '📖',
+        title: reflection.title || 'Untitled',
+        content: `
+          <div style="text-align: left; line-height: 1.8; margin: 15px 0;">
+            <div style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-primary);">
+              ${formattedReflection}
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
+              <strong>Date:</strong> ${reflection.date || 'No date'}
+            </div>
+          </div>
+        `,
+        primaryText: 'Close',
+        onPrimary: () => closeModal()
+      });
     }
 
     async function removeImageFromReflection(index) {
