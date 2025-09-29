@@ -572,7 +572,13 @@
       color: var(--text-primary);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(139, 92, 246, 0.1);
     }
-    textarea { min-height: 130px; resize: vertical; line-height: 1.8; }
+    textarea { 
+      min-height: 130px; 
+      resize: vertical; 
+      line-height: 1.8; 
+      white-space: pre-wrap; /* Preserve line breaks and wrap text */
+      word-wrap: break-word; /* Break long words if needed */
+    }
     #history-list { width: 98%; }
     .history-item {
       text-align: left;
@@ -1037,7 +1043,7 @@
     <h2 id="entry-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
     <input type="text" id="title" placeholder="Title">
-    <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
+    <textarea id="reflection" placeholder="Speak or type your reflections..." rows="6" wrap="soft"></textarea>
     <div>
       <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: transparent; justify-content: center; align-items: center;">
         <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
@@ -4330,6 +4336,15 @@ Need help? Check the console for any error messages.`;
     // Event listeners
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
+    
+    // Ensure Enter key creates new lines in textarea
+    document.getElementById('reflection').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        // Allow default behavior (new line) - don't prevent it
+        // This ensures Enter creates new lines instead of submitting
+        return true;
+      }
+    });
     // Note: Save button uses onclick attribute instead of event listener to avoid double-triggering
     // Add event listeners for both gallery and camera inputs
     document.getElementById('image-input').addEventListener('change', previewImage);
