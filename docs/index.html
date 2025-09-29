@@ -591,6 +591,13 @@
       border: 1px solid var(--border-color);
       line-height: 1.8;
     }
+    
+    .reflection-content {
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin: 10px 0;
+    }
     .history-item img {
       max-width: 90%;
       max-height: 400px;
@@ -3434,7 +3441,7 @@ Need help? Check the console for any error messages.`;
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
-          <p>${item.reflection || 'No content'}</p>
+          <div class="reflection-content">${(item.reflection || 'No content').replace(/\n/g, '<br>')}</div>
           <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${imagesHtml}
           <div class="button-group">
