@@ -1043,7 +1043,7 @@
     <h2 id="entry-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
     <input type="text" id="title" placeholder="Title">
-    <textarea id="reflection" placeholder="Speak or type your reflections..." rows="6" wrap="soft"></textarea>
+    <textarea id="reflection" placeholder="Speak or type your reflections... (Press Enter for new lines)" rows="6" wrap="soft"></textarea>
     <div>
       <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: transparent; justify-content: center; align-items: center;">
         <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
@@ -4342,6 +4342,16 @@ Need help? Check the console for any error messages.`;
       if (e.key === 'Enter') {
         // Allow default behavior (new line) - don't prevent it
         // This ensures Enter creates new lines instead of submitting
+        e.stopPropagation(); // Prevent any parent event handlers
+        return true;
+      }
+    });
+    
+    // Also handle keypress to ensure Enter works
+    document.getElementById('reflection').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        // Allow default behavior for new line
+        e.stopPropagation();
         return true;
       }
     });
