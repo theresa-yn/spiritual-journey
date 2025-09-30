@@ -3735,42 +3735,59 @@ Need help? Check the console for any error messages.`;
     }
 
     // Theme switching functions
-    function toggleTheme() {
+    function setThemeMetaColor(theme) {
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      const tileMeta = document.querySelector('meta[name="msapplication-TileColor"]');
+      const darkColor = '#0f0f23';
+      const lightColor = '#e0f2fe';
+      const color = theme === 'sky' ? lightColor : darkColor;
+      if (metaTheme) metaTheme.setAttribute('content', color);
+      if (tileMeta) tileMeta.setAttribute('content', color);
+    }
+
+    function applySkyTheme() {
+      document.documentElement.setAttribute('data-theme', 'sky');
+      document.body.classList.add('theme-sky');
+      document.body.classList.remove('theme-dark');
+      currentTheme = 'sky';
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
-      
+      if (themeToggle) themeToggle.textContent = '🌙';
+      if (sun) sun.style.display = 'block';
+      setThemeMetaColor('sky');
+    }
+
+    function applyDarkTheme() {
+      document.documentElement.removeAttribute('data-theme');
+      document.body.classList.add('theme-dark');
+      document.body.classList.remove('theme-sky');
+      currentTheme = 'dark';
+      const themeToggle = document.getElementById('theme-toggle');
+      const sun = document.querySelector('.sun');
+      if (themeToggle) themeToggle.textContent = '☀️';
+      if (sun) sun.style.display = 'none';
+      setThemeMetaColor('dark');
+    }
+
+    function toggleTheme() {
       if (currentTheme === 'dark') {
-        // Switch to sky theme
-        document.documentElement.setAttribute('data-theme', 'sky');
-        currentTheme = 'sky';
-        themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
+        applySkyTheme();
         localStorage.setItem('theme', 'sky');
       } else {
-        // Switch to dark theme
-        document.documentElement.removeAttribute('data-theme');
-        currentTheme = 'dark';
-        themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
+        applyDarkTheme();
         localStorage.setItem('theme', 'dark');
       }
     }
 
     function loadTheme() {
       const savedTheme = localStorage.getItem('theme');
-      const themeToggle = document.getElementById('theme-toggle');
-      const sun = document.querySelector('.sun');
-      
-      if (savedTheme === 'sky') {
-        document.documentElement.setAttribute('data-theme', 'sky');
-        currentTheme = 'sky';
-        themeToggle.textContent = '🌙';
-        sun.style.display = 'block';
+      // Fallback to system preference when no saved theme
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initial = savedTheme || (prefersDark ? 'dark' : 'sky');
+      if (initial === 'sky') {
+        applySkyTheme();
       } else {
-        document.documentElement.removeAttribute('data-theme');
-        currentTheme = 'dark';
-        themeToggle.textContent = '☀️';
-        sun.style.display = 'none';
+        applyDarkTheme();
       }
     }
 
