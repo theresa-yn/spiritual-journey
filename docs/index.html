@@ -22,8 +22,9 @@
     (function applyEarlyTheme() {
       try {
         var saved = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = saved || (prefersDark ? 'dark' : 'sky');
+        // Default to dark unless user explicitly chose sky
+        var theme = (saved === 'sky') ? 'sky' : 'dark';
+        if (!saved) { try { localStorage.setItem('theme', theme); } catch (e) {} }
         var root = document.documentElement;
         if (theme === 'sky') {
           root.setAttribute('data-theme', 'sky');
@@ -3804,9 +3805,8 @@ Need help? Check the console for any error messages.`;
 
     function loadTheme() {
       const savedTheme = localStorage.getItem('theme');
-      // Fallback to system preference when no saved theme
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initial = savedTheme || (prefersDark ? 'dark' : 'sky');
+      // Force dark by default unless explicitly saved as sky
+      const initial = (savedTheme === 'sky') ? 'sky' : 'dark';
       if (initial === 'sky') {
         applySkyTheme();
       } else {
