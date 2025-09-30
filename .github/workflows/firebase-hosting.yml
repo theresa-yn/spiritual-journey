@@ -1,0 +1,46 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: |
+          npm install -g firebase-tools
+
+      - name: Build site (if needed)
+        run: |
+          echo "No build step configured; ensure docs/ contains the site"
+
+      - name: Deploy to Firebase Hosting
+        if: github.event_name == 'push'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          firebase deploy --only hosting --non-interactive
+
+      - name: Create PR preview channel
+        if: github.event_name == 'pull_request'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          firebase hosting:channel:deploy pr-${{ github.event.number }} --non-interactive
