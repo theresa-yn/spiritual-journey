@@ -572,13 +572,7 @@
       color: var(--text-primary);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(139, 92, 246, 0.1);
     }
-    textarea { 
-      min-height: 130px; 
-      resize: vertical; 
-      line-height: 1.8; 
-      white-space: pre-wrap; /* Preserve line breaks and wrap text */
-      word-wrap: break-word; /* Break long words if needed */
-    }
+    textarea { min-height: 130px; resize: vertical; line-height: 1.8; }
     #history-list { width: 98%; }
     .history-item {
       text-align: left;
@@ -590,13 +584,6 @@
       cursor: pointer;
       border: 1px solid var(--border-color);
       line-height: 1.8;
-    }
-    
-    .reflection-content {
-      line-height: 1.8;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      margin: 10px 0;
     }
     .history-item img {
       max-width: 90%;
@@ -1050,7 +1037,7 @@
     <h2 id="entry-date"></h2>
     <div id="reflection-question" class="prompt">What moment today felt like a gift from the universe?</div>
     <input type="text" id="title" placeholder="Title">
-    <textarea id="reflection" placeholder="Speak or type your reflections... (Press Enter for new lines)" rows="6" wrap="soft"></textarea>
+    <textarea id="reflection" placeholder="Speak or type your reflections..."></textarea>
     <div>
       <div class="photo-toolbar" style="display: flex; gap: 8px; margin: 15px 0; padding: 12px; background: transparent; justify-content: center; align-items: center;">
         <button type="button" class="toolbar-button" onclick="newQuestion()" style="display: flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 25px; background: var(--button-gradient); color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 400; white-space: nowrap; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);">
@@ -2932,25 +2919,7 @@ Need help? Check the console for any error messages.`;
     }
 
     function reviewReflection(index) {
-      const reflection = reflections[index];
-      const formattedReflection = (reflection.reflection || 'No content').replace(/\n/g, '<br>');
-      
-      showModal({
-        icon: '📖',
-        title: reflection.title || 'Untitled',
-        content: `
-          <div style="text-align: left; line-height: 1.8; margin: 15px 0;">
-            <div style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-primary);">
-              ${formattedReflection}
-            </div>
-            <div style="font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
-              <strong>Date:</strong> ${reflection.date || 'No date'}
-            </div>
-          </div>
-        `,
-        primaryText: 'Close',
-        onPrimary: () => closeModal()
-      });
+      alert(`Title: ${reflections[index].title}\n\nReflection: ${reflections[index].reflection}\n\nDate: ${reflections[index].date}`);
     }
 
     async function removeImageFromReflection(index) {
@@ -3459,7 +3428,7 @@ Need help? Check the console for any error messages.`;
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
-          <div class="reflection-content">${(item.reflection || 'No content').replace(/\n/g, '<br>')}</div>
+          <p>${item.reflection || 'No content'}</p>
           <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${imagesHtml}
           <div class="button-group">
@@ -3766,29 +3735,17 @@ Need help? Check the console for any error messages.`;
     }
 
     // Theme switching functions
-    function setThemeMetaColor(theme) {
-      // Keep browser UI (address bar, task switcher) in sync with theme
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      const tileMeta = document.querySelector('meta[name="msapplication-TileColor"]');
-      const darkColor = '#0f0f23';
-      const lightColor = '#e0f2fe'; // sky theme background
-      const color = theme === 'sky' ? lightColor : darkColor;
-      if (metaTheme) metaTheme.setAttribute('content', color);
-      if (tileMeta) tileMeta.setAttribute('content', color);
-    }
-
     function toggleTheme() {
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       
       if (currentTheme === 'dark') {
-        // Switch to sky theme (light mode)
+        // Switch to sky theme
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
         localStorage.setItem('theme', 'sky');
-        setThemeMetaColor('sky');
       } else {
         // Switch to dark theme
         document.documentElement.removeAttribute('data-theme');
@@ -3796,7 +3753,6 @@ Need help? Check the console for any error messages.`;
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
         localStorage.setItem('theme', 'dark');
-        setThemeMetaColor('dark');
       }
     }
 
@@ -3810,13 +3766,11 @@ Need help? Check the console for any error messages.`;
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
-        setThemeMetaColor('sky');
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
-        setThemeMetaColor('dark');
       }
     }
 
@@ -4376,25 +4330,6 @@ Need help? Check the console for any error messages.`;
     // Event listeners
     document.getElementById('title').addEventListener('input', checkSaveEnabled);
     document.getElementById('reflection').addEventListener('input', checkSaveEnabled);
-    
-    // Ensure Enter key creates new lines in textarea
-    document.getElementById('reflection').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        // Allow default behavior (new line) - don't prevent it
-        // This ensures Enter creates new lines instead of submitting
-        e.stopPropagation(); // Prevent any parent event handlers
-        return true;
-      }
-    });
-    
-    // Also handle keypress to ensure Enter works
-    document.getElementById('reflection').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        // Allow default behavior for new line
-        e.stopPropagation();
-        return true;
-      }
-    });
     // Note: Save button uses onclick attribute instead of event listener to avoid double-triggering
     // Add event listeners for both gallery and camera inputs
     document.getElementById('image-input').addEventListener('change', previewImage);
