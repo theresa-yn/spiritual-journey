@@ -3735,6 +3735,12 @@ Need help? Check the console for any error messages.`;
     }
 
     // Theme switching functions
+    function updateThemeColor(theme) {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) return;
+      meta.setAttribute('content', theme === 'sky' ? '#e0f2fe' : '#0f0f23');
+    }
+
     function toggleTheme() {
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
@@ -3746,6 +3752,7 @@ Need help? Check the console for any error messages.`;
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
         localStorage.setItem('theme', 'sky');
+        updateThemeColor('sky');
       } else {
         // Switch to dark theme
         document.documentElement.removeAttribute('data-theme');
@@ -3753,24 +3760,34 @@ Need help? Check the console for any error messages.`;
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
         localStorage.setItem('theme', 'dark');
+        updateThemeColor('dark');
       }
     }
 
-    function loadTheme() {
+    function getPreferredTheme() {
       const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'sky' || savedTheme === 'dark') return savedTheme;
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return prefersDark ? 'dark' : 'sky';
+    }
+
+    function loadTheme() {
+      const theme = getPreferredTheme();
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       
-      if (savedTheme === 'sky') {
+      if (theme === 'sky') {
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
+        updateThemeColor('sky');
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
+        updateThemeColor('dark');
       }
     }
 
