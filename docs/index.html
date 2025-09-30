@@ -284,6 +284,8 @@
       font-family: 'Georgia', serif;
       margin: 0;
       padding: 0;
+      /* Solid fallback prevents white flash */
+      background-color: var(--bg-primary);
       background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
       color: var(--text-primary);
       text-align: center;
