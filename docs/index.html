@@ -3766,17 +3766,29 @@ Need help? Check the console for any error messages.`;
     }
 
     // Theme switching functions
+    function setThemeMetaColor(theme) {
+      // Keep browser UI (address bar, task switcher) in sync with theme
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      const tileMeta = document.querySelector('meta[name="msapplication-TileColor"]');
+      const darkColor = '#0f0f23';
+      const lightColor = '#e0f2fe'; // sky theme background
+      const color = theme === 'sky' ? lightColor : darkColor;
+      if (metaTheme) metaTheme.setAttribute('content', color);
+      if (tileMeta) tileMeta.setAttribute('content', color);
+    }
+
     function toggleTheme() {
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       
       if (currentTheme === 'dark') {
-        // Switch to sky theme
+        // Switch to sky theme (light mode)
         document.documentElement.setAttribute('data-theme', 'sky');
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
         localStorage.setItem('theme', 'sky');
+        setThemeMetaColor('sky');
       } else {
         // Switch to dark theme
         document.documentElement.removeAttribute('data-theme');
@@ -3784,6 +3796,7 @@ Need help? Check the console for any error messages.`;
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
         localStorage.setItem('theme', 'dark');
+        setThemeMetaColor('dark');
       }
     }
 
@@ -3797,11 +3810,13 @@ Need help? Check the console for any error messages.`;
         currentTheme = 'sky';
         themeToggle.textContent = '🌙';
         sun.style.display = 'block';
+        setThemeMetaColor('sky');
       } else {
         document.documentElement.removeAttribute('data-theme');
         currentTheme = 'dark';
         themeToggle.textContent = '☀️';
         sun.style.display = 'none';
+        setThemeMetaColor('dark');
       }
     }
 
