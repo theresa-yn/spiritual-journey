@@ -746,19 +746,25 @@
       display: none;
       z-index: 1000;
       min-width: 120px;
+      /* arrange items in a row when visible */
+      flex-direction: row;
+      gap: 6px;
+      align-items: center;
     }
     .kebab-dropdown .kebab-item {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
-      width: 100%;
+      width: auto;
       text-align: center;
       padding: 6px 12px;
       border-radius: 16px; /* smaller pill */
       color: var(--text-primary);
       cursor: pointer;
       transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
-      margin: 3px 0;
+      margin: 0;
       font-size: 0.85rem;
+      display: inline-flex;
+      white-space: nowrap;
     }
     .kebab-dropdown .kebab-item:hover {
       background: var(--bg-tertiary);
@@ -3561,9 +3567,9 @@ Need help? Check the console for any error messages.`;
       const id = `kebab-menu-${index}`;
       const menu = document.getElementById(id);
       if (!menu) return;
-      const isOpen = menu.style.display === 'block';
+      const isOpen = menu.style.display === 'flex';
       closeAllKebabMenus();
-      menu.style.display = isOpen ? 'none' : 'block';
+      menu.style.display = isOpen ? 'none' : 'flex';
     }
 
     // Close kebab menus on outside click
