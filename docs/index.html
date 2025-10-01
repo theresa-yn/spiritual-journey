@@ -44,6 +44,17 @@
         if (tileMeta) tileMeta.setAttribute('content', color);
         
         console.log('Early theme applied:', theme, 'data-theme:', root.getAttribute('data-theme'));
+        
+        // Immediate background fix for sky theme
+        if (theme === 'sky') {
+          setTimeout(function() {
+            console.log('IMMEDIATE SKY THEME FIX');
+            document.body.style.backgroundColor = '#e0f2fe';
+            document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
+            document.body.style.color = '#0c4a6e';
+            document.documentElement.style.backgroundColor = '#e0f2fe';
+          }, 10);
+        }
       } catch (e) {
         console.warn('Early theme application failed:', e);
       }
@@ -4517,6 +4528,17 @@ Need help? Check the console for any error messages.`;
           document.documentElement.style.setProperty('--text-secondary', '#0369a1');
           document.documentElement.style.setProperty('--text-muted', '#0ea5e9');
         }
+        
+        // DIRECT BACKGROUND FIX - Force the body background directly
+        console.log('DIRECT BACKGROUND FIX - Setting body background to light blue');
+        document.body.style.backgroundColor = '#e0f2fe';
+        document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
+        document.body.style.color = '#0c4a6e';
+        
+        // Also force the html element
+        document.documentElement.style.backgroundColor = '#e0f2fe';
+        
+        console.log('Direct background fix applied - body background:', document.body.style.backgroundColor);
       }, 100);
       
       // Initialize image click handlers
