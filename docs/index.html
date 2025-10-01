@@ -35,7 +35,9 @@
         var color = theme === 'sky' ? '#e0f2fe' : '#0f0f23';
         if (metaTheme) metaTheme.setAttribute('content', color);
         if (tileMeta) tileMeta.setAttribute('content', color);
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Early theme application failed:', e);
+      }
     })();
   </script>
   <!-- Firebase SDK -->
@@ -1010,7 +1012,7 @@
   
   <div class="header">
     <div>
-      <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">🌙</button>
+      <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">☀️</button>
       <!-- Authentication removed - automatic sync without signup -->
     </div>
     <div>
@@ -3812,6 +3814,14 @@ Need help? Check the console for any error messages.`;
       } else {
         applyDarkTheme();
       }
+      
+      // Ensure theme toggle button shows correct icon
+      setTimeout(function() {
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+          themeToggle.textContent = initial === 'sky' ? '🌙' : '☀️';
+        }
+      }, 50);
     }
 
     function startVoiceRecognition() {
