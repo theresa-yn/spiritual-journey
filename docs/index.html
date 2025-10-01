@@ -741,22 +741,27 @@
       border: 1px solid var(--border-color);
       box-shadow: 0 8px 20px rgba(0,0,0,0.12);
       border-radius: 12px;
-      padding: 6px;
+      padding: 8px;
       display: none;
       z-index: 1000;
       min-width: 140px;
     }
     .kebab-dropdown .kebab-item {
-      background: transparent;
-      border: none;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       width: 100%;
-      text-align: left;
-      padding: 10px 12px;
-      border-radius: 8px;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 20px; /* pill shape like Start Journaling */
       color: var(--text-primary);
       cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+      margin: 4px 0;
     }
-    .kebab-dropdown .kebab-item:hover { background: var(--bg-tertiary); }
+    .kebab-dropdown .kebab-item:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
 
 
 
