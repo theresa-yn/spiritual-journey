@@ -35,6 +35,9 @@
         var color = theme === 'sky' ? '#e0f2fe' : '#0f0f23';
         if (metaTheme) metaTheme.setAttribute('content', color);
         if (tileMeta) tileMeta.setAttribute('content', color);
+        
+        // Store theme in window object for later access
+        window.earlyTheme = theme;
       } catch (e) {
         console.warn('Early theme application failed:', e);
       }
@@ -1184,7 +1187,7 @@
     let currentImages = [];
     let editingIndex = null;
     let user = null;
-    let currentTheme = 'dark'; // Default theme
+    let currentTheme = 'dark'; // Default theme - will be updated by loadTheme()
 
     // Image Modal Functions
     function openImageModal(imageSrc, imageAlt = '') {
@@ -3795,20 +3798,25 @@ Need help? Check the console for any error messages.`;
     }
 
     function toggleTheme() {
+      console.log('Toggle theme called, current theme:', currentTheme);
       if (currentTheme === 'dark') {
+        console.log('Switching to sky theme');
         applySkyTheme();
         localStorage.setItem('theme', 'sky');
       } else {
+        console.log('Switching to dark theme');
         applyDarkTheme();
         localStorage.setItem('theme', 'dark');
       }
     }
 
     function loadTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      // Fallback to system preference when no saved theme
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initial = savedTheme || (prefersDark ? 'dark' : 'sky');
+      // Use the theme that was already applied early, or determine it
+      const initial = window.earlyTheme || localStorage.getItem('theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'sky');
+      
+      // Update currentTheme variable to match what's actually applied
+      currentTheme = initial;
+      
       if (initial === 'sky') {
         applySkyTheme();
       } else {
