@@ -31,8 +31,10 @@
         var root = document.documentElement;
         if (theme === 'sky') {
           root.setAttribute('data-theme', 'sky');
+          console.log('Early theme: Set data-theme="sky"');
         } else {
           root.removeAttribute('data-theme');
+          console.log('Early theme: Removed data-theme attribute');
         }
         
         var metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -41,7 +43,7 @@
         if (metaTheme) metaTheme.setAttribute('content', color);
         if (tileMeta) tileMeta.setAttribute('content', color);
         
-        console.log('Early theme applied:', theme);
+        console.log('Early theme applied:', theme, 'data-theme:', root.getAttribute('data-theme'));
       } catch (e) {
         console.warn('Early theme application failed:', e);
       }
@@ -3823,6 +3825,7 @@ Need help? Check the console for any error messages.`;
       const initial = window.currentTheme || 'dark';
       
       console.log('Loading theme:', initial, 'Current theme:', window.currentTheme);
+      console.log('Document data-theme before loadTheme:', document.documentElement.getAttribute('data-theme'));
       
       // Force reapply the theme to ensure it's properly set
       if (initial === 'sky') {
@@ -3830,6 +3833,8 @@ Need help? Check the console for any error messages.`;
       } else {
         applyDarkTheme();
       }
+      
+      console.log('Document data-theme after loadTheme:', document.documentElement.getAttribute('data-theme'));
       
       // Ensure theme toggle button shows correct icon
       setTimeout(function() {
@@ -4476,6 +4481,19 @@ Need help? Check the console for any error messages.`;
       
       // Load theme first
       loadTheme();
+      
+      // Double-check theme state after a short delay
+      setTimeout(function() {
+        console.log('Final theme check - Current theme:', window.currentTheme);
+        console.log('Final theme check - data-theme:', document.documentElement.getAttribute('data-theme'));
+        console.log('Final theme check - Button text:', document.getElementById('theme-toggle')?.textContent);
+        
+        // Force correct theme if something went wrong
+        if (window.currentTheme === 'sky' && !document.documentElement.getAttribute('data-theme')) {
+          console.log('Fixing missing data-theme attribute for sky theme');
+          document.documentElement.setAttribute('data-theme', 'sky');
+        }
+      }, 100);
       
       // Initialize image click handlers
       addImageClickHandlers();
