@@ -463,8 +463,8 @@
       font-size: 0.95rem;
       color: var(--text-muted);
     }
-    /* Softer dark color for journal text - enforce over theme blues */
-    .history-item, .history-item p, #reflection {
+    /* Softer dark color for journal text in LIGHT theme only */
+    [data-theme="sky"] .history-item, [data-theme="sky"] .history-item p, [data-theme="sky"] #reflection {
       color: #374151 !important; /* slate-700 */
     }
     .button {
