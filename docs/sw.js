@@ -1,5 +1,5 @@
 // sw.js - Service Worker for Soul Reflections App
-const CACHE_NAME = "soul-reflections-cache-v2";
+const CACHE_NAME = "soul-reflections-cache-v3";
 const OFFLINE_URL = "offline.html";
 // Files to cache
 const FILES_TO_CACHE = [
