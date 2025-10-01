@@ -4493,6 +4493,30 @@ Need help? Check the console for any error messages.`;
           console.log('Fixing missing data-theme attribute for sky theme');
           document.documentElement.setAttribute('data-theme', 'sky');
         }
+        
+        // Force sky theme for testing
+        console.log('FORCING SKY THEME FOR TESTING');
+        document.documentElement.setAttribute('data-theme', 'sky');
+        window.currentTheme = 'sky';
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) themeToggle.textContent = '🌙';
+        console.log('Forced sky theme - data-theme:', document.documentElement.getAttribute('data-theme'));
+        
+        // Check CSS variables
+        const computedStyle = getComputedStyle(document.documentElement);
+        const bgPrimary = computedStyle.getPropertyValue('--bg-primary');
+        console.log('CSS variable --bg-primary:', bgPrimary);
+        
+        // Force set CSS variables if they're not working
+        if (!bgPrimary || bgPrimary.trim() === '') {
+          console.log('CSS variables not working, forcing them manually');
+          document.documentElement.style.setProperty('--bg-primary', '#e0f2fe');
+          document.documentElement.style.setProperty('--bg-secondary', '#bae6fd');
+          document.documentElement.style.setProperty('--bg-tertiary', '#7dd3fc');
+          document.documentElement.style.setProperty('--text-primary', '#0c4a6e');
+          document.documentElement.style.setProperty('--text-secondary', '#0369a1');
+          document.documentElement.style.setProperty('--text-muted', '#0ea5e9');
+        }
       }, 100);
       
       // Initialize image click handlers
