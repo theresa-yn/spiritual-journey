@@ -719,7 +719,7 @@
     }
 
     /* Kebab (three-dot) menu for history items */
-    .kebab-container { position: relative; display: inline-block; }
+    .kebab-container { position: relative; display: inline-flex; align-items: center; gap: 6px; }
     .kebab-button {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
@@ -735,22 +735,19 @@
     }
     .kebab-button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
     .kebab-dropdown {
-      position: absolute;
-      top: 50%;
-      right: 42px; /* align inline with the dot button */
-      transform: translateY(-50%);
-      background: transparent; /* remove background box */
-      border: none;            /* remove border box */
-      box-shadow: none;        /* remove shadow box */
+      position: static; /* inline with the dot button */
+      background: transparent;
+      border: none;
+      box-shadow: none;
       border-radius: 0;
       padding: 0;
-      display: none;
-      z-index: 1000;
-      min-width: 120px;
-      /* arrange items in a row when visible */
+      display: none; /* toggled to flex */
+      z-index: 1;
+      min-width: 0;
       flex-direction: row;
       gap: 6px;
       align-items: center;
+      margin-left: 6px;
     }
     .kebab-dropdown .kebab-item {
       background: var(--bg-secondary);
