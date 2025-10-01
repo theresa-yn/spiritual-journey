@@ -1041,6 +1041,7 @@
   <div class="header">
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">☀️</button>
+      <button class="button" onclick="applyDarkTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem; background: red;">Force Dark</button>
       <!-- Authentication removed - automatic sync without signup -->
     </div>
     <div>
@@ -3813,6 +3814,7 @@ Need help? Check the console for any error messages.`;
     }
 
     function applyDarkTheme() {
+      console.log('APPLYING DARK THEME');
       // Apply dark theme
       document.documentElement.removeAttribute('data-theme');
       document.body.classList.add('theme-dark');
@@ -3830,14 +3832,17 @@ Need help? Check the console for any error messages.`;
       document.body.style.color = '#ffffff';
       document.documentElement.style.backgroundColor = '#0f0f23';
       
-      // Dark theme applied
+      console.log('Dark theme applied - body background:', document.body.style.backgroundColor);
     }
 
     function toggleTheme() {
+      console.log('Toggle theme called, current theme:', window.currentTheme);
       if (window.currentTheme === 'dark') {
+        console.log('Switching to sky theme');
         applySkyTheme();
         localStorage.setItem('theme', 'sky');
       } else {
+        console.log('Switching to dark theme');
         applyDarkTheme();
         localStorage.setItem('theme', 'dark');
       }
