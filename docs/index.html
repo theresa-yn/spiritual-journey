@@ -3800,6 +3800,7 @@ Need help? Check the console for any error messages.`;
     }
 
     function applySkyTheme() {
+      console.log('APPLYING SKY THEME');
       // Apply sky theme
       document.documentElement.setAttribute('data-theme', 'sky');
       document.body.classList.add('theme-sky');
@@ -3810,7 +3811,20 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '🌙';
       if (sun) sun.style.display = 'block';
       setThemeMetaColor('sky');
-      // Sky theme applied
+      
+      // AGGRESSIVE sky theme color override
+      document.body.style.setProperty('background-color', '#e0f2fe', 'important');
+      document.body.style.setProperty('background', 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)', 'important');
+      document.body.style.setProperty('color', '#0c4a6e', 'important');
+      document.documentElement.style.setProperty('background-color', '#e0f2fe', 'important');
+      
+      // Also override CSS variables
+      document.documentElement.style.setProperty('--bg-primary', '#e0f2fe', 'important');
+      document.documentElement.style.setProperty('--bg-secondary', '#bae6fd', 'important');
+      document.documentElement.style.setProperty('--bg-tertiary', '#7dd3fc', 'important');
+      document.documentElement.style.setProperty('--text-primary', '#0c4a6e', 'important');
+      
+      console.log('Sky theme applied - body background:', document.body.style.backgroundColor);
     }
 
     function applyDarkTheme() {
@@ -3826,13 +3840,20 @@ Need help? Check the console for any error messages.`;
       if (sun) sun.style.display = 'none';
       setThemeMetaColor('dark');
       
-      // Force dark theme colors directly
-      document.body.style.backgroundColor = '#0f0f23';
-      document.body.style.background = 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)';
-      document.body.style.color = '#ffffff';
-      document.documentElement.style.backgroundColor = '#0f0f23';
+      // AGGRESSIVE dark theme color override
+      document.body.style.setProperty('background-color', '#0f0f23', 'important');
+      document.body.style.setProperty('background', 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)', 'important');
+      document.body.style.setProperty('color', '#ffffff', 'important');
+      document.documentElement.style.setProperty('background-color', '#0f0f23', 'important');
+      
+      // Also override any CSS variables that might be interfering
+      document.documentElement.style.setProperty('--bg-primary', '#0f0f23', 'important');
+      document.documentElement.style.setProperty('--bg-secondary', '#1a1a2e', 'important');
+      document.documentElement.style.setProperty('--bg-tertiary', '#16213e', 'important');
+      document.documentElement.style.setProperty('--text-primary', '#ffffff', 'important');
       
       console.log('Dark theme applied - body background:', document.body.style.backgroundColor);
+      console.log('Dark theme applied - computed background:', getComputedStyle(document.body).backgroundColor);
     }
 
     function toggleTheme() {
