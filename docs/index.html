@@ -24,20 +24,24 @@
         var saved = localStorage.getItem('theme');
         var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         var theme = saved || (prefersDark ? 'dark' : 'sky');
+        
+        // Store theme globally for access by other functions
+        window.currentTheme = theme;
+        
         var root = document.documentElement;
         if (theme === 'sky') {
           root.setAttribute('data-theme', 'sky');
         } else {
           root.removeAttribute('data-theme');
         }
+        
         var metaTheme = document.querySelector('meta[name="theme-color"]');
         var tileMeta = document.querySelector('meta[name="msapplication-TileColor"]');
         var color = theme === 'sky' ? '#e0f2fe' : '#0f0f23';
         if (metaTheme) metaTheme.setAttribute('content', color);
         if (tileMeta) tileMeta.setAttribute('content', color);
         
-        // Store theme in window object for later access
-        window.earlyTheme = theme;
+        console.log('Early theme applied:', theme);
       } catch (e) {
         console.warn('Early theme application failed:', e);
       }
@@ -1187,7 +1191,7 @@
     let currentImages = [];
     let editingIndex = null;
     let user = null;
-    let currentTheme = 'dark'; // Default theme - will be updated by loadTheme()
+    // Theme will be managed by window.currentTheme set in early theme application
 
     // Image Modal Functions
     function openImageModal(imageSrc, imageAlt = '') {
@@ -3778,7 +3782,7 @@ Need help? Check the console for any error messages.`;
       document.documentElement.setAttribute('data-theme', 'sky');
       document.body.classList.add('theme-sky');
       document.body.classList.remove('theme-dark');
-      currentTheme = 'sky';
+      window.currentTheme = 'sky';
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       if (themeToggle) themeToggle.textContent = '🌙';
@@ -3792,7 +3796,7 @@ Need help? Check the console for any error messages.`;
       document.documentElement.removeAttribute('data-theme');
       document.body.classList.add('theme-dark');
       document.body.classList.remove('theme-sky');
-      currentTheme = 'dark';
+      window.currentTheme = 'dark';
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       if (themeToggle) themeToggle.textContent = '☀️';
@@ -3802,8 +3806,8 @@ Need help? Check the console for any error messages.`;
     }
 
     function toggleTheme() {
-      console.log('Toggle theme called, current theme:', currentTheme);
-      if (currentTheme === 'dark') {
+      console.log('Toggle theme called, current theme:', window.currentTheme);
+      if (window.currentTheme === 'dark') {
         console.log('Switching to sky theme');
         applySkyTheme();
         localStorage.setItem('theme', 'sky');
@@ -3815,13 +3819,10 @@ Need help? Check the console for any error messages.`;
     }
 
     function loadTheme() {
-      // Use the theme that was already applied early, or determine it
-      const initial = window.earlyTheme || localStorage.getItem('theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'sky');
+      // Use the theme that was already applied early
+      const initial = window.currentTheme || 'dark';
       
-      console.log('Loading theme:', initial, 'Early theme:', window.earlyTheme);
-      
-      // Update currentTheme variable to match what's actually applied
-      currentTheme = initial;
+      console.log('Loading theme:', initial, 'Current theme:', window.currentTheme);
       
       // Force reapply the theme to ensure it's properly set
       if (initial === 'sky') {
