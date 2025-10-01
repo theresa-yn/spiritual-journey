@@ -701,6 +701,15 @@
       transform: scale(1.05);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
+    /* Dark theme readability tweaks: brighter titles, softer date/time */
+    :root:not([data-theme="sky"]) .history-item h3 {
+      color: #e5e7eb; /* zinc-200 */
+    }
+    :root:not([data-theme="sky"]) .history-item small,
+    :root:not([data-theme="sky"]) #entry-date {
+      color: #cbd5e1 !important; /* slate-300 */
+      text-shadow: none;
+    }
     #current-date {
       font-size: 1.1rem;
       font-weight: 400;
