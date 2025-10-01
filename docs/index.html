@@ -3532,7 +3532,6 @@ Need help? Check the console for any error messages.`;
           <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${imagesHtml}
           <div class="button-group">
-            ${allImages.length > 0 ? `<button class="button" onclick="removeImageFromReflection(${index})">Remove All Images</button>` : ""}
             <div class="kebab-container">
               <button class="kebab-button" onclick="toggleKebabMenu(event, ${index})" aria-label="More options">⋯</button>
               <div class="kebab-dropdown" id="kebab-menu-${index}">
