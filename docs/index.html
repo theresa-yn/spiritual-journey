@@ -3774,6 +3774,7 @@ Need help? Check the console for any error messages.`;
     }
 
     function applySkyTheme() {
+      console.log('Applying sky theme');
       document.documentElement.setAttribute('data-theme', 'sky');
       document.body.classList.add('theme-sky');
       document.body.classList.remove('theme-dark');
@@ -3783,9 +3784,11 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '🌙';
       if (sun) sun.style.display = 'block';
       setThemeMetaColor('sky');
+      console.log('Sky theme applied, data-theme:', document.documentElement.getAttribute('data-theme'));
     }
 
     function applyDarkTheme() {
+      console.log('Applying dark theme');
       document.documentElement.removeAttribute('data-theme');
       document.body.classList.add('theme-dark');
       document.body.classList.remove('theme-sky');
@@ -3795,6 +3798,7 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '☀️';
       if (sun) sun.style.display = 'none';
       setThemeMetaColor('dark');
+      console.log('Dark theme applied, data-theme:', document.documentElement.getAttribute('data-theme'));
     }
 
     function toggleTheme() {
@@ -3814,9 +3818,12 @@ Need help? Check the console for any error messages.`;
       // Use the theme that was already applied early, or determine it
       const initial = window.earlyTheme || localStorage.getItem('theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'sky');
       
+      console.log('Loading theme:', initial, 'Early theme:', window.earlyTheme);
+      
       // Update currentTheme variable to match what's actually applied
       currentTheme = initial;
       
+      // Force reapply the theme to ensure it's properly set
       if (initial === 'sky') {
         applySkyTheme();
       } else {
@@ -3828,6 +3835,7 @@ Need help? Check the console for any error messages.`;
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
           themeToggle.textContent = initial === 'sky' ? '🌙' : '☀️';
+          console.log('Set theme toggle button to:', themeToggle.textContent, 'for theme:', initial);
         }
       }, 50);
     }
