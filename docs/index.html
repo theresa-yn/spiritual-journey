@@ -46,8 +46,10 @@
         // Theme applied successfully
         
         // Immediate background fix for themes
+        console.log('Early theme application - theme:', theme);
         if (theme === 'sky') {
           setTimeout(function() {
+            console.log('Early sky theme fix');
             // Apply sky theme colors
             document.body.style.backgroundColor = '#e0f2fe';
             document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
@@ -56,6 +58,7 @@
           }, 10);
         } else if (theme === 'dark') {
           setTimeout(function() {
+            console.log('Early dark theme fix');
             // Apply dark theme colors
             document.body.style.backgroundColor = '#0f0f23';
             document.body.style.background = 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)';
@@ -1042,6 +1045,7 @@
     <div>
       <button id="theme-toggle" class="button" onclick="toggleTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem;">☀️</button>
       <button class="button" onclick="applyDarkTheme()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem; background: red;">Force Dark</button>
+      <button class="button" onclick="checkThemeState()" style="margin-right: 10px; padding: 8px 12px; font-size: 0.8rem; background: orange;">Check Theme</button>
       <!-- Authentication removed - automatic sync without signup -->
     </div>
     <div>
@@ -3869,9 +3873,25 @@ Need help? Check the console for any error messages.`;
       }
     }
 
+    function checkThemeState() {
+      console.log('=== THEME STATE CHECK ===');
+      console.log('window.currentTheme:', window.currentTheme);
+      console.log('localStorage theme:', localStorage.getItem('theme'));
+      console.log('data-theme attribute:', document.documentElement.getAttribute('data-theme'));
+      console.log('body background (style):', document.body.style.backgroundColor);
+      console.log('body background (computed):', getComputedStyle(document.body).backgroundColor);
+      console.log('body background-image (computed):', getComputedStyle(document.body).backgroundImage);
+      console.log('documentElement background (style):', document.documentElement.style.backgroundColor);
+      console.log('documentElement background (computed):', getComputedStyle(document.documentElement).backgroundColor);
+      console.log('Theme toggle button text:', document.getElementById('theme-toggle')?.textContent);
+      console.log('========================');
+    }
+
     function loadTheme() {
       // Use the theme that was already applied early
       const initial = window.currentTheme || 'dark';
+      
+      console.log('loadTheme called with initial:', initial);
       
       // Force reapply the theme to ensure it's properly set
       if (initial === 'sky') {
