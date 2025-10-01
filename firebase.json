@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "heartnotes-xyz",
     "public": "docs",
     "ignore": [
       "firebase.json",
