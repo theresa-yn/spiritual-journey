@@ -736,8 +736,9 @@
     .kebab-button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
     .kebab-dropdown {
       position: absolute;
-      top: 42px;
-      right: 0;
+      top: 50%;
+      right: 42px; /* align inline with the dot button */
+      transform: translateY(-50%);
       background: transparent; /* remove background box */
       border: none;            /* remove border box */
       box-shadow: none;        /* remove shadow box */
