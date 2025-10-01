@@ -737,11 +737,11 @@
       position: absolute;
       top: 42px;
       right: 0;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-      border-radius: 12px;
-      padding: 8px;
+      background: transparent; /* remove background box */
+      border: none;            /* remove border box */
+      box-shadow: none;        /* remove shadow box */
+      border-radius: 0;
+      padding: 0;
       display: none;
       z-index: 1000;
       min-width: 140px;
