@@ -43,12 +43,12 @@
         if (metaTheme) metaTheme.setAttribute('content', color);
         if (tileMeta) tileMeta.setAttribute('content', color);
         
-        console.log('Early theme applied:', theme, 'data-theme:', root.getAttribute('data-theme'));
+        // Theme applied successfully
         
         // Immediate background fix for themes
         if (theme === 'sky') {
           setTimeout(function() {
-            console.log('IMMEDIATE SKY THEME FIX');
+            // Apply sky theme colors
             document.body.style.backgroundColor = '#e0f2fe';
             document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
             document.body.style.color = '#0c4a6e';
@@ -56,7 +56,7 @@
           }, 10);
         } else if (theme === 'dark') {
           setTimeout(function() {
-            console.log('IMMEDIATE DARK THEME FIX');
+            // Apply dark theme colors
             document.body.style.backgroundColor = '#0f0f23';
             document.body.style.background = 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)';
             document.body.style.color = '#ffffff';
@@ -3799,7 +3799,7 @@ Need help? Check the console for any error messages.`;
     }
 
     function applySkyTheme() {
-      console.log('Applying sky theme');
+      // Apply sky theme
       document.documentElement.setAttribute('data-theme', 'sky');
       document.body.classList.add('theme-sky');
       document.body.classList.remove('theme-dark');
@@ -3809,11 +3809,11 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '🌙';
       if (sun) sun.style.display = 'block';
       setThemeMetaColor('sky');
-      console.log('Sky theme applied, data-theme:', document.documentElement.getAttribute('data-theme'));
+      // Sky theme applied
     }
 
     function applyDarkTheme() {
-      console.log('Applying dark theme');
+      // Apply dark theme
       document.documentElement.removeAttribute('data-theme');
       document.body.classList.add('theme-dark');
       document.body.classList.remove('theme-sky');
@@ -3830,17 +3830,14 @@ Need help? Check the console for any error messages.`;
       document.body.style.color = '#ffffff';
       document.documentElement.style.backgroundColor = '#0f0f23';
       
-      console.log('Dark theme applied, data-theme:', document.documentElement.getAttribute('data-theme'));
+      // Dark theme applied
     }
 
     function toggleTheme() {
-      console.log('Toggle theme called, current theme:', window.currentTheme);
       if (window.currentTheme === 'dark') {
-        console.log('Switching to sky theme');
         applySkyTheme();
         localStorage.setItem('theme', 'sky');
       } else {
-        console.log('Switching to dark theme');
         applyDarkTheme();
         localStorage.setItem('theme', 'dark');
       }
@@ -3850,9 +3847,6 @@ Need help? Check the console for any error messages.`;
       // Use the theme that was already applied early
       const initial = window.currentTheme || 'dark';
       
-      console.log('Loading theme:', initial, 'Current theme:', window.currentTheme);
-      console.log('Document data-theme before loadTheme:', document.documentElement.getAttribute('data-theme'));
-      
       // Force reapply the theme to ensure it's properly set
       if (initial === 'sky') {
         applySkyTheme();
@@ -3860,14 +3854,11 @@ Need help? Check the console for any error messages.`;
         applyDarkTheme();
       }
       
-      console.log('Document data-theme after loadTheme:', document.documentElement.getAttribute('data-theme'));
-      
       // Ensure theme toggle button shows correct icon
       setTimeout(function() {
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
           themeToggle.textContent = initial === 'sky' ? '🌙' : '☀️';
-          console.log('Set theme toggle button to:', themeToggle.textContent, 'for theme:', initial);
         }
       }, 50);
     }
@@ -4508,53 +4499,7 @@ Need help? Check the console for any error messages.`;
       // Load theme first
       loadTheme();
       
-      // Double-check theme state after a short delay
-      setTimeout(function() {
-        console.log('Final theme check - Current theme:', window.currentTheme);
-        console.log('Final theme check - data-theme:', document.documentElement.getAttribute('data-theme'));
-        console.log('Final theme check - Button text:', document.getElementById('theme-toggle')?.textContent);
-        
-        // Force correct theme if something went wrong
-        if (window.currentTheme === 'sky' && !document.documentElement.getAttribute('data-theme')) {
-          console.log('Fixing missing data-theme attribute for sky theme');
-          document.documentElement.setAttribute('data-theme', 'sky');
-        }
-        
-        // Force sky theme for testing
-        console.log('FORCING SKY THEME FOR TESTING');
-        document.documentElement.setAttribute('data-theme', 'sky');
-        window.currentTheme = 'sky';
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) themeToggle.textContent = '🌙';
-        console.log('Forced sky theme - data-theme:', document.documentElement.getAttribute('data-theme'));
-        
-        // Check CSS variables
-        const computedStyle = getComputedStyle(document.documentElement);
-        const bgPrimary = computedStyle.getPropertyValue('--bg-primary');
-        console.log('CSS variable --bg-primary:', bgPrimary);
-        
-        // Force set CSS variables if they're not working
-        if (!bgPrimary || bgPrimary.trim() === '') {
-          console.log('CSS variables not working, forcing them manually');
-          document.documentElement.style.setProperty('--bg-primary', '#e0f2fe');
-          document.documentElement.style.setProperty('--bg-secondary', '#bae6fd');
-          document.documentElement.style.setProperty('--bg-tertiary', '#7dd3fc');
-          document.documentElement.style.setProperty('--text-primary', '#0c4a6e');
-          document.documentElement.style.setProperty('--text-secondary', '#0369a1');
-          document.documentElement.style.setProperty('--text-muted', '#0ea5e9');
-        }
-        
-        // DIRECT BACKGROUND FIX - Force the body background directly
-        console.log('DIRECT BACKGROUND FIX - Setting body background to light blue');
-        document.body.style.backgroundColor = '#e0f2fe';
-        document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
-        document.body.style.color = '#0c4a6e';
-        
-        // Also force the html element
-        document.documentElement.style.backgroundColor = '#e0f2fe';
-        
-        console.log('Direct background fix applied - body background:', document.body.style.backgroundColor);
-      }, 100);
+      // Theme is now working properly
       
       // Initialize image click handlers
       addImageClickHandlers();
