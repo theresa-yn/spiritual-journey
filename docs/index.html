@@ -45,7 +45,7 @@
         
         console.log('Early theme applied:', theme, 'data-theme:', root.getAttribute('data-theme'));
         
-        // Immediate background fix for sky theme
+        // Immediate background fix for themes
         if (theme === 'sky') {
           setTimeout(function() {
             console.log('IMMEDIATE SKY THEME FIX');
@@ -53,6 +53,14 @@
             document.body.style.background = 'linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)';
             document.body.style.color = '#0c4a6e';
             document.documentElement.style.backgroundColor = '#e0f2fe';
+          }, 10);
+        } else if (theme === 'dark') {
+          setTimeout(function() {
+            console.log('IMMEDIATE DARK THEME FIX');
+            document.body.style.backgroundColor = '#0f0f23';
+            document.body.style.background = 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)';
+            document.body.style.color = '#ffffff';
+            document.documentElement.style.backgroundColor = '#0f0f23';
           }, 10);
         }
       } catch (e) {
@@ -3815,6 +3823,13 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '☀️';
       if (sun) sun.style.display = 'none';
       setThemeMetaColor('dark');
+      
+      // Force dark theme colors directly
+      document.body.style.backgroundColor = '#0f0f23';
+      document.body.style.background = 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)';
+      document.body.style.color = '#ffffff';
+      document.documentElement.style.backgroundColor = '#0f0f23';
+      
       console.log('Dark theme applied, data-theme:', document.documentElement.getAttribute('data-theme'));
     }
 
