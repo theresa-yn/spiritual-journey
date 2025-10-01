@@ -717,6 +717,47 @@
       flex-wrap: wrap;
     }
 
+    /* Kebab (three-dot) menu for history items */
+    .kebab-container { position: relative; display: inline-block; }
+    .kebab-button {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+    .kebab-button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .kebab-dropdown {
+      position: absolute;
+      top: 42px;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 6px;
+      display: none;
+      z-index: 1000;
+      min-width: 140px;
+    }
+    .kebab-dropdown .kebab-item {
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .kebab-dropdown .kebab-item:hover { background: var(--bg-tertiary); }
+
 
 
 
@@ -3487,9 +3528,13 @@ Need help? Check the console for any error messages.`;
           ${imagesHtml}
           <div class="button-group">
             ${allImages.length > 0 ? `<button class="button" onclick="removeImageFromReflection(${index})">Remove All Images</button>` : ""}
-            <button class="button" onclick="editReflection(${index})">Edit</button>
-            <button class="button" onclick="reviewReflection(${index})">Review</button>
-            <button class="button" onclick="deleteReflection(${index})" onmouseover="console.log('Delete button hovered, index:', ${index})">Delete</button>
+            <div class="kebab-container">
+              <button class="kebab-button" onclick="toggleKebabMenu(event, ${index})" aria-label="More options">⋯</button>
+              <div class="kebab-dropdown" id="kebab-menu-${index}">
+                <button class="kebab-item" onclick="editReflection(${index}); closeAllKebabMenus()">Edit</button>
+                <button class="kebab-item" onclick="deleteReflection(${index}); closeAllKebabMenus()">Delete</button>
+              </div>
+            </div>
           </div>
         `;
         list.appendChild(div);
@@ -3497,6 +3542,27 @@ Need help? Check the console for any error messages.`;
       
       console.log('History display refreshed with', reflections.length, 'items');
     }
+
+    function closeAllKebabMenus() {
+      document.querySelectorAll('.kebab-dropdown').forEach(menu => {
+        menu.style.display = 'none';
+      });
+    }
+
+    function toggleKebabMenu(event, index) {
+      event.stopPropagation();
+      const id = `kebab-menu-${index}`;
+      const menu = document.getElementById(id);
+      if (!menu) return;
+      const isOpen = menu.style.display === 'block';
+      closeAllKebabMenus();
+      menu.style.display = isOpen ? 'none' : 'block';
+    }
+
+    // Close kebab menus on outside click
+    document.addEventListener('click', function() {
+      closeAllKebabMenus();
+    });
 
     async function deleteReflection(index) {
       console.log('=== DELETE FUNCTION CALLED ===');
