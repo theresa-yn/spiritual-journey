@@ -480,6 +480,11 @@
       /* Ensure proper text rendering */
       -webkit-text-stroke: 0.01em transparent;
       text-shadow: 0 0 0.01em transparent;
+      /* Prevent word hyphenation */
+      hyphens: none;
+      -webkit-hyphens: none;
+      -moz-hyphens: none;
+      -ms-hyphens: none;
     }
     p {
       font-size: 0.95rem;
@@ -821,6 +826,11 @@
         font-weight: 400;
         -webkit-font-smoothing: subpixel-antialiased;
         -moz-osx-font-smoothing: auto;
+        /* Prevent word hyphenation on mobile */
+        hyphens: none;
+        -webkit-hyphens: none;
+        -moz-hyphens: none;
+        -ms-hyphens: none;
       }
       p { font-size: 0.9rem; }
       .button { font-size: 0.85rem; padding: 8px 16px; }
@@ -1010,6 +1020,11 @@
       transform: none !important;
       /* Prevent any container clipping */
       contain: none !important;
+      /* Prevent word hyphenation */
+      hyphens: none !important;
+      -webkit-hyphens: none !important;
+      -moz-hyphens: none !important;
+      -ms-hyphens: none !important;
     }
 
     /* Mobile-specific quote fixes */
@@ -1033,6 +1048,11 @@
         -webkit-touch-callout: none !important;
         -webkit-user-select: none !important;
         user-select: none !important;
+        /* Prevent word hyphenation on mobile */
+        hyphens: none !important;
+        -webkit-hyphens: none !important;
+        -moz-hyphens: none !important;
+        -ms-hyphens: none !important;
       }
     }
 
@@ -1230,7 +1250,7 @@
     <button id="back-to-inspire-btn" class="button" onclick="goBackToInspire()" style="display: none; margin-bottom: 20px;">← Back to Inspire Me</button>
     <div id="welcome-message" class="prompt" style="display: none; margin-bottom: 20px;"></div>
     <div id="quota-status" class="prompt" style="display: none; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);"></div>
-    <div id="quote" class="prompt" style="word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'kern' 1; letter-spacing: 0.02em; line-height: 1.4;">Loading inspiration...</div>
+    <div id="quote" class="prompt" style="word-wrap: break-word; overflow-wrap: break-word; hyphens: none; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'kern' 1; letter-spacing: 0.02em; line-height: 1.4;">Loading inspiration...</div>
     <button class="button" onclick="newQuote()">Inspire Me</button>
           <h2 class="app-title">Writing Experiences</h2>
       <p>Tap the plus button to start your journey</p>
