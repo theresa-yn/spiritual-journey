@@ -46,10 +46,16 @@
         
         // Theme applied successfully
         
-        // Show sun immediately for sky theme
+        // Show sun immediately for sky theme with fade-in
         if (theme === 'sky') {
           var sun = document.querySelector('.sun');
-          if (sun) sun.style.display = 'block';
+          if (sun) {
+            sun.style.display = 'block';
+            // Fade in the sun after a short delay
+            setTimeout(function() {
+              sun.style.opacity = '1';
+            }, 100);
+          }
         }
         
         // Immediate background fix for themes
@@ -1182,7 +1188,7 @@
 
   
   <!-- Sun for Sky Theme -->
-  <div class="sun" style="display: none;"></div>
+  <div class="sun" style="display: none; opacity: 0; transition: opacity 0.5s ease;"></div>
   
   <!-- Elegant Loading Overlay -->
   <div id="loading-overlay" class="loading-overlay" style="opacity: 0; visibility: hidden;">
@@ -3985,7 +3991,12 @@ Need help? Check the console for any error messages.`;
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       if (themeToggle) themeToggle.textContent = '🌙';
-      if (sun) sun.style.display = 'block';
+      if (sun) {
+        sun.style.display = 'block';
+        setTimeout(function() {
+          sun.style.opacity = '1';
+        }, 50);
+      }
       setThemeMetaColor('sky');
       
       // AGGRESSIVE sky theme color override
@@ -4012,7 +4023,12 @@ Need help? Check the console for any error messages.`;
       const themeToggle = document.getElementById('theme-toggle');
       const sun = document.querySelector('.sun');
       if (themeToggle) themeToggle.textContent = '☀️';
-      if (sun) sun.style.display = 'none';
+      if (sun) {
+        sun.style.opacity = '0';
+        setTimeout(function() {
+          sun.style.display = 'none';
+        }, 500);
+      }
       setThemeMetaColor('dark');
       
       // AGGRESSIVE dark theme color override
