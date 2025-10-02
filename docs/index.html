@@ -430,7 +430,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 80px 8px 20px 8px;
+      padding: 80px 0 20px 0;
       position: relative;
       z-index: 1;
       /* PWA specific styles */
@@ -668,21 +668,22 @@
     textarea { min-height: 130px; resize: vertical; line-height: 1.8; }
     #history-list { 
       width: 100%; 
-      padding: 0 8px;
+      padding: 0;
+      margin: 0;
       box-sizing: border-box;
     }
     .history-item {
       text-align: left;
       padding: 15px;
       background: var(--card-bg);
-      margin: 8px 0;
+      margin: 8px 12px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       cursor: pointer;
       border: none;
       line-height: 1.8;
-      width: 100%;
-      max-width: 100%;
+      width: calc(100% - 24px);
+      max-width: calc(100% - 24px);
       box-sizing: border-box;
     }
     .history-item img {
@@ -851,8 +852,8 @@
       input[type="text"], input[type="email"], input[type="password"], textarea { width: 96%; padding: 10px; }
       .history-item { 
         padding: 12px; 
-        margin: 8px 0;
-        width: 100%;
+        margin: 8px 12px;
+        width: calc(100% - 24px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         border: none;
       }
@@ -871,7 +872,7 @@
       .header { padding: 10px 16px; }
       
       /* Mobile content adjustments - wider journal box */
-      .content { padding: 80px 4px 20px 4px; }
+      .content { padding: 80px 0 20px 0; }
       
       /* Mobile toolbar */
       .photo-toolbar {
