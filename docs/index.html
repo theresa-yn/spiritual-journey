@@ -46,17 +46,8 @@
         
         // Theme applied successfully
         
-        // Show sun immediately for sky theme with fade-in
-        if (theme === 'sky') {
-          var sun = document.querySelector('.sun');
-          if (sun) {
-            sun.style.display = 'block';
-            // Fade in the sun after a short delay
-            setTimeout(function() {
-              sun.style.opacity = '1';
-            }, 100);
-          }
-        }
+        // Don't show sun immediately - wait for page load
+        // Sun will be shown by the page load handler
         
         // Immediate background fix for themes
         if (theme === 'sky') {
@@ -1188,7 +1179,7 @@
 
   
   <!-- Sun for Sky Theme -->
-  <div class="sun" style="display: none; opacity: 0; transition: opacity 0.5s ease;"></div>
+  <div class="sun" style="display: none; opacity: 0; transition: opacity 0.5s ease; visibility: hidden;"></div>
   
   <!-- Elegant Loading Overlay -->
   <div id="loading-overlay" class="loading-overlay" style="opacity: 0; visibility: hidden;">
@@ -3993,6 +3984,7 @@ Need help? Check the console for any error messages.`;
       if (themeToggle) themeToggle.textContent = '🌙';
       if (sun) {
         sun.style.display = 'block';
+        sun.style.visibility = 'visible';
         setTimeout(function() {
           sun.style.opacity = '1';
         }, 50);
@@ -4027,6 +4019,7 @@ Need help? Check the console for any error messages.`;
         sun.style.opacity = '0';
         setTimeout(function() {
           sun.style.display = 'none';
+          sun.style.visibility = 'hidden';
         }, 500);
       }
       setThemeMetaColor('dark');
@@ -4717,6 +4710,18 @@ Need help? Check the console for any error messages.`;
       
       // Load theme first
       loadTheme();
+      
+      // Show sun smoothly if sky theme is active
+      if (window.currentTheme === 'sky') {
+        const sun = document.querySelector('.sun');
+        if (sun) {
+          sun.style.display = 'block';
+          sun.style.visibility = 'visible';
+          setTimeout(function() {
+            sun.style.opacity = '1';
+          }, 200);
+        }
+      }
       
       // Theme is now working properly
       
