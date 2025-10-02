@@ -306,7 +306,7 @@
       --accent-secondary: #0369a1;
       --accent-tertiary: #0c4a6e;
       --header-bg: rgba(224, 242, 254, 0.9);
-      --border-color: rgba(12, 74, 110, 0.2);
+      --border-color: rgba(0, 0, 0, 0.05);
       --input-bg: rgba(255, 255, 255, 0.8);
       --card-bg: rgba(255, 255, 255, 0.9);
       --star-color: #fbbf24;
@@ -663,7 +663,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
       background: var(--input-bg);
       color: var(--text-primary);
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(139, 92, 246, 0.1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     textarea { min-height: 130px; resize: vertical; line-height: 1.8; }
     #history-list { 
@@ -679,7 +679,7 @@
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       cursor: pointer;
-      border: 1px solid var(--border-color);
+      border: none;
       line-height: 1.8;
       width: 100%;
       max-width: 100%;
@@ -854,6 +854,7 @@
         margin: 8px 0;
         width: 100%;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border: none;
       }
       .floating-plus { width: 52px; height: 52px; font-size: 26px; }
       .options-menu { min-width: 170px; padding: 10px; }
