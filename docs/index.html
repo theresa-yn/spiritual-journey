@@ -3688,17 +3688,12 @@ Need help? Check the console for any error messages.`;
         // Format reflection text to preserve paragraph breaks
         const reflectionText = item.reflection || 'No content';
         const formattedText = reflectionText.replace(/\n/g, '<br>');
-        const maxLength = 200; // Show first 200 characters
-        const isLongText = reflectionText.length > maxLength;
-        const truncatedText = isLongText ? reflectionText.substring(0, maxLength) + '...' : reflectionText;
-        const formattedTruncatedText = truncatedText.replace(/\n/g, '<br>');
         
         const div = document.createElement('div');
         div.className = 'history-item';
         div.innerHTML = `
           <h3>${item.title || 'Untitled'}</h3>
-          <div id="reflection-text-${index}">${formattedTruncatedText}</div>
-          ${isLongText ? `<button class="read-more-btn" onclick="toggleReadMore(${index}, '${formattedText.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--accent-color); cursor: pointer; font-size: 0.85rem; margin-top: 5px; text-decoration: underline;">Read more</button>` : ''}
+          <div>${formattedText}</div>
           <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: block;">${displayDate}</small>
           ${imagesHtml}
           <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
@@ -3715,23 +3710,6 @@ Need help? Check the console for any error messages.`;
       });
       
       console.log('History display refreshed with', reflections.length, 'items');
-    }
-
-    function toggleReadMore(index, fullText) {
-      const textElement = document.getElementById(`reflection-text-${index}`);
-      const button = textElement.nextElementSibling;
-      
-      if (textElement.innerHTML.includes('...')) {
-        // Show full text
-        textElement.innerHTML = fullText;
-        button.textContent = 'Read less';
-      } else {
-        // Show truncated text
-        const truncatedText = fullText.replace(/<br>/g, '\n').substring(0, 200) + '...';
-        const formattedTruncatedText = truncatedText.replace(/\n/g, '<br>');
-        textElement.innerHTML = formattedTruncatedText;
-        button.textContent = 'Read more';
-      }
     }
 
     function closeAllKebabMenus() {
