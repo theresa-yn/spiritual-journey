@@ -1,5 +1,5 @@
 // sw.js - Service Worker for Soul Reflections App
-const CACHE_NAME = "soul-reflections-cache-v4";
+const CACHE_NAME = "soul-reflections-cache-v5"; // bumped to invalidate old caches
 const OFFLINE_URL = "offline.html";
 // Files to cache
 const FILES_TO_CACHE = [
@@ -40,10 +40,17 @@ self.addEventListener("activate", (event) => {
 // Fetch: serve from cache, then fallback to network, then offline page
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
+    // Always try network first for navigations with cache-bypass to get fresh index.html
     event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.open(CACHE_NAME).then((cache) => cache.match(OFFLINE_URL))
-      )
+      (async () => {
+        try {
+          const freshRequest = new Request(event.request.url, { cache: "reload" });
+          return await fetch(freshRequest);
+        } catch (err) {
+          const cache = await caches.open(CACHE_NAME);
+          return (await cache.match(OFFLINE_URL)) || Response.error();
+        }
+      })()
     );
   } else {
     event.respondWith(
