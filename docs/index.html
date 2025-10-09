@@ -3145,6 +3145,25 @@ Need help? Check the console for any error messages.`;
       
       // Refresh the history display
       refreshHistoryDisplay();
+
+      // Scroll to top to show newest entry
+      try {
+        const list = document.getElementById('history-list');
+        const screen = document.getElementById('history-screen');
+        if (list) list.scrollTop = 0;
+        if (screen) screen.scrollTop = 0;
+        if (typeof window !== 'undefined' && window.scrollTo) {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        requestAnimationFrame(() => {
+          const firstItem = list && list.querySelector('.history-item');
+          if (firstItem && typeof firstItem.scrollIntoView === 'function') {
+            firstItem.scrollIntoView({ behavior: 'auto', block: 'start' });
+          }
+        });
+      } catch (e) {
+        // non-critical
+      }
     }
     
     function goToHome() {
@@ -3173,6 +3192,26 @@ Need help? Check the console for any error messages.`;
       
       await loadReflections();
       refreshHistoryDisplay();
+
+      // Ensure the newest (top) item is visible without manual scrolling
+      try {
+        const list = document.getElementById('history-list');
+        const screen = document.getElementById('history-screen');
+        if (list) list.scrollTop = 0;
+        if (screen) screen.scrollTop = 0;
+        if (typeof window !== 'undefined' && window.scrollTo) {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        // Focus first item if present
+        requestAnimationFrame(() => {
+          const firstItem = list && list.querySelector('.history-item');
+          if (firstItem && typeof firstItem.scrollIntoView === 'function') {
+            firstItem.scrollIntoView({ behavior: 'auto', block: 'start' });
+          }
+        });
+      } catch (e) {
+        // non-critical
+      }
     }
 
     function editReflection(index) {
@@ -3651,8 +3690,49 @@ Need help? Check the console for any error messages.`;
         return;
       }
       
-      reflections.forEach((item, index) => {
-        console.log('Creating display for reflection', index, ':', item.title);
+      // Ensure newest reflections are shown first while preserving original indices
+      const getItemTime = (entry) => {
+        if (!entry) return 0;
+        // Firestore Timestamp or ISO/number
+        if (entry.createdAt) {
+          const d = entry.createdAt.toDate ? entry.createdAt.toDate() : new Date(entry.createdAt);
+          const t = d && typeof d.getTime === 'function' ? d.getTime() : NaN;
+          if (!isNaN(t)) return t;
+        }
+        // Common numeric fields
+        const numericFields = ['timestamp', 'createdAtMs', 'createdAtMillis', 'created_at_ms'];
+        for (const key of numericFields) {
+          if (entry[key] && !isNaN(Number(entry[key]))) return Number(entry[key]);
+        }
+        // Parse human-readable date strings like "Monday, September 15, 2025 at 01:59 PM"
+        if (entry.date && typeof entry.date === 'string') {
+          const raw = entry.date.trim();
+          const tryParse = (s) => {
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? NaN : d.getTime();
+          };
+          // 1) Direct parse
+          let t = tryParse(raw);
+          if (!isNaN(t)) return t;
+          // 2) Remove weekday prefix
+          t = tryParse(raw.replace(/^[A-Za-z]+,\s+/, ''));
+          if (!isNaN(t)) return t;
+          // 3) Replace ' at ' with space
+          t = tryParse(raw.replace(/\sat\s/i, ' '));
+          if (!isNaN(t)) return t;
+          // 4) Remove weekday and replace ' at '
+          const noWeekday = raw.replace(/^[A-Za-z]+,\s+/, '');
+          t = tryParse(noWeekday.replace(/\sat\s/i, ' '));
+          if (!isNaN(t)) return t;
+        }
+        return 0;
+      };
+
+      const itemsWithOriginalIndex = reflections.map((it, idx) => ({ item: it, originalIndex: idx }));
+      itemsWithOriginalIndex.sort((a, b) => getItemTime(b.item) - getItemTime(a.item));
+
+      itemsWithOriginalIndex.forEach(({ item, originalIndex }) => {
+        console.log('Creating display for reflection', originalIndex, ':', item.title);
         
         // Format the date and time properly
         let displayDate = 'No date';
@@ -3698,10 +3778,10 @@ Need help? Check the console for any error messages.`;
           ${imagesHtml}
           <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
             <div class="kebab-container">
-              <button class="kebab-button" onclick="toggleKebabMenu(event, ${index})" aria-label="More options">⋯</button>
-              <div class="kebab-dropdown" id="kebab-menu-${index}">
-                <button class="kebab-item" onclick="editReflection(${index}); closeAllKebabMenus()">Edit</button>
-                <button class="kebab-item" onclick="deleteReflection(${index}); closeAllKebabMenus()">Delete</button>
+              <button class="kebab-button" onclick="toggleKebabMenu(event, ${originalIndex})" aria-label="More options">⋯</button>
+              <div class="kebab-dropdown" id="kebab-menu-${originalIndex}">
+                <button class="kebab-item" onclick="editReflection(${originalIndex}); closeAllKebabMenus()">Edit</button>
+                <button class="kebab-item" onclick="deleteReflection(${originalIndex}); closeAllKebabMenus()">Delete</button>
               </div>
             </div>
           </div>
@@ -3710,6 +3790,16 @@ Need help? Check the console for any error messages.`;
       });
       
       console.log('History display refreshed with', reflections.length, 'items');
+
+      // Ensure the user sees the newest entries immediately
+      try {
+        list.scrollTop = 0;
+        if (typeof window !== 'undefined' && window.scrollTo) {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+      } catch (e) {
+        // Non-critical if scrolling fails
+      }
     }
 
     function closeAllKebabMenus() {
